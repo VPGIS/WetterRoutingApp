@@ -19,7 +19,7 @@
 <head>
 <meta charset="utf-8"/>
 <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
-<title>WetterAppProjekt</title>
+<title>ICON-CH1 · Rain Forecast</title>
 <!-- Leaflet -->
 <link crossorigin="" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" rel="stylesheet"/>
 <script crossorigin="" defer="" src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
@@ -49,7 +49,7 @@
         #top-right-title h1 { 
             font-size: 1.6rem; 
             margin: 0; 
-            color: #1d6fa4; 
+            color: #1a1a1a; 
             font-weight: 800; 
             letter-spacing: -0.5px; 
             white-space: nowrap;
@@ -66,7 +66,7 @@
 #model-info-box h2 { font-size: 1rem; margin: 0 0 8px 0; color: #0d3a6e; display: flex; align-items: center; gap: 8px; }
 #model-run-custom, #frame-readout-inline { font-size: 0.8rem; color: #555; margin-bottom: 4px; }
 .control-group { margin-bottom: 18px; display: flex; flex-direction: column; }
-.control-group label { font-size: 0.85rem; font-weight: bold; margin-bottom: 6px; color: #000; }
+.control-group label { font-size: 0.85rem; font-weight: bold; margin-bottom: 6px; color: #444; }
 .control-group input[type="text"], .control-group input[type="time"], .control-group select { padding: 10px; border: 1px solid #ccc; border-radius: 6px; font-size: 0.95rem; background: #fff; box-sizing: border-box; width: 100%; }
 .slider-labels { display: flex; justify-content: space-between; font-size: 0.75rem; color: #666; margin-top: 6px; font-weight: 600; }
 .buttons { flex-direction: row; justify-content: space-between; margin-top: 25px; }
@@ -1710,25 +1710,26 @@ label[for="route_start"] {
 </head>
 <body>
 <!-- Custom Layer Control -->
-<div id="custom-layer-control" style="position: absolute; bottom: 20px; left: 20px; z-index: 1000; background: rgba(255, 255, 255, 0.75); padding: 15px 25px; border-radius: 12px; box-shadow: 0 8px 16px rgba(0,0,0,0.2); font-family: sans-serif; backdrop-filter: blur(4px); display: flex; align-items: center; gap: 12px;">
-    <label for="layer_select" data-i18n="map_style" style="margin: 0; font-size: 14px; font-weight: 600; color: #1f2937;">Karte</label>
-    <select id="layer_select" style="height: 36px; padding: 0 10px; border: 1px solid rgba(0,0,0,0.12); border-radius: 8px; background: rgba(255,255,255,0.9); font-size: 14px; color: #1f2937; outline: none;">
-        <option value="streets" data-i18n="map_standard" selected>Standard</option>
-        <option value="hybrid" data-i18n="map_hybrid">Hybrid</option>
+<div id="custom-layer-control" style="position: absolute; bottom: 90px; left: 20px; z-index: 1000; background: rgba(255, 255, 255, 0.9); padding: 5px 10px; border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.15); font-family: sans-serif; display: flex; align-items: center; gap: 8px; backdrop-filter: blur(4px);">
+    <label for="layer_select" style="font-size: 13px; font-weight: 600; margin: 0; color: #333;" data-i18n="map_style">Karte</label>
+    <select id="layer_select" style="font-size: 13px; padding: 2px 6px; border: 1px solid #ccc; border-radius: 4px; outline: none; cursor: pointer;">
+        <option value="streets" selected>Standard</option>
+        <option value="satellite">Satellit</option>
+        <option value="hybrid">Hybrid</option>
     </select>
 </div>
 
 <!-- Top Right Title -->
     <div id="top-right-title">
-        <h1><span style="color:#0d3a6e;">W</span>etter<span style="color:#0d3a6e;">A</span>pp<span style="color:#0d3a6e;">P</span>rojekt</h1>
+        <h1>VP Routing</h1>
         <img src="logo.jpg" alt="Logo" class="header-logo" />
     </div>
 <!-- Left Routing Panel -->
 <div id="routing-panel">
 <div class="control-group">
-<div style="position: relative; display: flex; justify-content: space-between; align-items: center; width: 100%; margin-bottom: 8px;">
+<div style="display: flex; justify-content: space-between; align-items: center; width: 100%; margin-bottom: 8px;">
     <label data-i18n="start" for="route_start">Startpunkt</label>
-    <div id="start-marker-ui" onclick="zoomToMarker('start')" title="Zoom to Start" style="display: none; position: absolute; left: 50%; transform: translateX(-50%); width: 12px; height: 12px; border-radius: 50%; background: #10b981; border: 2px solid rgba(0,0,0,0.5); cursor: pointer; flex-shrink: 0; box-shadow: 0 0 4px rgba(0,0,0,0.3);"></div>
+    <div id="start-marker-ui" class="hidden" onclick="zoomToMarker('start')" title="Zoom to Start" style="width: 12px; height: 12px; border-radius: 50%; background: #10b981; border: 2px solid rgba(0,0,0,0.5); cursor: pointer; flex-shrink: 0; box-shadow: 0 0 4px rgba(0,0,0,0.3);"></div>
     <div class="lang-switcher" style="position: static !important;">
 <select id="lang_select">
 <option selected="" value="de">DE</option>
@@ -1740,9 +1741,9 @@ label[for="route_start"] {
 <input data-i18n-ph="where_from" id="route_start" placeholder="Woher?" type="text"/>
 </div>
 <div class="control-group">
-<div style="position: relative; display: flex; justify-content: space-between; align-items: center; width: 100%; margin-bottom: 8px;">
+<div style="display: flex; justify-content: space-between; align-items: center; width: 100%; margin-bottom: 8px;">
     <label data-i18n="end" for="route_end">Ziel</label>
-    <div id="end-marker-ui" onclick="zoomToMarker('end')" title="Zoom to End" style="display: none; position: absolute; left: 50%; transform: translateX(-50%); width: 12px; height: 12px; border-radius: 50%; background: #ef4444; border: 2px solid rgba(0,0,0,0.5); cursor: pointer; flex-shrink: 0; box-shadow: 0 0 4px rgba(0,0,0,0.3);"></div>
+    <div id="end-marker-ui" class="hidden" onclick="zoomToMarker('end')" title="Zoom to End" style="width: 12px; height: 12px; border-radius: 50%; background: #ef4444; border: 2px solid rgba(0,0,0,0.5); cursor: pointer; flex-shrink: 0; box-shadow: 0 0 4px rgba(0,0,0,0.3); margin-right: auto; margin-left: auto;"></div>
     <div style="width: 50px;"></div> <!-- Spacer to match layout -->
 </div>
 <input data-i18n-ph="where_to" id="route_end" placeholder="Wohin?" type="text"/>
@@ -2193,7 +2194,6 @@ document.addEventListener("DOMContentLoaded", () => {
                 inputEl.dataset.lon = '';
                 if (isStart && vpStartMarker) { map.removeLayer(vpStartMarker); vpStartMarker = null; }
                 if (!isStart && vpEndMarker) { map.removeLayer(vpEndMarker); vpEndMarker = null; }
-                window.updateUIMarkers();
                 return;
             }
 
@@ -2308,10 +2308,10 @@ document.addEventListener("DOMContentLoaded", () => {
 </script>
 <script>
 const i18n = {
-    de: { start: "Startpunkt", where_from: "Woher?", end: "Ziel", where_to: "Wohin?", time: "Abfahrtszeit", speed: "Geschwindigkeit", rain: "Regenresistenz", rain_low: "Wenig", rain_med: "Mittel", rain_high: "Viel", route: "Route", route_def: "Standard", route_scen: "Kein Regen", route_fast: "Schnell", gpx_in: "GPX Import", gpx_out: "GPX Export", calc: "Route berechnen", adv_settings: "Erweiterte Einstellungen", resolving: "Adresse wird gesucht...", map_style: "Karte", map_standard: "Standard", map_hybrid: "Hybrid", calculating: "Berechne...", model_run: "Modelllauf" },
-    en: { start: "Start Location", where_from: "Where from?", end: "End Location", where_to: "Where to?", time: "Time Start", speed: "Speed", rain: "Rain Resistance", rain_low: "Low", rain_med: "Medium", rain_high: "High", route: "Route Type", route_def: "Default", route_scen: "No Rain", route_fast: "Fastest", gpx_in: "Import GPX", gpx_out: "Export GPX", calc: "Calculate Route", adv_settings: "Advanced Settings", resolving: "Resolving address...", map_style: "Map", map_standard: "Standard", map_hybrid: "Hybrid", calculating: "Calculating...", model_run: "Model run" },
-    it: { start: "Punto di partenza", where_from: "Da dove?", end: "Destinazione", where_to: "Verso dove?", time: "Orario di partenza", speed: "Velocità", rain: "Resistenza alla pioggia", rain_low: "Bassa", rain_med: "Media", rain_high: "Alta", route: "Tipo di percorso", route_def: "Predefinito", route_scen: "Nessuna pioggia", route_fast: "Veloce", gpx_in: "Importa GPX", gpx_out: "Esporta GPX", calc: "Calcola percorso", adv_settings: "Impostazioni avanzate", resolving: "Ricerca indirizzo...", map_style: "Mappa", map_standard: "Standard", map_hybrid: "Ibrido", calculating: "Calcolo...", model_run: "Corsa del modello" },
-    fr: { start: "Point de départ", where_from: "D'où ?", end: "Destination", where_to: "Vers où ?", time: "Heure de départ", speed: "Vitesse", rain: "Résistance à la pluie", rain_low: "Faible", rain_med: "Moyenne", rain_high: "Forte", route: "Type d'itinéraire", route_def: "Défaut", route_scen: "Pas de pluie", route_fast: "Rapide", gpx_in: "Importer GPX", gpx_out: "Exporter GPX", calc: "Calculer l'itinéraire", adv_settings: "Paramètres avancés", resolving: "Recherche d'adresse...", map_style: "Carte", map_standard: "Standard", map_hybrid: "Hybride", calculating: "Calcul en cours...", model_run: "Exécution du modèle" }
+    de: { start: "Startpunkt", where_from: "Woher?", end: "Ziel", where_to: "Wohin?", time: "Abfahrtszeit", speed: "Geschwindigkeit", rain: "Regenresistenz", rain_low: "Wenig", rain_med: "Mittel", rain_high: "Viel", route: "Route", route_def: "Standard", route_scen: "Kein Regen", route_fast: "Schnell", gpx_in: "GPX Import", gpx_out: "GPX Export", calc: "Route berechnen", adv_settings: "Erweiterte Einstellungen", resolving: "Adresse wird gesucht...", calculating: "Berechne...", model_run: "Modelllauf" },
+    en: { start: "Start Location", where_from: "Where from?", end: "End Location", where_to: "Where to?", time: "Time Start", speed: "Speed", rain: "Rain Resistance", rain_low: "Low", rain_med: "Medium", rain_high: "High", route: "Route Type", route_def: "Default", route_scen: "No Rain", route_fast: "Fastest", gpx_in: "Import GPX", gpx_out: "Export GPX", calc: "Calculate Route", adv_settings: "Advanced Settings", resolving: "Resolving address...", calculating: "Calculating...", model_run: "Model run" },
+    it: { start: "Punto di partenza", where_from: "Da dove?", end: "Destinazione", where_to: "Verso dove?", time: "Orario di partenza", speed: "Velocità", rain: "Resistenza alla pioggia", rain_low: "Bassa", rain_med: "Media", rain_high: "Alta", route: "Tipo di percorso", route_def: "Predefinito", route_scen: "Nessuna pioggia", route_fast: "Veloce", gpx_in: "Importa GPX", gpx_out: "Esporta GPX", calc: "Calcola percorso", adv_settings: "Impostazioni avanzate", resolving: "Ricerca indirizzo...", calculating: "Calcolo...", model_run: "Corsa del modello" },
+    fr: { start: "Point de départ", where_from: "D'où ?", end: "Destination", where_to: "Vers où ?", time: "Heure de départ", speed: "Vitesse", rain: "Résistance à la pluie", rain_low: "Faible", rain_med: "Moyenne", rain_high: "Forte", route: "Type d'itinéraire", route_def: "Défaut", route_scen: "Pas de pluie", route_fast: "Rapide", gpx_in: "Importer GPX", gpx_out: "Exporter GPX", calc: "Calculer l'itinéraire", adv_settings: "Paramètres avancés", resolving: "Recherche d'adresse...", calculating: "Calcul en cours...", model_run: "Exécution du modèle" }
 };
 
 let currentLang = 'de';

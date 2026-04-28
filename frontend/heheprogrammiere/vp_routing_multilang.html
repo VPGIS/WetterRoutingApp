@@ -19,54 +19,21 @@
 <head>
 <meta charset="utf-8"/>
 <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
-<title>WetterAppProjekt</title>
+<title>ICON-CH1 · Rain Forecast</title>
 <!-- Leaflet -->
 <link crossorigin="" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" rel="stylesheet"/>
 <script crossorigin="" defer="" src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <!-- Local styles (sibling file) -->
 <link href="style.css" rel="stylesheet"/>
 <style>
-
-        
-#top-right-title { 
-            position: absolute; 
-            top: 20px; 
-            right: 20px; 
-            height: 56px; /* Explicit height ensures the image can scale to 100% */
-            background: rgba(255, 255, 255, 0.95); 
-            padding: 0 0 0 20px; 
-            border-radius: 12px; 
-            box-shadow: 0 8px 16px rgba(0,0,0,0.2); 
-            z-index: 1000; 
-            font-family: sans-serif; 
-            backdrop-filter: blur(4px); 
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            gap: 15px;
-            overflow: hidden; 
-        }
-        #top-right-title h1 { 
-            font-size: 1.6rem; 
-            margin: 0; 
-            color: #1d6fa4; 
-            font-weight: 800; 
-            letter-spacing: -0.5px; 
-            white-space: nowrap;
-        }
-        #top-right-title img.header-logo {
-            height: 100%; /* Now safely fills exactly 56px */
-            width: auto;
-            object-fit: cover;
-            display: block;
-            border-left: 1px solid rgba(0,0,0,0.05);
-        }
+#top-right-title { position: absolute; top: 20px; right: 20px; background: rgba(255, 255, 255, 0.95); padding: 15px 25px; border-radius: 12px; box-shadow: 0 8px 16px rgba(0,0,0,0.2); z-index: 1000; font-family: sans-serif; backdrop-filter: blur(4px); }
+#top-right-title h1 { font-size: 1.6rem; margin: 0; color: #1a1a1a; font-weight: 800; letter-spacing: -0.5px; }
 #routing-panel { position: absolute; top: 20px; left: 20px; width: 320px; background: rgba(255, 255, 255, 0.75); padding: 25px; border-radius: 12px; box-shadow: 0 8px 16px rgba(0,0,0,0.2); z-index: 1000; font-family: sans-serif; backdrop-filter: blur(4px); }
 #model-info-box { background: rgba(248, 249, 250, 0.85); border-radius: 8px; padding: 12px; margin-bottom: 20px; border: 1px solid #e9ecef; }
 #model-info-box h2 { font-size: 1rem; margin: 0 0 8px 0; color: #0d3a6e; display: flex; align-items: center; gap: 8px; }
 #model-run-custom, #frame-readout-inline { font-size: 0.8rem; color: #555; margin-bottom: 4px; }
 .control-group { margin-bottom: 18px; display: flex; flex-direction: column; }
-.control-group label { font-size: 0.85rem; font-weight: bold; margin-bottom: 6px; color: #000; }
+.control-group label { font-size: 0.85rem; font-weight: bold; margin-bottom: 6px; color: #444; }
 .control-group input[type="text"], .control-group input[type="time"], .control-group select { padding: 10px; border: 1px solid #ccc; border-radius: 6px; font-size: 0.95rem; background: #fff; box-sizing: border-box; width: 100%; }
 .slider-labels { display: flex; justify-content: space-between; font-size: 0.75rem; color: #666; margin-top: 6px; font-weight: 600; }
 .buttons { flex-direction: row; justify-content: space-between; margin-top: 25px; }
@@ -150,468 +117,7 @@
 
 /* We should make sure the top-right title doesn't clash. It's fine at top-right. */
 
-
-/* Make the timeline wider */
-#controls {
-    max-width: 1000px !important;
-}
-
-/* CSS for dynamic slider ticks */
-#slider-ticks {
-    display: flex !important;
-    justify-content: space-between !important;
-    width: 100% !important;
-    position: relative;
-    height: 20px;
-    margin-top: 5px;
-}
-
-#slider-ticks span {
-    position: absolute;
-    transform: translateX(-50%);
-    font-size: 0.7rem;
-    color: #666;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 4px;
-}
-
-/* The little dot for every hour */
-#slider-ticks span::before {
-    content: '';
-    display: block;
-    width: 2px;
-    height: 4px;
-    background-color: #999;
-}
-
-/* Make every 2nd hour's dot slightly taller/darker if we wanted, but not strictly necessary */
-#slider-ticks span.hour-label::before {
-    height: 6px;
-    background-color: #444;
-}
-
-/* Hide the text for odd hours to avoid clutter, keeping only the dot */
-#slider-ticks span.hour-dot-only {
-    color: transparent;
-}
-
-
-/* 1. Hide Leaflet Zoom Controls */
-.leaflet-control-zoom { display: none !important; }
-
-/* 2. Dynamically expand timeline to use more space */
-#controls {
-    max-width: none !important;
-    width: calc(100vw - 370px) !important;
-    left: auto !important;
-}
-
-/* 3. Align timeline slider thumb exactly with the dynamic ticks */
-#slider-wrap {
-    margin: 0 20px !important;
-    flex-grow: 1 !important;
-    position: relative;
-}
-
-#time-slider {
-    width: 100% !important;
-    margin: 0 !important;
-    padding: 0 !important;
-    box-sizing: border-box !important;
-}
-
-/* The center of the slider thumb moves from (thumb_width/2) to (100% - thumb_width/2). 
-   To align absolute 0%-100% ticks, we need padding equal to half the thumb width. */
-#slider-ticks {
-    padding: 0 8px !important; 
-    box-sizing: border-box !important;
-    width: 100% !important;
-}
-
-
-<style>
-/* Lang switcher flush with input right edges */
-.lang-switcher {
-    right: 25px !important;
-    top: 25px !important;
-}
-
-/* Ticks container reset so absolute spans work accurately */
-#slider-ticks {
-    padding: 0 !important;
-    position: relative !important;
-    width: 100% !important;
-    height: 20px !important;
-    display: block !important; /* Not flex, since spans are absolute */
-}
-
-/* Remove old ticks flex behaviour from our earlier CSS injection */
-#slider-ticks span {
-    display: flex !important;
-    flex-direction: column !important;
-    align-items: center !important;
-}
-
-<style>
-/* Anchor the routing panel to the bottom instead of letting it float freely based on height */
-#routing-panel {
-    top: 20px !important;
-    bottom: 20px !important;
-    overflow-y: auto !important; /* Scrollable if it gets too tall on small screens */
-    display: flex !important;
-    flex-direction: column !important;
-}
-
-/* Make sure the control buttons inside the panel stay at the bottom if it stretches */
-#routing-panel .buttons {
-    margin-top: auto !important;
-}
-
-/* Lock the timeline perfectly to the exact same bottom margin */
-#controls {
-    bottom: 20px !important;
-    right: 20px !important;
-    width: calc(100vw - 370px) !important;
-    max-width: none !important;
-}
-
-/* Advanced Settings Styling */
-.advanced-settings-wrapper { margin-bottom: 18px; }
-.adv-toggle { display: flex; align-items: center; gap: 8px; font-size: 0.85rem; font-weight: 600; color: #555; cursor: pointer; padding: 8px 0; user-select: none; transition: color 0.2s; }
-.adv-toggle:hover { color: #0d3a6e; }
-.adv-icon { transition: transform 0.3s; }
-.adv-toggle.active .adv-icon { transform: rotate(90deg); }
-.adv-chevron { margin-left: auto; transition: transform 0.3s; }
-.adv-toggle.active .adv-chevron { transform: rotate(180deg); }
-.adv-options-container { margin-top: 10px; padding: 15px; background: rgba(0, 0, 0, 0.03); border-radius: 8px; border: 1px solid rgba(0, 0, 0, 0.05); transition: max-height 0.3s ease-in-out, opacity 0.3s ease-in-out, padding 0.3s ease-in-out; }
-.adv-options-container.hidden { display: none; }
-.adv-options-container .control-group:last-child { margin-bottom: 0; }
-
-/* Ensure the panel naturally shrinks and stacks buttons */
-#routing-panel {
-    bottom: auto !important; /* Remove bottom lock so it shrinks */
-    height: fit-content !important;
-    max-height: calc(100vh - 40px) !important;
-}
-
-.calculate-btn { margin-bottom: 15px; margin-top: 5px !important; }
-.buttons { margin-top: 0 !important; } /* Remove auto margin that pushed to bottom */
-
-
-/* Lock timeline to bottom right */
-#controls {
-    bottom: 20px !important;
-    right: 20px !important;
-    left: auto !important;
-    width: calc(100vw - 370px) !important;
-    max-width: none !important;
-    position: absolute !important;
-}
-
-
-/* Tighter padding on the bottom of the routing panel to remove whitespace */
-#routing-panel {
-    padding-bottom: 20px !important;
-}
-
-.buttons {
-    margin-bottom: 0 !important;
-    padding-bottom: 0 !important;
-}
-
-
-/* Tighten the main panel padding */
-#routing-panel {
-    padding: 15px !important; /* Reduced from 25px */
-    width: 290px !important; /* Slightly narrower to match reduced padding proportionally */
-}
-
-/* Tighten spacing between control groups */
-.control-group {
-    margin-bottom: 12px !important; /* Reduced from 18px */
-}
-
-/* Reduce padding inside text inputs */
-.control-group input[type="text"],
-.control-group input[type="time"] {
-    padding: 6px 8px !important; /* Reduced from 10px */
-    font-size: 0.9rem !important;
-}
-
-/* Unify button padding and reduce it */
-.buttons {
-    display: flex !important;
-    gap: 8px !important; /* Tight gap between GPX buttons instead of space-between with margins */
-    justify-content: stretch !important;
-    margin-top: 0 !important;
-    margin-bottom: 0 !important;
-}
-
-.buttons button {
-    padding: 8px 0 !important; /* Unified compact padding */
-    margin: 0 !important;
-    flex: 1 !important; /* Both take exactly 50% of the space evenly */
-    font-size: 0.85rem !important;
-}
-
-/* Calculate button specific */
-.calculate-btn {
-    padding: 10px 0 !important; /* Unified tight padding */
-    margin-top: 5px !important;
-    margin-bottom: 8px !important; /* Just a small gap before the GPX buttons */
-    font-size: 1rem !important;
-}
-
-/* Adjust language switcher position due to tighter panel padding */
-.lang-switcher {
-    right: 15px !important;
-    top: 15px !important;
-}
-.lang-switcher select {
-    padding: 2px 4px !important;
-    font-size: 0.7rem !important;
-}
-
-
-/* Remove duplicate padding below advanced settings wrapper */
-.advanced-settings-wrapper { margin-bottom: 0 !important; }
-.adv-options-container { margin-bottom: 5px !important; }
-.calculate-btn { margin-top: 5px !important; }
-
-    /* Reset language switcher positioning to sit inline with the label */
-    .lang-switcher {
-        position: static !important;
-        right: auto !important;
-        top: auto !important;
-    }
-    
-
-<style>
-.lang-switcher select {
-    padding: 0 4px !important;
-    height: 20px !important; /* Keep it very slim to not push down the layout */
-    font-size: 0.75rem !important;
-    line-height: 20px !important;
-    border: 1px solid #ddd;
-    background: transparent;
-    cursor: pointer;
-}
-
-/* Ensure the wrapper respects baseline if needed */
-.control-group > div[style*="display: flex"] {
-    align-items: center !important;
-}
-
-.lang-switcher {
-    margin-bottom: 0 !important; /* Remove any previous margin */
-}
-
-<style>
-/* Adjust speed labels to fit 9 items neatly */
-#ride_spd + .slider-labels span {
-    font-size: 0.65rem !important;
-    color: #888;
-}
-/* Make route modus text a bit smaller so they sit properly */
-#route_type + .slider-labels span {
-    font-size: 0.75rem !important;
-}
-
-<style>
-/* Make 9 items fit nicely */
-#ride_spd + .slider-labels span {
-    font-size: 0.65rem !important;
-    color: #666;
-}
-/* Ensure the route modes text don't overflow */
-#route_type + .slider-labels span {
-    font-size: 0.75rem !important;
-}
 </style>
-
-</style>
-
-<style>
-/* Anchor the routing panel to the bottom instead of letting it float freely based on height */
-#routing-panel {
-    top: 20px !important;
-    bottom: 20px !important;
-    overflow-y: auto !important; /* Scrollable if it gets too tall on small screens */
-    display: flex !important;
-    flex-direction: column !important;
-}
-
-/* Make sure the control buttons inside the panel stay at the bottom if it stretches */
-#routing-panel .buttons {
-    margin-top: auto !important;
-}
-
-/* Lock the timeline perfectly to the exact same bottom margin */
-#controls {
-    bottom: 20px !important;
-    right: 20px !important;
-    width: calc(100vw - 370px) !important;
-    max-width: none !important;
-}
-
-/* Advanced Settings Styling */
-.advanced-settings-wrapper { margin-bottom: 18px; }
-.adv-toggle { display: flex; align-items: center; gap: 8px; font-size: 0.85rem; font-weight: 600; color: #555; cursor: pointer; padding: 8px 0; user-select: none; transition: color 0.2s; }
-.adv-toggle:hover { color: #0d3a6e; }
-.adv-icon { transition: transform 0.3s; }
-.adv-toggle.active .adv-icon { transform: rotate(90deg); }
-.adv-chevron { margin-left: auto; transition: transform 0.3s; }
-.adv-toggle.active .adv-chevron { transform: rotate(180deg); }
-.adv-options-container { margin-top: 10px; padding: 15px; background: rgba(0, 0, 0, 0.03); border-radius: 8px; border: 1px solid rgba(0, 0, 0, 0.05); transition: max-height 0.3s ease-in-out, opacity 0.3s ease-in-out, padding 0.3s ease-in-out; }
-.adv-options-container.hidden { display: none; }
-.adv-options-container .control-group:last-child { margin-bottom: 0; }
-
-/* Ensure the panel naturally shrinks and stacks buttons */
-#routing-panel {
-    bottom: auto !important; /* Remove bottom lock so it shrinks */
-    height: fit-content !important;
-    max-height: calc(100vh - 40px) !important;
-}
-
-.calculate-btn { margin-bottom: 15px; margin-top: 5px !important; }
-.buttons { margin-top: 0 !important; } /* Remove auto margin that pushed to bottom */
-
-
-/* Lock timeline to bottom right */
-#controls {
-    bottom: 20px !important;
-    right: 20px !important;
-    left: auto !important;
-    width: calc(100vw - 370px) !important;
-    max-width: none !important;
-    position: absolute !important;
-}
-
-
-/* Tighter padding on the bottom of the routing panel to remove whitespace */
-#routing-panel {
-    padding-bottom: 20px !important;
-}
-
-.buttons {
-    margin-bottom: 0 !important;
-    padding-bottom: 0 !important;
-}
-
-
-/* Tighten the main panel padding */
-#routing-panel {
-    padding: 15px !important; /* Reduced from 25px */
-    width: 290px !important; /* Slightly narrower to match reduced padding proportionally */
-}
-
-/* Tighten spacing between control groups */
-.control-group {
-    margin-bottom: 12px !important; /* Reduced from 18px */
-}
-
-/* Reduce padding inside text inputs */
-.control-group input[type="text"],
-.control-group input[type="time"] {
-    padding: 6px 8px !important; /* Reduced from 10px */
-    font-size: 0.9rem !important;
-}
-
-/* Unify button padding and reduce it */
-.buttons {
-    display: flex !important;
-    gap: 8px !important; /* Tight gap between GPX buttons instead of space-between with margins */
-    justify-content: stretch !important;
-    margin-top: 0 !important;
-    margin-bottom: 0 !important;
-}
-
-.buttons button {
-    padding: 8px 0 !important; /* Unified compact padding */
-    margin: 0 !important;
-    flex: 1 !important; /* Both take exactly 50% of the space evenly */
-    font-size: 0.85rem !important;
-}
-
-/* Calculate button specific */
-.calculate-btn {
-    padding: 10px 0 !important; /* Unified tight padding */
-    margin-top: 5px !important;
-    margin-bottom: 8px !important; /* Just a small gap before the GPX buttons */
-    font-size: 1rem !important;
-}
-
-/* Adjust language switcher position due to tighter panel padding */
-.lang-switcher {
-    right: 15px !important;
-    top: 15px !important;
-}
-.lang-switcher select {
-    padding: 2px 4px !important;
-    font-size: 0.7rem !important;
-}
-
-
-/* Remove duplicate padding below advanced settings wrapper */
-.advanced-settings-wrapper { margin-bottom: 0 !important; }
-.adv-options-container { margin-bottom: 5px !important; }
-.calculate-btn { margin-top: 5px !important; }
-
-    /* Reset language switcher positioning to sit inline with the label */
-    .lang-switcher {
-        position: static !important;
-        right: auto !important;
-        top: auto !important;
-    }
-    
-
-<style>
-.lang-switcher select {
-    padding: 0 4px !important;
-    height: 20px !important; /* Keep it very slim to not push down the layout */
-    font-size: 0.75rem !important;
-    line-height: 20px !important;
-    border: 1px solid #ddd;
-    background: transparent;
-    cursor: pointer;
-}
-
-/* Ensure the wrapper respects baseline if needed */
-.control-group > div[style*="display: flex"] {
-    align-items: center !important;
-}
-
-.lang-switcher {
-    margin-bottom: 0 !important; /* Remove any previous margin */
-}
-
-<style>
-/* Adjust speed labels to fit 9 items neatly */
-#ride_spd + .slider-labels span {
-    font-size: 0.65rem !important;
-    color: #888;
-}
-/* Make route modus text a bit smaller so they sit properly */
-#route_type + .slider-labels span {
-    font-size: 0.75rem !important;
-}
-
-<style>
-/* Make 9 items fit nicely */
-#ride_spd + .slider-labels span {
-    font-size: 0.65rem !important;
-    color: #666;
-}
-/* Ensure the route modes text don't overflow */
-#route_type + .slider-labels span {
-    font-size: 0.75rem !important;
-}
-</style>
-
-</style>
-
 <style>
 /* Info toggle button inside the timeline */
 #timeline-info-container {
@@ -705,468 +211,7 @@
     margin-bottom: 0;
     font-weight: 500;
 }
-
-/* Make the timeline wider */
-#controls {
-    max-width: 1000px !important;
-}
-
-/* CSS for dynamic slider ticks */
-#slider-ticks {
-    display: flex !important;
-    justify-content: space-between !important;
-    width: 100% !important;
-    position: relative;
-    height: 20px;
-    margin-top: 5px;
-}
-
-#slider-ticks span {
-    position: absolute;
-    transform: translateX(-50%);
-    font-size: 0.7rem;
-    color: #666;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 4px;
-}
-
-/* The little dot for every hour */
-#slider-ticks span::before {
-    content: '';
-    display: block;
-    width: 2px;
-    height: 4px;
-    background-color: #999;
-}
-
-/* Make every 2nd hour's dot slightly taller/darker if we wanted, but not strictly necessary */
-#slider-ticks span.hour-label::before {
-    height: 6px;
-    background-color: #444;
-}
-
-/* Hide the text for odd hours to avoid clutter, keeping only the dot */
-#slider-ticks span.hour-dot-only {
-    color: transparent;
-}
-
-
-/* 1. Hide Leaflet Zoom Controls */
-.leaflet-control-zoom { display: none !important; }
-
-/* 2. Dynamically expand timeline to use more space */
-#controls {
-    max-width: none !important;
-    width: calc(100vw - 370px) !important;
-    left: auto !important;
-}
-
-/* 3. Align timeline slider thumb exactly with the dynamic ticks */
-#slider-wrap {
-    margin: 0 20px !important;
-    flex-grow: 1 !important;
-    position: relative;
-}
-
-#time-slider {
-    width: 100% !important;
-    margin: 0 !important;
-    padding: 0 !important;
-    box-sizing: border-box !important;
-}
-
-/* The center of the slider thumb moves from (thumb_width/2) to (100% - thumb_width/2). 
-   To align absolute 0%-100% ticks, we need padding equal to half the thumb width. */
-#slider-ticks {
-    padding: 0 8px !important; 
-    box-sizing: border-box !important;
-    width: 100% !important;
-}
-
-
-<style>
-/* Lang switcher flush with input right edges */
-.lang-switcher {
-    right: 25px !important;
-    top: 25px !important;
-}
-
-/* Ticks container reset so absolute spans work accurately */
-#slider-ticks {
-    padding: 0 !important;
-    position: relative !important;
-    width: 100% !important;
-    height: 20px !important;
-    display: block !important; /* Not flex, since spans are absolute */
-}
-
-/* Remove old ticks flex behaviour from our earlier CSS injection */
-#slider-ticks span {
-    display: flex !important;
-    flex-direction: column !important;
-    align-items: center !important;
-}
-
-<style>
-/* Anchor the routing panel to the bottom instead of letting it float freely based on height */
-#routing-panel {
-    top: 20px !important;
-    bottom: 20px !important;
-    overflow-y: auto !important; /* Scrollable if it gets too tall on small screens */
-    display: flex !important;
-    flex-direction: column !important;
-}
-
-/* Make sure the control buttons inside the panel stay at the bottom if it stretches */
-#routing-panel .buttons {
-    margin-top: auto !important;
-}
-
-/* Lock the timeline perfectly to the exact same bottom margin */
-#controls {
-    bottom: 20px !important;
-    right: 20px !important;
-    width: calc(100vw - 370px) !important;
-    max-width: none !important;
-}
-
-/* Advanced Settings Styling */
-.advanced-settings-wrapper { margin-bottom: 18px; }
-.adv-toggle { display: flex; align-items: center; gap: 8px; font-size: 0.85rem; font-weight: 600; color: #555; cursor: pointer; padding: 8px 0; user-select: none; transition: color 0.2s; }
-.adv-toggle:hover { color: #0d3a6e; }
-.adv-icon { transition: transform 0.3s; }
-.adv-toggle.active .adv-icon { transform: rotate(90deg); }
-.adv-chevron { margin-left: auto; transition: transform 0.3s; }
-.adv-toggle.active .adv-chevron { transform: rotate(180deg); }
-.adv-options-container { margin-top: 10px; padding: 15px; background: rgba(0, 0, 0, 0.03); border-radius: 8px; border: 1px solid rgba(0, 0, 0, 0.05); transition: max-height 0.3s ease-in-out, opacity 0.3s ease-in-out, padding 0.3s ease-in-out; }
-.adv-options-container.hidden { display: none; }
-.adv-options-container .control-group:last-child { margin-bottom: 0; }
-
-/* Ensure the panel naturally shrinks and stacks buttons */
-#routing-panel {
-    bottom: auto !important; /* Remove bottom lock so it shrinks */
-    height: fit-content !important;
-    max-height: calc(100vh - 40px) !important;
-}
-
-.calculate-btn { margin-bottom: 15px; margin-top: 5px !important; }
-.buttons { margin-top: 0 !important; } /* Remove auto margin that pushed to bottom */
-
-
-/* Lock timeline to bottom right */
-#controls {
-    bottom: 20px !important;
-    right: 20px !important;
-    left: auto !important;
-    width: calc(100vw - 370px) !important;
-    max-width: none !important;
-    position: absolute !important;
-}
-
-
-/* Tighter padding on the bottom of the routing panel to remove whitespace */
-#routing-panel {
-    padding-bottom: 20px !important;
-}
-
-.buttons {
-    margin-bottom: 0 !important;
-    padding-bottom: 0 !important;
-}
-
-
-/* Tighten the main panel padding */
-#routing-panel {
-    padding: 15px !important; /* Reduced from 25px */
-    width: 290px !important; /* Slightly narrower to match reduced padding proportionally */
-}
-
-/* Tighten spacing between control groups */
-.control-group {
-    margin-bottom: 12px !important; /* Reduced from 18px */
-}
-
-/* Reduce padding inside text inputs */
-.control-group input[type="text"],
-.control-group input[type="time"] {
-    padding: 6px 8px !important; /* Reduced from 10px */
-    font-size: 0.9rem !important;
-}
-
-/* Unify button padding and reduce it */
-.buttons {
-    display: flex !important;
-    gap: 8px !important; /* Tight gap between GPX buttons instead of space-between with margins */
-    justify-content: stretch !important;
-    margin-top: 0 !important;
-    margin-bottom: 0 !important;
-}
-
-.buttons button {
-    padding: 8px 0 !important; /* Unified compact padding */
-    margin: 0 !important;
-    flex: 1 !important; /* Both take exactly 50% of the space evenly */
-    font-size: 0.85rem !important;
-}
-
-/* Calculate button specific */
-.calculate-btn {
-    padding: 10px 0 !important; /* Unified tight padding */
-    margin-top: 5px !important;
-    margin-bottom: 8px !important; /* Just a small gap before the GPX buttons */
-    font-size: 1rem !important;
-}
-
-/* Adjust language switcher position due to tighter panel padding */
-.lang-switcher {
-    right: 15px !important;
-    top: 15px !important;
-}
-.lang-switcher select {
-    padding: 2px 4px !important;
-    font-size: 0.7rem !important;
-}
-
-
-/* Remove duplicate padding below advanced settings wrapper */
-.advanced-settings-wrapper { margin-bottom: 0 !important; }
-.adv-options-container { margin-bottom: 5px !important; }
-.calculate-btn { margin-top: 5px !important; }
-
-    /* Reset language switcher positioning to sit inline with the label */
-    .lang-switcher {
-        position: static !important;
-        right: auto !important;
-        top: auto !important;
-    }
-    
-
-<style>
-.lang-switcher select {
-    padding: 0 4px !important;
-    height: 20px !important; /* Keep it very slim to not push down the layout */
-    font-size: 0.75rem !important;
-    line-height: 20px !important;
-    border: 1px solid #ddd;
-    background: transparent;
-    cursor: pointer;
-}
-
-/* Ensure the wrapper respects baseline if needed */
-.control-group > div[style*="display: flex"] {
-    align-items: center !important;
-}
-
-.lang-switcher {
-    margin-bottom: 0 !important; /* Remove any previous margin */
-}
-
-<style>
-/* Adjust speed labels to fit 9 items neatly */
-#ride_spd + .slider-labels span {
-    font-size: 0.65rem !important;
-    color: #888;
-}
-/* Make route modus text a bit smaller so they sit properly */
-#route_type + .slider-labels span {
-    font-size: 0.75rem !important;
-}
-
-<style>
-/* Make 9 items fit nicely */
-#ride_spd + .slider-labels span {
-    font-size: 0.65rem !important;
-    color: #666;
-}
-/* Ensure the route modes text don't overflow */
-#route_type + .slider-labels span {
-    font-size: 0.75rem !important;
-}
 </style>
-
-</style>
-
-<style>
-/* Anchor the routing panel to the bottom instead of letting it float freely based on height */
-#routing-panel {
-    top: 20px !important;
-    bottom: 20px !important;
-    overflow-y: auto !important; /* Scrollable if it gets too tall on small screens */
-    display: flex !important;
-    flex-direction: column !important;
-}
-
-/* Make sure the control buttons inside the panel stay at the bottom if it stretches */
-#routing-panel .buttons {
-    margin-top: auto !important;
-}
-
-/* Lock the timeline perfectly to the exact same bottom margin */
-#controls {
-    bottom: 20px !important;
-    right: 20px !important;
-    width: calc(100vw - 370px) !important;
-    max-width: none !important;
-}
-
-/* Advanced Settings Styling */
-.advanced-settings-wrapper { margin-bottom: 18px; }
-.adv-toggle { display: flex; align-items: center; gap: 8px; font-size: 0.85rem; font-weight: 600; color: #555; cursor: pointer; padding: 8px 0; user-select: none; transition: color 0.2s; }
-.adv-toggle:hover { color: #0d3a6e; }
-.adv-icon { transition: transform 0.3s; }
-.adv-toggle.active .adv-icon { transform: rotate(90deg); }
-.adv-chevron { margin-left: auto; transition: transform 0.3s; }
-.adv-toggle.active .adv-chevron { transform: rotate(180deg); }
-.adv-options-container { margin-top: 10px; padding: 15px; background: rgba(0, 0, 0, 0.03); border-radius: 8px; border: 1px solid rgba(0, 0, 0, 0.05); transition: max-height 0.3s ease-in-out, opacity 0.3s ease-in-out, padding 0.3s ease-in-out; }
-.adv-options-container.hidden { display: none; }
-.adv-options-container .control-group:last-child { margin-bottom: 0; }
-
-/* Ensure the panel naturally shrinks and stacks buttons */
-#routing-panel {
-    bottom: auto !important; /* Remove bottom lock so it shrinks */
-    height: fit-content !important;
-    max-height: calc(100vh - 40px) !important;
-}
-
-.calculate-btn { margin-bottom: 15px; margin-top: 5px !important; }
-.buttons { margin-top: 0 !important; } /* Remove auto margin that pushed to bottom */
-
-
-/* Lock timeline to bottom right */
-#controls {
-    bottom: 20px !important;
-    right: 20px !important;
-    left: auto !important;
-    width: calc(100vw - 370px) !important;
-    max-width: none !important;
-    position: absolute !important;
-}
-
-
-/* Tighter padding on the bottom of the routing panel to remove whitespace */
-#routing-panel {
-    padding-bottom: 20px !important;
-}
-
-.buttons {
-    margin-bottom: 0 !important;
-    padding-bottom: 0 !important;
-}
-
-
-/* Tighten the main panel padding */
-#routing-panel {
-    padding: 15px !important; /* Reduced from 25px */
-    width: 290px !important; /* Slightly narrower to match reduced padding proportionally */
-}
-
-/* Tighten spacing between control groups */
-.control-group {
-    margin-bottom: 12px !important; /* Reduced from 18px */
-}
-
-/* Reduce padding inside text inputs */
-.control-group input[type="text"],
-.control-group input[type="time"] {
-    padding: 6px 8px !important; /* Reduced from 10px */
-    font-size: 0.9rem !important;
-}
-
-/* Unify button padding and reduce it */
-.buttons {
-    display: flex !important;
-    gap: 8px !important; /* Tight gap between GPX buttons instead of space-between with margins */
-    justify-content: stretch !important;
-    margin-top: 0 !important;
-    margin-bottom: 0 !important;
-}
-
-.buttons button {
-    padding: 8px 0 !important; /* Unified compact padding */
-    margin: 0 !important;
-    flex: 1 !important; /* Both take exactly 50% of the space evenly */
-    font-size: 0.85rem !important;
-}
-
-/* Calculate button specific */
-.calculate-btn {
-    padding: 10px 0 !important; /* Unified tight padding */
-    margin-top: 5px !important;
-    margin-bottom: 8px !important; /* Just a small gap before the GPX buttons */
-    font-size: 1rem !important;
-}
-
-/* Adjust language switcher position due to tighter panel padding */
-.lang-switcher {
-    right: 15px !important;
-    top: 15px !important;
-}
-.lang-switcher select {
-    padding: 2px 4px !important;
-    font-size: 0.7rem !important;
-}
-
-
-/* Remove duplicate padding below advanced settings wrapper */
-.advanced-settings-wrapper { margin-bottom: 0 !important; }
-.adv-options-container { margin-bottom: 5px !important; }
-.calculate-btn { margin-top: 5px !important; }
-
-    /* Reset language switcher positioning to sit inline with the label */
-    .lang-switcher {
-        position: static !important;
-        right: auto !important;
-        top: auto !important;
-    }
-    
-
-<style>
-.lang-switcher select {
-    padding: 0 4px !important;
-    height: 20px !important; /* Keep it very slim to not push down the layout */
-    font-size: 0.75rem !important;
-    line-height: 20px !important;
-    border: 1px solid #ddd;
-    background: transparent;
-    cursor: pointer;
-}
-
-/* Ensure the wrapper respects baseline if needed */
-.control-group > div[style*="display: flex"] {
-    align-items: center !important;
-}
-
-.lang-switcher {
-    margin-bottom: 0 !important; /* Remove any previous margin */
-}
-
-<style>
-/* Adjust speed labels to fit 9 items neatly */
-#ride_spd + .slider-labels span {
-    font-size: 0.65rem !important;
-    color: #888;
-}
-/* Make route modus text a bit smaller so they sit properly */
-#route_type + .slider-labels span {
-    font-size: 0.75rem !important;
-}
-
-<style>
-/* Make 9 items fit nicely */
-#ride_spd + .slider-labels span {
-    font-size: 0.65rem !important;
-    color: #666;
-}
-/* Ensure the route modes text don't overflow */
-#route_type + .slider-labels span {
-    font-size: 0.75rem !important;
-}
-</style>
-
-</style>
-
 <style>
 .lang-switcher {
     position: absolute;
@@ -1189,585 +234,58 @@
     font-weight: bold;
     color: #0d3a6e;
 }
-
-/* Make the timeline wider */
-#controls {
-    max-width: 1000px !important;
-}
-
-/* CSS for dynamic slider ticks */
-#slider-ticks {
-    display: flex !important;
-    justify-content: space-between !important;
-    width: 100% !important;
-    position: relative;
-    height: 20px;
-    margin-top: 5px;
-}
-
-#slider-ticks span {
-    position: absolute;
-    transform: translateX(-50%);
-    font-size: 0.7rem;
-    color: #666;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 4px;
-}
-
-/* The little dot for every hour */
-#slider-ticks span::before {
-    content: '';
-    display: block;
-    width: 2px;
-    height: 4px;
-    background-color: #999;
-}
-
-/* Make every 2nd hour's dot slightly taller/darker if we wanted, but not strictly necessary */
-#slider-ticks span.hour-label::before {
-    height: 6px;
-    background-color: #444;
-}
-
-/* Hide the text for odd hours to avoid clutter, keeping only the dot */
-#slider-ticks span.hour-dot-only {
-    color: transparent;
-}
-
-
-/* 1. Hide Leaflet Zoom Controls */
-.leaflet-control-zoom { display: none !important; }
-
-/* 2. Dynamically expand timeline to use more space */
-#controls {
-    max-width: none !important;
-    width: calc(100vw - 370px) !important;
-    left: auto !important;
-}
-
-/* 3. Align timeline slider thumb exactly with the dynamic ticks */
-#slider-wrap {
-    margin: 0 20px !important;
-    flex-grow: 1 !important;
-    position: relative;
-}
-
-#time-slider {
-    width: 100% !important;
-    margin: 0 !important;
-    padding: 0 !important;
-    box-sizing: border-box !important;
-}
-
-/* The center of the slider thumb moves from (thumb_width/2) to (100% - thumb_width/2). 
-   To align absolute 0%-100% ticks, we need padding equal to half the thumb width. */
-#slider-ticks {
-    padding: 0 8px !important; 
-    box-sizing: border-box !important;
-    width: 100% !important;
-}
-
-
-<style>
-/* Lang switcher flush with input right edges */
-.lang-switcher {
-    right: 25px !important;
-    top: 25px !important;
-}
-
-/* Ticks container reset so absolute spans work accurately */
-#slider-ticks {
-    padding: 0 !important;
-    position: relative !important;
-    width: 100% !important;
-    height: 20px !important;
-    display: block !important; /* Not flex, since spans are absolute */
-}
-
-/* Remove old ticks flex behaviour from our earlier CSS injection */
-#slider-ticks span {
-    display: flex !important;
-    flex-direction: column !important;
-    align-items: center !important;
-}
-
-<style>
-/* Anchor the routing panel to the bottom instead of letting it float freely based on height */
-#routing-panel {
-    top: 20px !important;
-    bottom: 20px !important;
-    overflow-y: auto !important; /* Scrollable if it gets too tall on small screens */
-    display: flex !important;
-    flex-direction: column !important;
-}
-
-/* Make sure the control buttons inside the panel stay at the bottom if it stretches */
-#routing-panel .buttons {
-    margin-top: auto !important;
-}
-
-/* Lock the timeline perfectly to the exact same bottom margin */
-#controls {
-    bottom: 20px !important;
-    right: 20px !important;
-    width: calc(100vw - 370px) !important;
-    max-width: none !important;
-}
-
-/* Advanced Settings Styling */
-.advanced-settings-wrapper { margin-bottom: 18px; }
-.adv-toggle { display: flex; align-items: center; gap: 8px; font-size: 0.85rem; font-weight: 600; color: #555; cursor: pointer; padding: 8px 0; user-select: none; transition: color 0.2s; }
-.adv-toggle:hover { color: #0d3a6e; }
-.adv-icon { transition: transform 0.3s; }
-.adv-toggle.active .adv-icon { transform: rotate(90deg); }
-.adv-chevron { margin-left: auto; transition: transform 0.3s; }
-.adv-toggle.active .adv-chevron { transform: rotate(180deg); }
-.adv-options-container { margin-top: 10px; padding: 15px; background: rgba(0, 0, 0, 0.03); border-radius: 8px; border: 1px solid rgba(0, 0, 0, 0.05); transition: max-height 0.3s ease-in-out, opacity 0.3s ease-in-out, padding 0.3s ease-in-out; }
-.adv-options-container.hidden { display: none; }
-.adv-options-container .control-group:last-child { margin-bottom: 0; }
-
-/* Ensure the panel naturally shrinks and stacks buttons */
-#routing-panel {
-    bottom: auto !important; /* Remove bottom lock so it shrinks */
-    height: fit-content !important;
-    max-height: calc(100vh - 40px) !important;
-}
-
-.calculate-btn { margin-bottom: 15px; margin-top: 5px !important; }
-.buttons { margin-top: 0 !important; } /* Remove auto margin that pushed to bottom */
-
-
-/* Lock timeline to bottom right */
-#controls {
-    bottom: 20px !important;
-    right: 20px !important;
-    left: auto !important;
-    width: calc(100vw - 370px) !important;
-    max-width: none !important;
-    position: absolute !important;
-}
-
-
-/* Tighter padding on the bottom of the routing panel to remove whitespace */
-#routing-panel {
-    padding-bottom: 20px !important;
-}
-
-.buttons {
-    margin-bottom: 0 !important;
-    padding-bottom: 0 !important;
-}
-
-
-/* Tighten the main panel padding */
-#routing-panel {
-    padding: 15px !important; /* Reduced from 25px */
-    width: 290px !important; /* Slightly narrower to match reduced padding proportionally */
-}
-
-/* Tighten spacing between control groups */
-.control-group {
-    margin-bottom: 12px !important; /* Reduced from 18px */
-}
-
-/* Reduce padding inside text inputs */
-.control-group input[type="text"],
-.control-group input[type="time"] {
-    padding: 6px 8px !important; /* Reduced from 10px */
-    font-size: 0.9rem !important;
-}
-
-/* Unify button padding and reduce it */
-.buttons {
-    display: flex !important;
-    gap: 8px !important; /* Tight gap between GPX buttons instead of space-between with margins */
-    justify-content: stretch !important;
-    margin-top: 0 !important;
-    margin-bottom: 0 !important;
-}
-
-.buttons button {
-    padding: 8px 0 !important; /* Unified compact padding */
-    margin: 0 !important;
-    flex: 1 !important; /* Both take exactly 50% of the space evenly */
-    font-size: 0.85rem !important;
-}
-
-/* Calculate button specific */
-.calculate-btn {
-    padding: 10px 0 !important; /* Unified tight padding */
-    margin-top: 5px !important;
-    margin-bottom: 8px !important; /* Just a small gap before the GPX buttons */
-    font-size: 1rem !important;
-}
-
-/* Adjust language switcher position due to tighter panel padding */
-.lang-switcher {
-    right: 15px !important;
-    top: 15px !important;
-}
-.lang-switcher select {
-    padding: 2px 4px !important;
-    font-size: 0.7rem !important;
-}
-
-
-/* Remove duplicate padding below advanced settings wrapper */
-.advanced-settings-wrapper { margin-bottom: 0 !important; }
-.adv-options-container { margin-bottom: 5px !important; }
-.calculate-btn { margin-top: 5px !important; }
-
-    /* Reset language switcher positioning to sit inline with the label */
-    .lang-switcher {
-        position: static !important;
-        right: auto !important;
-        top: auto !important;
-    }
-    
-
-<style>
-.lang-switcher select {
-    padding: 0 4px !important;
-    height: 20px !important; /* Keep it very slim to not push down the layout */
-    font-size: 0.75rem !important;
-    line-height: 20px !important;
-    border: 1px solid #ddd;
-    background: transparent;
-    cursor: pointer;
-}
-
-/* Ensure the wrapper respects baseline if needed */
-.control-group > div[style*="display: flex"] {
-    align-items: center !important;
-}
-
-.lang-switcher {
-    margin-bottom: 0 !important; /* Remove any previous margin */
-}
-
-<style>
-/* Adjust speed labels to fit 9 items neatly */
-#ride_spd + .slider-labels span {
-    font-size: 0.65rem !important;
-    color: #888;
-}
-/* Make route modus text a bit smaller so they sit properly */
-#route_type + .slider-labels span {
-    font-size: 0.75rem !important;
-}
-
-<style>
-/* Make 9 items fit nicely */
-#ride_spd + .slider-labels span {
-    font-size: 0.65rem !important;
-    color: #666;
-}
-/* Ensure the route modes text don't overflow */
-#route_type + .slider-labels span {
-    font-size: 0.75rem !important;
-}
 </style>
-
-</style>
-
-<style>
-/* Anchor the routing panel to the bottom instead of letting it float freely based on height */
-#routing-panel {
-    top: 20px !important;
-    bottom: 20px !important;
-    overflow-y: auto !important; /* Scrollable if it gets too tall on small screens */
-    display: flex !important;
-    flex-direction: column !important;
-}
-
-/* Make sure the control buttons inside the panel stay at the bottom if it stretches */
-#routing-panel .buttons {
-    margin-top: auto !important;
-}
-
-/* Lock the timeline perfectly to the exact same bottom margin */
-#controls {
-    bottom: 20px !important;
-    right: 20px !important;
-    width: calc(100vw - 370px) !important;
-    max-width: none !important;
-}
-
-/* Advanced Settings Styling */
-.advanced-settings-wrapper { margin-bottom: 18px; }
-.adv-toggle { display: flex; align-items: center; gap: 8px; font-size: 0.85rem; font-weight: 600; color: #555; cursor: pointer; padding: 8px 0; user-select: none; transition: color 0.2s; }
-.adv-toggle:hover { color: #0d3a6e; }
-.adv-icon { transition: transform 0.3s; }
-.adv-toggle.active .adv-icon { transform: rotate(90deg); }
-.adv-chevron { margin-left: auto; transition: transform 0.3s; }
-.adv-toggle.active .adv-chevron { transform: rotate(180deg); }
-.adv-options-container { margin-top: 10px; padding: 15px; background: rgba(0, 0, 0, 0.03); border-radius: 8px; border: 1px solid rgba(0, 0, 0, 0.05); transition: max-height 0.3s ease-in-out, opacity 0.3s ease-in-out, padding 0.3s ease-in-out; }
-.adv-options-container.hidden { display: none; }
-.adv-options-container .control-group:last-child { margin-bottom: 0; }
-
-/* Ensure the panel naturally shrinks and stacks buttons */
-#routing-panel {
-    bottom: auto !important; /* Remove bottom lock so it shrinks */
-    height: fit-content !important;
-    max-height: calc(100vh - 40px) !important;
-}
-
-.calculate-btn { margin-bottom: 15px; margin-top: 5px !important; }
-.buttons { margin-top: 0 !important; } /* Remove auto margin that pushed to bottom */
-
-
-/* Lock timeline to bottom right */
-#controls {
-    bottom: 20px !important;
-    right: 20px !important;
-    left: auto !important;
-    width: calc(100vw - 370px) !important;
-    max-width: none !important;
-    position: absolute !important;
-}
-
-
-/* Tighter padding on the bottom of the routing panel to remove whitespace */
-#routing-panel {
-    padding-bottom: 20px !important;
-}
-
-.buttons {
-    margin-bottom: 0 !important;
-    padding-bottom: 0 !important;
-}
-
-
-/* Tighten the main panel padding */
-#routing-panel {
-    padding: 15px !important; /* Reduced from 25px */
-    width: 290px !important; /* Slightly narrower to match reduced padding proportionally */
-}
-
-/* Tighten spacing between control groups */
-.control-group {
-    margin-bottom: 12px !important; /* Reduced from 18px */
-}
-
-/* Reduce padding inside text inputs */
-.control-group input[type="text"],
-.control-group input[type="time"] {
-    padding: 6px 8px !important; /* Reduced from 10px */
-    font-size: 0.9rem !important;
-}
-
-/* Unify button padding and reduce it */
-.buttons {
-    display: flex !important;
-    gap: 8px !important; /* Tight gap between GPX buttons instead of space-between with margins */
-    justify-content: stretch !important;
-    margin-top: 0 !important;
-    margin-bottom: 0 !important;
-}
-
-.buttons button {
-    padding: 8px 0 !important; /* Unified compact padding */
-    margin: 0 !important;
-    flex: 1 !important; /* Both take exactly 50% of the space evenly */
-    font-size: 0.85rem !important;
-}
-
-/* Calculate button specific */
-.calculate-btn {
-    padding: 10px 0 !important; /* Unified tight padding */
-    margin-top: 5px !important;
-    margin-bottom: 8px !important; /* Just a small gap before the GPX buttons */
-    font-size: 1rem !important;
-}
-
-/* Adjust language switcher position due to tighter panel padding */
-.lang-switcher {
-    right: 15px !important;
-    top: 15px !important;
-}
-.lang-switcher select {
-    padding: 2px 4px !important;
-    font-size: 0.7rem !important;
-}
-
-
-/* Remove duplicate padding below advanced settings wrapper */
-.advanced-settings-wrapper { margin-bottom: 0 !important; }
-.adv-options-container { margin-bottom: 5px !important; }
-.calculate-btn { margin-top: 5px !important; }
-
-    /* Reset language switcher positioning to sit inline with the label */
-    .lang-switcher {
-        position: static !important;
-        right: auto !important;
-        top: auto !important;
-    }
-    
-
-<style>
-.lang-switcher select {
-    padding: 0 4px !important;
-    height: 20px !important; /* Keep it very slim to not push down the layout */
-    font-size: 0.75rem !important;
-    line-height: 20px !important;
-    border: 1px solid #ddd;
-    background: transparent;
-    cursor: pointer;
-}
-
-/* Ensure the wrapper respects baseline if needed */
-.control-group > div[style*="display: flex"] {
-    align-items: center !important;
-}
-
-.lang-switcher {
-    margin-bottom: 0 !important; /* Remove any previous margin */
-}
-
-<style>
-/* Adjust speed labels to fit 9 items neatly */
-#ride_spd + .slider-labels span {
-    font-size: 0.65rem !important;
-    color: #888;
-}
-/* Make route modus text a bit smaller so they sit properly */
-#route_type + .slider-labels span {
-    font-size: 0.75rem !important;
-}
-
-<style>
-/* Make 9 items fit nicely */
-#ride_spd + .slider-labels span {
-    font-size: 0.65rem !important;
-    color: #666;
-}
-/* Ensure the route modes text don't overflow */
-#route_type + .slider-labels span {
-    font-size: 0.75rem !important;
-}
-</style>
-
-</style>
-
-<style>
-/* Make the select text perfectly align with the label text */
-.lang-switcher select {
-    padding: 0 !important;
-    height: auto !important;
-    font-size: 0.85rem !important;
-    line-height: 1 !important;
-    border: none !important;
-    background: transparent !important;
-    cursor: pointer;
-    font-weight: bold;
-    color: #555;
-    outline: none;
-    -webkit-appearance: none;
-    -moz-appearance: none;
-    appearance: none;
-    /* Add a custom tiny arrow to the right of the text */
-    padding-right: 12px !important;
-    background-image: url('data:image/svg+xml;charset=US-ASCII,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%2210%22%20height%3D%2210%22%20viewBox%3D%220%200%2024%2024%22%20fill%3D%22none%22%20stroke%3D%22%23555%22%20stroke-width%3D%222%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%3E%3Cpolyline%20points%3D%226%209%2012%2015%2018%209%22%3E%3C%2Fpolyline%3E%3C%2Fsvg%3E') !important;
-    background-repeat: no-repeat !important;
-    background-position: right center !important;
-}
-
-/* Ensure the label also sits perfectly flat */
-label[for="route_start"] {
-    line-height: 1 !important;
-    margin: 0 !important;
-    padding: 0 !important;
-    font-size: 0.85rem !important;
-}
-
-<style>
-/* Adjust speed labels to fit 9 items neatly */
-#ride_spd + .slider-labels span {
-    font-size: 0.65rem !important;
-    color: #888;
-}
-/* Make route modus text a bit smaller so they sit properly */
-#route_type + .slider-labels span {
-    font-size: 0.75rem !important;
-}
-
-<style>
-/* Make 9 items fit nicely */
-#ride_spd + .slider-labels span {
-    font-size: 0.65rem !important;
-    color: #666;
-}
-/* Ensure the route modes text don't overflow */
-#route_type + .slider-labels span {
-    font-size: 0.75rem !important;
-}
-</style>
-
-</style>
-
 </head>
 <body>
-<!-- Custom Layer Control -->
-<div id="custom-layer-control" style="position: absolute; bottom: 20px; left: 20px; z-index: 1000; background: rgba(255, 255, 255, 0.75); padding: 15px 25px; border-radius: 12px; box-shadow: 0 8px 16px rgba(0,0,0,0.2); font-family: sans-serif; backdrop-filter: blur(4px); display: flex; align-items: center; gap: 12px;">
-    <label for="layer_select" data-i18n="map_style" style="margin: 0; font-size: 14px; font-weight: 600; color: #1f2937;">Karte</label>
-    <select id="layer_select" style="height: 36px; padding: 0 10px; border: 1px solid rgba(0,0,0,0.12); border-radius: 8px; background: rgba(255,255,255,0.9); font-size: 14px; color: #1f2937; outline: none;">
-        <option value="streets" data-i18n="map_standard" selected>Standard</option>
-        <option value="hybrid" data-i18n="map_hybrid">Hybrid</option>
-    </select>
-</div>
-
 <!-- Top Right Title -->
-    <div id="top-right-title">
-        <h1><span style="color:#0d3a6e;">W</span>etter<span style="color:#0d3a6e;">A</span>pp<span style="color:#0d3a6e;">P</span>rojekt</h1>
-        <img src="logo.jpg" alt="Logo" class="header-logo" />
-    </div>
+<div id="top-right-title">
+<h1>VP Routing</h1>
+</div>
 <!-- Left Routing Panel -->
+
 <div id="routing-panel">
-<div class="control-group">
-<div style="position: relative; display: flex; justify-content: space-between; align-items: center; width: 100%; margin-bottom: 8px;">
-    <label data-i18n="start" for="route_start">Startpunkt</label>
-    <div id="start-marker-ui" onclick="zoomToMarker('start')" title="Zoom to Start" style="display: none; position: absolute; left: 50%; transform: translateX(-50%); width: 12px; height: 12px; border-radius: 50%; background: #10b981; border: 2px solid rgba(0,0,0,0.5); cursor: pointer; flex-shrink: 0; box-shadow: 0 0 4px rgba(0,0,0,0.3);"></div>
-    <div class="lang-switcher" style="position: static !important;">
+<div class="lang-switcher">
 <select id="lang_select">
 <option selected="" value="de">DE</option>
 <option value="en">EN</option>
 <option value="it">IT</option>
 <option value="fr">FR</option>
 </select>
-</div></div>
+</div>
+<div id="model-info-box">
+<h2 id="model-title">
+<svg aria-hidden="true" fill="none" height="18" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" viewbox="0 0 24 24" width="18">
+<path d="M12 2C6 10 4 14 4 16a8 8 0 0 0 16 0c0-2-2-6-8-14z"></path>
+</svg>
+            ICON-CH1 EPS
+        </h2>
+<div id="model-run-custom"><span data-i18n="model_run">Model run</span>: <span id="run-label-text"></span></div>
+<div id="frame-readout-inline">
+<span id="lead-time-label">+01h</span> · <span id="valid-time-label">--</span>
+</div>
+</div>
+<div class="control-group">
+<label data-i18n="start" for="route_start">Startpunkt</label>
 <input data-i18n-ph="where_from" id="route_start" placeholder="Woher?" type="text"/>
 </div>
 <div class="control-group">
-<div style="position: relative; display: flex; justify-content: space-between; align-items: center; width: 100%; margin-bottom: 8px;">
-    <label data-i18n="end" for="route_end">Ziel</label>
-    <div id="end-marker-ui" onclick="zoomToMarker('end')" title="Zoom to End" style="display: none; position: absolute; left: 50%; transform: translateX(-50%); width: 12px; height: 12px; border-radius: 50%; background: #ef4444; border: 2px solid rgba(0,0,0,0.5); cursor: pointer; flex-shrink: 0; box-shadow: 0 0 4px rgba(0,0,0,0.3);"></div>
-    <div style="width: 50px;"></div> <!-- Spacer to match layout -->
-</div>
+<label data-i18n="end" for="route_end">Ziel</label>
 <input data-i18n-ph="where_to" id="route_end" placeholder="Wohin?" type="text"/>
 </div>
 <div class="control-group">
 <label data-i18n="time" for="time_start">Abfahrtszeit</label>
 <input id="time_start" type="time"/>
 </div>
-<div class="advanced-settings-wrapper">
-<div class="adv-toggle" id="btn_toggle_advanced">
-<svg aria-hidden="true" class="adv-icon" fill="none" height="16" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" viewbox="0 0 24 24" width="16">
-<path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"></path>
-<circle cx="12" cy="12" r="3"></circle>
-</svg>
-<span data-i18n="adv_settings">Erweiterte Einstellungen</span>
-<svg class="adv-chevron" fill="none" height="14" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" viewbox="0 0 24 24" width="14">
-<polyline points="6 9 12 15 18 9"></polyline>
-</svg>
-</div>
-<div class="adv-options-container hidden" id="advanced_options">
 <div class="control-group">
-<label for="ride_spd"><span data-i18n="speed">Geschwindigkeit</span>: <span id="speed_display">20</span> km/h</label>
-<input id="ride_spd" max="50" min="10" step="1" type="range" value="20"/>
-<div class="slider-labels"><span>10</span><span>15</span><span>20</span><span>25</span><span>30</span><span>35</span><span>40</span><span>45</span><span>50</span></div>
-</div><div class="control-group">
+<label for="ride_spd"><span data-i18n="speed">Geschwindigkeit</span>: <span id="speed_display">25</span> km/h</label>
+<input id="ride_spd" max="50" min="5" step="1" type="range" value="25"/>
+<div class="slider-labels">
+<span>5</span>
+<span>25</span>
+<span>50</span>
+</div>
+</div>
+<div class="control-group">
 <label data-i18n="rain" for="rain_resistance">Regenresistenz</label>
 <input id="rain_resistance" max="3" min="1" type="range" value="2"/>
 <div class="slider-labels">
@@ -1778,23 +296,23 @@ label[for="route_start"] {
 </div>
 <div class="control-group">
 <label data-i18n="route" for="route_type">Route</label>
-<input id="route_type" max="3" min="1" type="range" value="2"/>
-<div class="slider-labels">
-<span data-i18n="route_scen">Kein Regen</span>
-<span data-i18n="route_def">Standard</span>
-<span data-i18n="route_fast">Schnell</span>
+<select id="route_type">
+<option data-i18n="route_def" value="default">Standard</option>
+<option data-i18n="route_scen" value="scenic">Schön</option>
+<option data-i18n="route_fast" value="fastest">Schnell</option>
+</select>
 </div>
-</div>
-</div>
+<div class="control-group buttons">
+<button data-i18n="gpx_in" id="btn_import" type="button">GPX Import</button>
+<input accept=".gpx" id="data_import" style="display: none;" type="file"/>
+<button data-i18n="gpx_out" id="btn_export" type="button">GPX Export</button>
 </div>
 <button class="calculate-btn" id="btn_calculate">
 <div class="btn-spinner" id="calc_spinner"></div>
 <span data-i18n="calc" id="calc_text">Route berechnen</span>
-</button><div class="control-group buttons">
-<button data-i18n="gpx_in" id="btn_import" type="button">GPX Import</button>
-<input accept=".gpx" id="data_import" style="display: none;" type="file"/>
-<button data-i18n="gpx_out" id="btn_export" type="button">GPX Export</button>
-</div></div>
+</button>
+</div>
+
 <!-- Loading overlay shown while Leaflet boots -->
 <div id="loading">
 <div id="loading-spinner"></div>
@@ -1843,6 +361,11 @@ label[for="route_start"] {
 <div aria-label="Animated rain forecast map" id="map" role="application"></div>
 <!-- ── Playback controls ────────────────────────────────────── -->
 <div aria-label="Playback controls" id="controls" role="toolbar">
+<button aria-label="Previous frame" class="btn-step" id="btn-prev" title="Previous (←)">
+<svg aria-hidden="true" fill="none" height="14" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" viewbox="0 0 24 24" width="14">
+<polyline points="15 18 9 12 15 6"></polyline>
+</svg>
+</button>
 <button aria-label="Play" id="btn-play" title="Play/Pause (Space)">
 <svg aria-hidden="true" fill="currentColor" height="16" id="icon-play" viewbox="0 0 24 24" width="16">
 <polygon points="5,3 19,12 5,21"></polygon>
@@ -1850,6 +373,11 @@ label[for="route_start"] {
 <svg aria-hidden="true" fill="currentColor" height="16" id="icon-pause" style="display:none" viewbox="0 0 24 24" width="16">
 <rect height="16" width="4" x="6" y="4"></rect>
 <rect height="16" width="4" x="14" y="4"></rect>
+</svg>
+</button>
+<button aria-label="Next frame" class="btn-step" id="btn-next" title="Next (→)">
+<svg aria-hidden="true" fill="none" height="14" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" viewbox="0 0 24 24" width="14">
+<polyline points="9 18 15 12 9 6"></polyline>
 </svg>
 </button>
 <div id="slider-wrap">
@@ -1861,6 +389,15 @@ label[for="route_start"] {
 <span>+25h</span>
 <span>+33h</span>
 </div>
+</div>
+<div id="speed-wrap">
+<label for="speed-select" id="speed-label">Speed</label>
+<select aria-label="Animation speed" id="speed-select">
+<option value="800">0.5×</option>
+<option selected="" value="500">1×</option>
+<option value="300">2×</option>
+<option value="150">4×</option>
+</select>
 </div>
 <div id="timeline-info-container">
 <button class="info-toggle-btn" id="btn-toggle-info" title="Toggle Model Info">
@@ -1906,6 +443,8 @@ let intervalMs   = 500;
 // ── DOM refs ─────────────────────────────────────────────────────────────────
 const slider        = document.getElementById('time-slider');
 const btnPlay       = document.getElementById('btn-play');
+const btnPrev       = document.getElementById('btn-prev');
+const btnNext       = document.getElementById('btn-next');
 const iconPlay      = document.getElementById('icon-play');
 const iconPause     = document.getElementById('icon-pause');
 const leadLbl       = document.getElementById('lead-time-label');
@@ -1913,6 +452,7 @@ const validLbl      = document.getElementById('valid-time-label');
 const frameCount    = document.getElementById('stat-frame');
 const intensityBadge = document.getElementById('intensity-badge');
 const intensityTxt  = document.getElementById('intensity-text');
+const speedSel      = document.getElementById('speed-select');
 const loading       = document.getElementById('loading');
 
 // ── Init panel metadata ──────────────────────────────────────────────────────
@@ -1927,7 +467,7 @@ document.addEventListener('DOMContentLoaded', () => {
   window.map = L.map('map', {
     center: [46.8, 8.2],
     zoom: 7,
-    zoomControl: false,
+    zoomControl: true,
     attributionControl: true,
   });
 
@@ -1999,13 +539,9 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // ── Playback ───────────────────────────────────────────────────────────────
   function step() {
-    const next = currentFrame + 1;
-    if (next >= FRAMES.length) {
-        // We reached the end. Stop playing on the last frame so the user can see the final forecast state.
-        stopPlay();
-    } else {
-        showFrame(next);
-    }
+    const next = (currentFrame + 1) % FRAMES.length;
+    showFrame(next);
+    if (next === 0) stopPlay(); // pause after one full loop
   }
 
   function startPlay() {
@@ -2013,12 +549,6 @@ document.addEventListener('DOMContentLoaded', () => {
     iconPlay.style.display  = 'none';
     iconPause.style.display = '';
     btnPlay.setAttribute('aria-label', 'Pause');
-
-    // If the slider is manually dragged to the very end, reset to the beginning when play is clicked
-    if (currentFrame === FRAMES.length - 1) {
-        showFrame(0);
-    }
-
     timer = setInterval(step, intervalMs);
   }
 
@@ -2031,32 +561,25 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   btnPlay.addEventListener('click', () => playing ? stopPlay() : startPlay());
-  const handleSliderChange = () => {
-    // Instantly pause playback if the user clicks or drags the timeline bar
-    if (playing) stopPlay();
-    showFrame(parseInt(slider.value, 10) || 0);
-  };
-  slider.addEventListener('input', handleSliderChange);
-  slider.addEventListener('change', handleSliderChange);
+  btnPrev.addEventListener('click', () => { stopPlay(); showFrame((currentFrame - 1 + FRAMES.length) % FRAMES.length); });
+  btnNext.addEventListener('click', () => { stopPlay(); showFrame((currentFrame + 1) % FRAMES.length); });
 
+  slider.addEventListener('input', () => {
+    stopPlay();
+    showFrame(parseInt(slider.value, 10));
+  });
+
+  speedSel.addEventListener('change', () => {
+    intervalMs = parseInt(speedSel.value, 10);
+    if (playing) { stopPlay(); startPlay(); }
+  });
 
   // Keyboard shortcuts
   document.addEventListener('keydown', (e) => {
-    // Do not capture shortcuts if the user is typing in an input field
-    if (['INPUT', 'TEXTAREA', 'SELECT'].includes(e.target.tagName)) return;
-
-    if (e.key === ' ') {
-      e.preventDefault();
-      playing ? stopPlay() : startPlay();
-    }
-    if (e.key === 'ArrowLeft') {
-      stopPlay();
-      showFrame((currentFrame - 1 + FRAMES.length) % FRAMES.length);
-    }
-    if (e.key === 'ArrowRight') {
-      stopPlay();
-      showFrame((currentFrame + 1) % FRAMES.length);
-    }
+    if (e.target.tagName === 'INPUT' || e.target.tagName === 'SELECT') return;
+    if (e.code === 'Space')       { e.preventDefault(); btnPlay.click(); }
+    if (e.code === 'ArrowRight')  { e.preventDefault(); btnNext.click(); }
+    if (e.code === 'ArrowLeft')   { e.preventDefault(); btnPrev.click(); }
   });
 
   // Initial render
@@ -2115,53 +638,25 @@ document.addEventListener("DOMContentLoaded", () => {
 
         // 1. CLICKING THE MAP 
         // No need to focus boxes first.
-        // Keep track of the initial two-click map interaction phase
-        // 0: Waiting for first click (Start)
-        // 1: Waiting for second click (End)
-        // 2: Done with initial phase. Relies entirely on `activeInputBox`.
-        let clickPhase = 0;
-        let activeInputBox = 'start';
-
-        routeStartInput.addEventListener('focus', () => { activeInputBox = 'start'; clickPhase = 2; });
-        routeEndInput.addEventListener('focus', () => { activeInputBox = 'end'; clickPhase = 2; });
-        routeStartInput.addEventListener('click', () => { activeInputBox = 'start'; clickPhase = 2; });
-        routeEndInput.addEventListener('click', () => { activeInputBox = 'end'; clickPhase = 2; });
-
-                
-        const updateUIMarkers = () => {
-            const startUI = document.getElementById('start-marker-ui');
-            const endUI = document.getElementById('end-marker-ui');
-            if (startUI) startUI.style.display = routeStartInput.value.trim() ? 'block' : 'none';
-            if (endUI) endUI.style.display = routeEndInput.value.trim() ? 'block' : 'none';
-        };
-
-        // CLICKING THE MAP
-        window.zoomToMarker = (type) => {
-            if (type === 'start' && vpStartMarker) {
-                map.flyTo(vpStartMarker.getLatLng(), 14, { animate: true, duration: 1 });
-            } else if (type === 'end' && vpEndMarker) {
-                map.flyTo(vpEndMarker.getLatLng(), 14, { animate: true, duration: 1 });
-            }
-        };
         map.on('click', async (e) => {
             const { lat, lng } = e.latlng;
 
-            let isStart;
-            if (clickPhase === 0) {
+            // Logic: Start empty -> Start. 
+            // Start full, End empty -> End. 
+            // Both full -> Clear End, overwrite Start.
+            let isStart = true;
+            if (routeStartInput.value.trim() !== '' && routeEndInput.value.trim() === '') {
+                isStart = false; // Start is full, End is empty
+            } else if (routeStartInput.value.trim() !== '' && routeEndInput.value.trim() !== '') {
+                // Both full. Reset End and rewrite Start
+                routeEndInput.value = '';
+                routeEndInput.dataset.lat = '';
+                routeEndInput.dataset.lon = '';
+                if (vpEndMarker) { map.removeLayer(vpEndMarker); vpEndMarker = null; }
                 isStart = true;
-                clickPhase = 1;
-                activeInputBox = 'end'; // Automatically switch active box to End for the next click
-            } else if (clickPhase === 1) {
-                isStart = false;
-                clickPhase = 2; // Phase complete
-                activeInputBox = 'end'; // Leave it at end, or require them to click boxes from now on
-            } else {
-                // Phase complete. Strictly use whichever box they focused last.
-                isStart = (activeInputBox === 'start');
             }
 
             const targetInput = isStart ? routeStartInput : routeEndInput;
-
             targetInput.value = window.t("resolving");
 
             const address = await reverseGeocode(lat, lng);
@@ -2179,7 +674,6 @@ document.addEventListener("DOMContentLoaded", () => {
 
             const endpoint = isStart ? '/route_start' : '/route_end';
             sendData(endpoint, { location: address, lat: lat, lon: lng });
-            updateUIMarkers();
         });
 
         // 2. TYPING ADDRESSES MANUALLY
@@ -2193,7 +687,6 @@ document.addEventListener("DOMContentLoaded", () => {
                 inputEl.dataset.lon = '';
                 if (isStart && vpStartMarker) { map.removeLayer(vpStartMarker); vpStartMarker = null; }
                 if (!isStart && vpEndMarker) { map.removeLayer(vpEndMarker); vpEndMarker = null; }
-                window.updateUIMarkers();
                 return;
             }
 
@@ -2214,7 +707,6 @@ document.addEventListener("DOMContentLoaded", () => {
                 const endpoint = isStart ? '/route_start' : '/route_end';
                 sendData(endpoint, { location: query, lat: coords.lat, lon: coords.lon });
             }
-            updateUIMarkers();
         };
 
         const handleEnterKey = (e) => {
@@ -2236,7 +728,7 @@ document.addEventListener("DOMContentLoaded", () => {
     // ── OTHER UI BINDINGS ──────────────────────────────────────────────────────
     
     document.getElementById('ride_spd').addEventListener('change', (e) => {
-        const kmh = parseFloat(e.target.value) || 20;
+        const kmh = parseFloat(e.target.value) || 25;
         sendData('/ride_spd', { speed_ms: kmh / 3.6 });
     });
     document.getElementById('route_type').addEventListener('change', (e) => sendData('/route_type', { type: e.target.value }));
@@ -2282,7 +774,7 @@ document.addEventListener("DOMContentLoaded", () => {
                 lat: document.getElementById('route_end').dataset.lat,
                 lon: document.getElementById('route_end').dataset.lon
             },
-            type: {1: 'scenic', 2: 'default', 3: 'fastest'}[document.getElementById('route_type').value],
+            type: document.getElementById('route_type').value,
             time: document.getElementById('time_start').value,
             rain_resistance: document.getElementById('rain_resistance').value,
             speed_ms: parseFloat(document.getElementById('ride_spd').value) / 3.6
@@ -2302,16 +794,22 @@ document.addEventListener("DOMContentLoaded", () => {
             popup.classList.toggle('hidden');
             toggleBtn.classList.toggle('active');
         });
-        
+        document.addEventListener('click', (e) => {
+            if (!popup.classList.contains('hidden') && !popup.contains(e.target) && e.target !== toggleBtn) {
+                popup.classList.add('hidden');
+                toggleBtn.classList.remove('active');
+            }
+        });
     }
 });
 </script>
+
 <script>
 const i18n = {
-    de: { start: "Startpunkt", where_from: "Woher?", end: "Ziel", where_to: "Wohin?", time: "Abfahrtszeit", speed: "Geschwindigkeit", rain: "Regenresistenz", rain_low: "Wenig", rain_med: "Mittel", rain_high: "Viel", route: "Route", route_def: "Standard", route_scen: "Kein Regen", route_fast: "Schnell", gpx_in: "GPX Import", gpx_out: "GPX Export", calc: "Route berechnen", adv_settings: "Erweiterte Einstellungen", resolving: "Adresse wird gesucht...", map_style: "Karte", map_standard: "Standard", map_hybrid: "Hybrid", calculating: "Berechne...", model_run: "Modelllauf" },
-    en: { start: "Start Location", where_from: "Where from?", end: "End Location", where_to: "Where to?", time: "Time Start", speed: "Speed", rain: "Rain Resistance", rain_low: "Low", rain_med: "Medium", rain_high: "High", route: "Route Type", route_def: "Default", route_scen: "No Rain", route_fast: "Fastest", gpx_in: "Import GPX", gpx_out: "Export GPX", calc: "Calculate Route", adv_settings: "Advanced Settings", resolving: "Resolving address...", map_style: "Map", map_standard: "Standard", map_hybrid: "Hybrid", calculating: "Calculating...", model_run: "Model run" },
-    it: { start: "Punto di partenza", where_from: "Da dove?", end: "Destinazione", where_to: "Verso dove?", time: "Orario di partenza", speed: "Velocità", rain: "Resistenza alla pioggia", rain_low: "Bassa", rain_med: "Media", rain_high: "Alta", route: "Tipo di percorso", route_def: "Predefinito", route_scen: "Nessuna pioggia", route_fast: "Veloce", gpx_in: "Importa GPX", gpx_out: "Esporta GPX", calc: "Calcola percorso", adv_settings: "Impostazioni avanzate", resolving: "Ricerca indirizzo...", map_style: "Mappa", map_standard: "Standard", map_hybrid: "Ibrido", calculating: "Calcolo...", model_run: "Corsa del modello" },
-    fr: { start: "Point de départ", where_from: "D'où ?", end: "Destination", where_to: "Vers où ?", time: "Heure de départ", speed: "Vitesse", rain: "Résistance à la pluie", rain_low: "Faible", rain_med: "Moyenne", rain_high: "Forte", route: "Type d'itinéraire", route_def: "Défaut", route_scen: "Pas de pluie", route_fast: "Rapide", gpx_in: "Importer GPX", gpx_out: "Exporter GPX", calc: "Calculer l'itinéraire", adv_settings: "Paramètres avancés", resolving: "Recherche d'adresse...", map_style: "Carte", map_standard: "Standard", map_hybrid: "Hybride", calculating: "Calcul en cours...", model_run: "Exécution du modèle" }
+    de: { start: "Startpunkt", where_from: "Woher?", end: "Ziel", where_to: "Wohin?", time: "Abfahrtszeit", speed: "Geschwindigkeit", rain: "Regenresistenz", rain_low: "Wenig", rain_med: "Mittel", rain_high: "Viel", route: "Route", route_def: "Standard", route_scen: "Schön", route_fast: "Schnell", gpx_in: "GPX Import", gpx_out: "GPX Export", calc: "Route berechnen", resolving: "Adresse wird gesucht...", calculating: "Berechne...", model_run: "Modelllauf" },
+    en: { start: "Start Location", where_from: "Where from?", end: "End Location", where_to: "Where to?", time: "Time Start", speed: "Speed", rain: "Rain Resistance", rain_low: "Low", rain_med: "Medium", rain_high: "High", route: "Route Type", route_def: "Default", route_scen: "Scenic", route_fast: "Fastest", gpx_in: "Import GPX", gpx_out: "Export GPX", calc: "Calculate Route", resolving: "Resolving address...", calculating: "Calculating...", model_run: "Model run" },
+    it: { start: "Punto di partenza", where_from: "Da dove?", end: "Destinazione", where_to: "Verso dove?", time: "Orario di partenza", speed: "Velocità", rain: "Resistenza alla pioggia", rain_low: "Bassa", rain_med: "Media", rain_high: "Alta", route: "Tipo di percorso", route_def: "Predefinito", route_scen: "Panoramico", route_fast: "Veloce", gpx_in: "Importa GPX", gpx_out: "Esporta GPX", calc: "Calcola percorso", resolving: "Ricerca indirizzo...", calculating: "Calcolo...", model_run: "Corsa del modello" },
+    fr: { start: "Point de départ", where_from: "D'où ?", end: "Destination", where_to: "Vers où ?", time: "Heure de départ", speed: "Vitesse", rain: "Résistance à la pluie", rain_low: "Faible", rain_med: "Moyenne", rain_high: "Forte", route: "Type d'itinéraire", route_def: "Défaut", route_scen: "Pittoresque", route_fast: "Rapide", gpx_in: "Importer GPX", gpx_out: "Exporter GPX", calc: "Calculer l'itinéraire", resolving: "Recherche d'adresse...", calculating: "Calcul en cours...", model_run: "Exécution du modèle" }
 };
 
 let currentLang = 'de';
@@ -2350,139 +848,30 @@ document.addEventListener("DOMContentLoaded", () => {
     });
 
     // Human readable timeline ticks
-    
-    // Human readable timeline ticks: Dot every hour, text every 2 hours
-    
-});
-</script>
-<script>
-document.addEventListener("DOMContentLoaded", () => {
-    
-
-    // Timeline ticks precision alignment
     const updateTicks = () => {
-        if (typeof LABELS !== 'undefined' && LABELS.length > 0) {
-            const ticksContainer = document.getElementById('slider-ticks');
-            if (!ticksContainer) return;
-
-            ticksContainer.innerHTML = '';
-            const totalHours = LABELS.length;
-
-            for (let i = 0; i < totalHours; i++) {
-                const span = document.createElement('span');
-                const percent = i / (totalHours - 1);
-
-                // Chrome range thumb width is ~16px. 
-                // Thumb center goes from 8px to (100% - 8px).
-                // So left offset of span center = 8px + (100% - 16px) * percent
-                span.style.setProperty('left', `calc(8px + calc(100% - 16px) * ${percent})`, 'important');
-                span.style.setProperty('position', 'absolute', 'important');
-                span.style.setProperty('transform', 'translateX(-50%)', 'important');
-
-                const parts = LABELS[i].split(' · ');
-                let timeText = '';
-                if (parts.length > 1) {
-                    const timeStr = parts[1].replace(' UTC', ''); 
-                    const timeParts = timeStr.split(' ');
-                    if (timeParts.length >= 4) timeText = timeParts[3];
+        if (typeof LABELS !== 'undefined') {
+            const ticks = document.querySelectorAll('#slider-ticks span');
+            const indices = [0, 8, 16, 24, 32];
+            ticks.forEach((tick, i) => {
+                const idx = indices[i];
+                if (LABELS[idx]) {
+                    const parts = LABELS[idx].split(' · ');
+                    if (parts.length > 1) {
+                        const timeStr = parts[1].replace(' UTC', ''); 
+                        const timeParts = timeStr.split(' '); 
+                        if (timeParts.length >= 4) {
+                            tick.textContent = timeParts[0] + ' ' + timeParts[3]; 
+                        } else {
+                            tick.textContent = timeStr;
+                        }
+                    }
                 }
-
-                span.textContent = timeText;
-
-                if (i % 2 === 0) {
-                    span.classList.add('hour-label');
-                } else {
-                    span.classList.add('hour-dot-only');
-                }
-                ticksContainer.appendChild(span);
-            }
+            });
         } else {
             setTimeout(updateTicks, 200);
         }
     };
     updateTicks();
-});
-</script>
-<script>
-document.addEventListener("DOMContentLoaded", () => {
-    // Advanced Settings Toggle
-    const btnAdv = document.getElementById('btn_toggle_advanced');
-    const advContainer = document.getElementById('advanced_options');
-    if (btnAdv && advContainer) {
-        btnAdv.addEventListener('click', () => {
-            advContainer.classList.toggle('hidden');
-            btnAdv.classList.toggle('active');
-
-            // Wait slightly for any transitions or layout recalculations to finish, then realign the timeline
-            
-        });
-    }
-
-
-});
-</script>
-
-<script>
-document.addEventListener('DOMContentLoaded', () => {
-    // Wait until map is definitely initialized
-    const checkMap = setInterval(() => {
-        if (typeof window.map !== 'undefined' && window.map !== null) {
-            clearInterval(checkMap);
-            initLayerControl();
-        }
-    }, 200);
-
-    function initLayerControl() {
-        const standardLayer = L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
-            attribution: '© OSM · © CARTO',
-            subdomains: 'abcd',
-            maxZoom: 19
-        });
-
-        const satLayer = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
-            attribution: 'Tiles © Esri',
-            maxZoom: 19
-        });
-
-        const hybridLayer = L.layerGroup([
-            L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
-                attribution: 'Tiles © Esri',
-                maxZoom: 19
-            }),
-            L.tileLayer('https://{s}.basemaps.cartocdn.com/light_only_labels/{z}/{x}/{y}{r}.png', {
-                attribution: '© CARTO',
-                subdomains: 'abcd',
-                maxZoom: 19
-            })
-        ]);
-
-        document.getElementById('layer_select').addEventListener('change', (e) => {
-            const val = e.target.value;
-
-            // Remove existing basemaps
-            window.map.eachLayer((layer) => {
-                if (layer instanceof L.TileLayer) {
-                    window.map.removeLayer(layer);
-                }
-                if (layer instanceof L.LayerGroup && !layer.getLayers().some(l => l instanceof L.ImageOverlay)) {
-                    window.map.removeLayer(layer); // Safe removal of our hybrid group
-                }
-            });
-
-            // Add the selected basemap
-            let activeLayer;
-            if (val === 'streets') activeLayer = standardLayer;
-            if (val === 'satellite') activeLayer = satLayer;
-            if (val === 'hybrid') activeLayer = hybridLayer;
-
-            if (activeLayer) activeLayer.addTo(window.map);
-
-            // Ensure basemap sits at the bottom z-index so weather overlays remain visible
-            if (activeLayer && typeof activeLayer.setZIndex === 'function') {
-                activeLayer.setZIndex(0);
-            }
-        });
-    }
 });
 </script>
 </body>
