@@ -5,12 +5,19 @@ import math
 import os
 import json
 import uuid
+from pathlib import Path
+from functools import lru_cache
 
 import xarray as xr
 from scipy.spatial import cKDTree
 
 
-def get_cellid(G, nc_filepath="nc_folder/NC_for_Cellid.nc", lat_name="lat", lon_name="lon"):
+@lru_cache(maxsize=16)
+def _load_graphml_cached(filepath):
+    return ox.load_graphml(filepath)
+
+
+def get_cellid(G, nc_filepath=None, lat_name="lat", lon_name="lon"):
     """
     Ordnet jeder Edge eines OSMnx-Graphen eine Rasterzelle (cell_id) zu.
 
@@ -37,6 +44,11 @@ def get_cellid(G, nc_filepath="nc_folder/NC_for_Cellid.nc", lat_name="lat", lon_
     # ═══════════════════════════════════════════════════════════════
     # 1. NetCDF laden
     # ═══════════════════════════════════════════════════════════════
+    if nc_filepath is None:
+        nc_filepath = Path(__file__).resolve().parent / "nc_folder" / "RAINY_DATA_DEMO_icon_ch1_TOT_PREC_all_lead_times.nc"
+    else:
+        nc_filepath = Path(nc_filepath)
+
     ds = xr.open_dataset(nc_filepath)
 
     lat = ds[lat_name].values
@@ -222,7 +234,7 @@ def get_graph_cached(bbox, network_type="bike", size_threshold=0.5, precision=5,
 
     if candidates:
         best_entry = min(candidates, key=lambda x: x[1])[0]
-        return ox.load_graphml(best_entry["file"])
+        return _load_graphml_cached(best_entry["file"]).copy()
 
     else:
         G = ox.graph_from_bbox(to_osmnx_bbox(bbox),network_type=network_type,**kwargs)

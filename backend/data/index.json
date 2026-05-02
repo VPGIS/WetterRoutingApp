@@ -7,5 +7,149 @@
     "network_type": "bike",
     "file": "data/graphs\\65322986b2df419a9a58076c82aeba2c.graphml",
     "file_light": "data/graphs\\195ac04300e542f98cc15a031c01f7ae_light.graphml"
+  },
+  {
+    "north": 47.69934,
+    "south": 47.60183,
+    "east": 8.00511,
+    "west": 7.92157,
+    "network_type": "bike",
+    "file": "data/graphs\\2c330495fa0f49c2860f276bfd1e2921.graphml",
+    "file_light": "data/graphs\\c6bf831d810747bf8ff2852bf49bd1ff_light.graphml"
+  },
+  {
+    "north": 47.65669,
+    "south": 47.62143,
+    "east": 8.02779,
+    "west": 7.99733,
+    "network_type": "bike",
+    "file": "data/graphs\\8b0e614358954dc59f2e1c8b27cddf28.graphml",
+    "file_light": "data/graphs\\9b652a7e7d474619a839737b6417f4a5_light.graphml"
+  },
+  {
+    "north": 47.41051,
+    "south": 47.36781,
+    "east": 8.10629,
+    "west": 8.00691,
+    "network_type": "bike",
+    "file": "data/graphs\\1819f07efe1c4d5eb2a4e7f9ff0dba53.graphml",
+    "file_light": "data/graphs\\b65a4e8dea754f7daf324e3982312f92_light.graphml"
+  },
+  {
+    "north": 47.61997,
+    "south": 47.57716,
+    "east": 7.81641,
+    "west": 7.76167,
+    "network_type": "bike",
+    "file": "data/graphs\\deacdc843c194948a60201b933275465.graphml",
+    "file_light": "data/graphs\\56cc1e4a1cf6484cae3bffdf5caacb8c_light.graphml"
+  },
+  {
+    "north": 47.65544,
+    "south": 47.54144,
+    "east": 7.87163,
+    "west": 7.77743,
+    "network_type": "bike",
+    "file": "data/graphs\\e150fbeef4d74edb964c5ed80ecb7302.graphml",
+    "file_light": "data/graphs\\10fd87ea5b8646c5a39837e117e743cf_light.graphml"
+  },
+  {
+    "north": 47.61997,
+    "south": 47.54248,
+    "east": 7.81641,
+    "west": 7.81312,
+    "network_type": "bike",
+    "file": "data/graphs\\955af945882d4c6f931d5568235d2082.graphml",
+    "file_light": "data/graphs\\a47b3b72174d469eb4cae7040525cd76_light.graphml"
+  },
+  {
+    "north": 47.65327,
+    "south": 47.5243,
+    "east": 7.90156,
+    "west": 7.82947,
+    "network_type": "bike",
+    "file": "data/graphs\\0cd9c4db67dd4127865ed7863a29c5a5.graphml",
+    "file_light": "data/graphs\\0526ba0eb83941fb9bcba040e3721deb_light.graphml"
+  },
+  {
+    "north": 47.62515,
+    "south": 47.52485,
+    "east": 7.84214,
+    "west": 7.81751,
+    "network_type": "bike",
+    "file": "data/graphs\\ed23431150444d23b950f0c34ad8ae87.graphml",
+    "file_light": "data/graphs\\f915be7bc6b340aab58231cc504cc00c_light.graphml"
+  },
+  {
+    "north": 47.63756,
+    "south": 47.54563,
+    "east": 7.7969,
+    "west": 7.7296,
+    "network_type": "bike",
+    "file": "data/graphs\\f362261d03544ea7849d429aee2970e6.graphml",
+    "file_light": "data/graphs\\f8553ffc0a3145f7a4cce49fcf3a865b_light.graphml"
+  },
+  {
+    "north": 47.63756,
+    "south": 47.55638,
+    "east": 7.84586,
+    "west": 7.7296,
+    "network_type": "bike",
+    "file": "data/graphs\\a9ff0fabd51b46a1807933705d3aa2b8.graphml",
+    "file_light": "data/graphs\\302504f4b791494a8552903cac7263f8_light.graphml"
+  },
+  {
+    "north": 47.63756,
+    "south": 47.56063,
+    "east": 7.7296,
+    "west": 7.72101,
+    "network_type": "bike",
+    "file": "data/graphs\\af2ffc2450e74af19bc5f1c914e7dc00.graphml",
+    "file_light": "data/graphs\\231683c6cf92407c8646b8ce1dfd59af_light.graphml"
+  },
+  {
+    "north": 47.63756,
+    "south": 47.54793,
+    "east": 7.7296,
+    "west": 7.68899,
+    "network_type": "bike",
+    "file": "data/graphs\\5bb1fee315d3496d8c69843bc48bfcdf.graphml",
+    "file_light": "data/graphs\\f7fd1da4aa1f4afbbf43dcffaa32e1e4_light.graphml"
+  },
+  {
+    "north": 47.63561,
+    "south": 47.52754,
+    "east": 7.81269,
+    "west": 7.69197,
+    "network_type": "bike",
+    "file": "data/graphs\\051e5136baed419b888990d9c711f457.graphml",
+    "file_light": "data/graphs\\11954256aa7f4056942d834b5e78b962_light.graphml"
+  },
+  {
+    "north": 47.63275,
+    "south": 47.55083,
+    "east": 7.73873,
+    "west": 7.73817,
+    "network_type": "bike",
+    "file": "data/graphs\\75b8da4b973d470daec9564149cf001f.graphml",
+    "file_light": "data/graphs\\780cbd8a1f99420985d07c04da2c5ef0_light.graphml"
+  },
+  {
+    "north": 47.63275,
+    "south": 47.53056,
+    "east": 7.73817,
+    "west": 7.63764,
+    "network_type": "bike",
+    "file": "data/graphs\\c3fb4ab3ef4e45cca875e778ec5dc4c4.graphml",
+    "file_light": "data/graphs\\4af813664f9c414090cf950a9d98e8d8_light.graphml"
+  },
+  {
+    "north": 47.65192,
+    "south": 47.55193,
+    "east": 7.93698,
+    "west": 7.82405,
+    "network_type": "bike",
+    "file": "data/graphs\\8c5e3f5e8ea24b70a2abf0ae34c1a7ae.graphml",
+    "file_light": "data/graphs\\dd4bd552d35746dc93930aa53e77d19d_light.graphml"
   }
 ]

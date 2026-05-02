@@ -1,0 +1,57 @@
+<?xml version='1.0' encoding='utf-8'?>
+<graphml xmlns="http://graphml.graphdrawing.org/xmlns" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://graphml.graphdrawing.org/xmlns http://graphml.graphdrawing.org/xmlns/1.0/graphml.xsd">
+  <key id="d14" for="edge" attr.name="cell_id" attr.type="string" />
+  <key id="d13" for="edge" attr.name="cell_j" attr.type="string" />
+  <key id="d12" for="edge" attr.name="cell_i" attr.type="string" />
+  <key id="d11" for="edge" attr.name="geometry" attr.type="string" />
+  <key id="d10" for="edge" attr.name="length" attr.type="string" />
+  <key id="d9" for="edge" attr.name="reversed" attr.type="string" />
+  <key id="d8" for="edge" attr.name="oneway" attr.type="string" />
+  <key id="d7" for="edge" attr.name="name" attr.type="string" />
+  <key id="d6" for="edge" attr.name="maxspeed" attr.type="string" />
+  <key id="d5" for="edge" attr.name="highway" attr.type="string" />
+  <key id="d4" for="edge" attr.name="osmid" attr.type="string" />
+  <key id="d3" for="node" attr.name="street_count" attr.type="string" />
+  <key id="d2" for="node" attr.name="x" attr.type="string" />
+  <key id="d1" for="node" attr.name="y" attr.type="string" />
+  <key id="d0" for="graph" attr.name="crs" attr.type="string" />
+  <graph edgedefault="directed">
+    <node id="296145481">
+      <data key="d1">47.6326478</data>
+      <data key="d2">7.7384317</data>
+      <data key="d3">3</data>
+    </node>
+    <node id="296145477">
+      <data key="d1">47.632297</data>
+      <data key="d2">7.7386221</data>
+      <data key="d3">3</data>
+    </node>
+    <edge source="296145481" target="296145477" id="0">
+      <data key="d4">23860844</data>
+      <data key="d5">residential</data>
+      <data key="d6">30</data>
+      <data key="d7">Laierstraße</data>
+      <data key="d8">False</data>
+      <data key="d9">True</data>
+      <data key="d10">41.66886235310692</data>
+      <data key="d11">LINESTRING (7.7384317 47.6326478, 7.7385105 47.6324589, 7.7386221 47.632297)</data>
+      <data key="d12">190</data>
+      <data key="d13">193</data>
+      <data key="d14">190_193</data>
+    </edge>
+    <edge source="296145477" target="296145481" id="0">
+      <data key="d4">23860844</data>
+      <data key="d5">residential</data>
+      <data key="d6">30</data>
+      <data key="d7">Laierstraße</data>
+      <data key="d8">False</data>
+      <data key="d9">False</data>
+      <data key="d10">41.66886235310692</data>
+      <data key="d11">LINESTRING (7.7386221 47.632297, 7.7385105 47.6324589, 7.7384317 47.6326478)</data>
+      <data key="d12">190</data>
+      <data key="d13">193</data>
+      <data key="d14">190_193</data>
+    </edge>
+    <data key="d0">epsg:4326</data>
+  </graph>
+</graphml>

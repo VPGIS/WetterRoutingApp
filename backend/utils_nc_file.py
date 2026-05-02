@@ -1,4 +1,5 @@
 import os
+from pathlib import Path
 
 def get_nc_file(start_time, parentfolder='nc_folder', valid_time=33*3600):
     """
@@ -20,12 +21,17 @@ def get_nc_file(start_time, parentfolder='nc_folder', valid_time=33*3600):
     """
     
     # Sicherstellen, dass der Ordner existiert
-    if not os.path.exists(parentfolder):
-        raise FileNotFoundError(f"Ordner '{parentfolder}' existiert nicht")
+    base_dir = Path(__file__).resolve().parent
+    parentfolder_path = Path(parentfolder)
+    if not parentfolder_path.is_absolute():
+        parentfolder_path = base_dir / parentfolder_path
+
+    if not parentfolder_path.exists():
+        raise FileNotFoundError(f"Ordner '{parentfolder_path}' existiert nicht")
     valid_files = []
     
     # Alle .nc-Dateien im Ordner durchsuchen
-    for filename in os.listdir(parentfolder):
+    for filename in os.listdir(parentfolder_path):
         if filename.endswith('.nc'):
 
             # Zeitstempel aus dem Dateinamen extrahieren
@@ -41,12 +47,15 @@ def get_nc_file(start_time, parentfolder='nc_folder', valid_time=33*3600):
             # Prüfen ob Datei noch gültig ist
             age = start_time - file_timestamp
             if 0 <= age <= valid_time:
-                full_path = os.path.join(parentfolder, filename)
+                full_path = os.path.join(str(parentfolder_path), filename)
                 valid_files.append((file_timestamp, full_path))
             
     
     # Neuste Datei oder None
     if not valid_files:
+        demo_file = parentfolder_path / "RAINY_DATA_DEMO_icon_ch1_TOT_PREC_all_lead_times.nc"
+        if demo_file.exists():
+            return str(demo_file)
         return None
     else:
         newest_files = max(valid_files, key=lambda x: x[0])
