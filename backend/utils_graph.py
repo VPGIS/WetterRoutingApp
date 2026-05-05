@@ -5,6 +5,7 @@ import math
 import os
 import json
 import uuid
+from pathlib import Path
 
 import xarray as xr
 from scipy.spatial import cKDTree
@@ -33,9 +34,21 @@ def get_cellid(G, lat_name="lat", lon_name="lon"):
     """
 
     # ═══════════════════════════════════════════════════════════════
-    # 1. NetCDF laden
+    # 1. NetCDF laden   (Pfad relativ für uvicorn startup ändern, falls noch zeit)
     # ═══════════════════════════════════════════════════════════════
-    nc_filepath="nc_folder/NC_for_Cellid.nc"
+  
+    nc_folder = Path(__file__).resolve().parent / "nc_folder"
+    if not nc_folder.exists():
+        raise FileNotFoundError(f"Ordner '{nc_folder}' existiert nicht")
+
+    preferred_file = nc_folder / "NC_for_Cellid.nc"
+    if preferred_file.exists():
+        nc_filepath = preferred_file
+    else:
+        nc_files = sorted(nc_folder.glob("*.nc"), key=lambda p: p.stat().st_mtime, reverse=True)
+        if not nc_files:
+            raise FileNotFoundError(f"Keine .nc Dateien in '{nc_folder}' gefunden")
+        nc_filepath = nc_files[0]
 
     ds = xr.open_dataset(nc_filepath)
 
