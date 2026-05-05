@@ -111,7 +111,7 @@ def _parse_point(point):
 
     return lat, lon
 
-def get_boundingbox_from_points(point1, point2, buffer_km=0.0):
+def get_bbox_from_points(point1, point2, buffer_km=0.0): # ALT
     """
     Erstellt eine Bounding Box aus zwei Punkten und erweitert sie um einen Puffer in Kilometern.
     
@@ -150,6 +150,48 @@ def get_boundingbox_from_points(point1, point2, buffer_km=0.0):
 
     # INTERNES FORMAT
     return (north, south, east, west)
+
+def get_square_bbox_from_points(point1, point2):
+    lat1, lon1 = point1
+    lat2, lon2 = point2
+
+    north = max(lat1, lat2)
+    south = min(lat1, lat2)
+    east = max(lon1, lon2)
+    west = min(lon1, lon2)
+
+    center_lat = (north + south) / 2
+
+    # Umrechnung
+    km_per_deg_lat = 111.0
+    km_per_deg_lon = 111.0 * math.cos(math.radians(center_lat))
+
+    # Größe in km
+    height_km = (north - south) * km_per_deg_lat
+    width_km = (east - west) * km_per_deg_lon
+
+    # Grundgröße der Box
+    square_size_km = max(height_km, width_km)
+
+    # dynamischer Buffer (automatisch kleiner bei großen Boxen)
+    BASE = 0.3
+    SCALE = 50.0
+    factor = BASE / (1 + square_size_km / SCALE)
+
+    square_size_km *= (1 + 2 * factor)
+
+    # zurück in Grad
+    half_lat = (square_size_km / 2) / km_per_deg_lat
+    half_lon = (square_size_km / 2) / km_per_deg_lon
+
+    center_lon = (east + west) / 2
+
+    return (
+        center_lat + half_lat,  # north
+        center_lat - half_lat,  # south
+        center_lon + half_lon,  # east
+        center_lon - half_lon   # west
+    )
 
 def to_osmnx_bbox(bbox):
     """Konvertiert (north, south, east, west) → (west, south, east, north)"""

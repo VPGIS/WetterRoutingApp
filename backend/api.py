@@ -14,7 +14,7 @@ import xarray as xr
 from pathlib import Path
 
 # Utils
-from backend.utils_graph import _parse_point, get_boundingbox_from_points, get_graph_cached
+from backend.utils_graph import _parse_point, get_square_bbox_from_points, get_graph_cached
 from backend.utils_nc_file import get_nc_file
 from backend.utils_forecast import get_forecast, compute_rain_adjusted_cost
 
@@ -65,7 +65,7 @@ def get_route(start_point, end_point, start_time, speed, routingmodel, sensibili
     # ——————————————————————————————————————————————————————————————————————————
     # Aus Start-/ Endpunkt den richtigen Graphen aus dem Cache finden oder herunterladen
     # ——————————————————————————————————————————————————————————————————————————
-    bbox = get_boundingbox_from_points(start_point, end_point)
+    bbox = get_square_bbox_from_points(start_point, end_point)
     G = get_graph_cached(bbox)
     
 
