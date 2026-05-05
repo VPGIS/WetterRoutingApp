@@ -2067,15 +2067,10 @@ document.addEventListener('DOMContentLoaded', () => {
 // ── GLOBALS SO MAP EVENTS WORK ──────────────────────────────────────────────
 let vpStartMarker = null;
 let vpEndMarker = null;
+let vpRouteLayer = null;
+const VP_API_BASE = 'http://127.0.0.1:8000';
 
 document.addEventListener("DOMContentLoaded", () => {
-    const sendData = async (endpoint, payload) => {
-        try {
-            await fetch(endpoint, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
-            console.log(`Sent to ${endpoint}:`, payload);
-        } catch (error) { console.error(`Error connecting to ${endpoint}:`, error); }
-    };
-
     const routeStartInput = document.getElementById('route_start');
     const routeEndInput = document.getElementById('route_end');
 
@@ -2134,6 +2129,7 @@ document.addEventListener("DOMContentLoaded", () => {
             if (startUI) startUI.style.display = routeStartInput.value.trim() ? 'block' : 'none';
             if (endUI) endUI.style.display = routeEndInput.value.trim() ? 'block' : 'none';
         };
+        window.updateUIMarkers = updateUIMarkers;
 
         // CLICKING THE MAP
         window.zoomToMarker = (type) => {
@@ -2177,8 +2173,6 @@ document.addEventListener("DOMContentLoaded", () => {
                 vpEndMarker = L.circleMarker([lat, lng], { color: '#ef4444', radius: 6, fillOpacity: 0.8, weight: 2 }).addTo(map);
             }
 
-            const endpoint = isStart ? '/route_start' : '/route_end';
-            sendData(endpoint, { location: address, lat: lat, lon: lng });
             updateUIMarkers();
         });
 
@@ -2211,8 +2205,6 @@ document.addEventListener("DOMContentLoaded", () => {
                 }
                 map.setView([coords.lat, coords.lon], 13, { animate: true });
 
-                const endpoint = isStart ? '/route_start' : '/route_end';
-                sendData(endpoint, { location: query, lat: coords.lat, lon: coords.lon });
             }
             updateUIMarkers();
         };
@@ -2235,15 +2227,27 @@ document.addEventListener("DOMContentLoaded", () => {
 
     // ── OTHER UI BINDINGS ──────────────────────────────────────────────────────
     
-    document.getElementById('ride_spd').addEventListener('change', (e) => {
-        const kmh = parseFloat(e.target.value) || 20;
-        sendData('/ride_spd', { speed_ms: kmh / 3.6 });
+    document.getElementById('ride_spd').addEventListener('change', () => {
+        // Handled when the calculate button is clicked.
     });
-    document.getElementById('route_type').addEventListener('change', (e) => sendData('/route_type', { type: e.target.value }));
-    document.getElementById('time_start').addEventListener('change', (e) => sendData('/time_start', { time: e.target.value }));
-    document.getElementById('rain_resistance').addEventListener('change', (e) => {
-        const levels = {1: 'low', 2: 'medium', 3: 'high'};
-        sendData('/rain_resistance', { level: levels[e.target.value] });
+    document.getElementById('route_type').addEventListener('change', () => {
+        // Handled when the calculate button is clicked.
+    });
+    document.getElementById('time_start').addEventListener('change', () => {
+        // Handled when the calculate button is clicked.
+    });
+
+    // Default departure time to current local time (HH:MM).
+    const timeStartInput = document.getElementById('time_start');
+    if (timeStartInput && !timeStartInput.value) {
+        const now = new Date();
+        const hh = String(now.getHours()).padStart(2, '0');
+        const mm = String(now.getMinutes()).padStart(2, '0');
+        timeStartInput.value = `${hh}:${mm}`;
+    }
+
+    document.getElementById('rain_resistance').addEventListener('change', () => {
+        // Handled when the calculate button is clicked.
     });
 
     document.getElementById('btn_import').addEventListener('click', () => document.getElementById('data_import').click());
@@ -2271,6 +2275,48 @@ document.addEventListener("DOMContentLoaded", () => {
         const spinner = document.getElementById('calc_spinner');
         const text = document.getElementById('calc_text');
 
+        const parseDepartureToUnix = (timeString) => {
+            const now = new Date();
+            if (!timeString) {
+                return Math.floor(now.getTime() / 1000);
+            }
+
+            const [hours, minutes] = timeString.split(':').map(v => parseInt(v, 10) || 0);
+            const departure = new Date(now);
+            departure.setHours(hours, minutes, 0, 0);
+
+            // If chosen clock time is already in the past, use the next day.
+            if (departure.getTime() < now.getTime()) {
+                departure.setDate(departure.getDate() + 1);
+            }
+
+            return Math.floor(departure.getTime() / 1000);
+        };
+
+        const routingModelBySlider = {
+            '1': 'einfach',
+            '2': 'einfach',
+            '3': 'einfach'
+        };
+
+        const sensibilityBySlider = {
+            '1': 'low',
+            '2': 'medium',
+            '3': 'high'
+        };
+
+        const routeTypeValue = document.getElementById('route_type').value;
+        const rainSensitivity = routeTypeValue === '1'
+            ? 'none'
+            : (sensibilityBySlider[document.getElementById('rain_resistance').value] || 'medium');
+
+        const startValue = document.getElementById('route_start').value.trim();
+        const endValue = document.getElementById('route_end').value.trim();
+        if (!startValue || !endValue) {
+            alert('Bitte Start und Ziel setzen.');
+            return;
+        }
+
         const payload = {
             start: {
                 address: document.getElementById('route_start').value,
@@ -2290,7 +2336,60 @@ document.addEventListener("DOMContentLoaded", () => {
 
         console.log("Calculating route with:", payload);
         btn.disabled = true; spinner.style.display = 'block'; text.innerText = window.t("calculating");
-        setTimeout(() => { btn.disabled = false; spinner.style.display = 'none'; text.innerText = window.t("calc"); }, 2000);
+        try {
+            const query = new URLSearchParams({
+                start_point: startValue,
+                end_point: endValue,
+                start_time: String(parseDepartureToUnix(document.getElementById('time_start').value)),
+                speed: String(parseFloat(document.getElementById('ride_spd').value) || 20),
+                routingmodel: routingModelBySlider[document.getElementById('route_type').value] || 'einfach',
+                sensibility: rainSensitivity
+            });
+
+            const response = await fetch(`${VP_API_BASE}/WAPapi/v1/route?${query.toString()}`);
+            if (!response.ok) {
+                const responseText = await response.text();
+                throw new Error(`Route request failed with status ${response.status}: ${responseText}`);
+            }
+
+            const raw = await response.json();
+            const geojson = (typeof raw === 'string') ? JSON.parse(raw) : raw;
+
+            if (!geojson || !geojson.type) {
+                throw new Error(`Invalid GeoJSON payload: ${JSON.stringify(geojson).slice(0, 200)}`);
+            }
+
+            if (vpRouteLayer) {
+                map.removeLayer(vpRouteLayer);
+            }
+
+            if (typeof L === 'undefined') {
+                throw new Error('Leaflet is not ready');
+            }
+
+            if (typeof map === 'undefined' || !map) {
+                throw new Error('Map is not ready');
+            }
+
+            vpRouteLayer = L.geoJSON(geojson, {
+                style: {
+                    color: '#0d3a6e',
+                    weight: 5,
+                    opacity: 0.9
+                }
+            }).addTo(map);
+
+            if (vpRouteLayer.getBounds && vpRouteLayer.getBounds().isValid()) {
+                map.fitBounds(vpRouteLayer.getBounds(), { padding: [30, 30] });
+            }
+        } catch (err) {
+            console.error('Route calculation failed:', err);
+            alert(`Routing fehlgeschlagen: ${err && err.message ? err.message : err}`);
+        } finally {
+            btn.disabled = false;
+            spinner.style.display = 'none';
+            text.innerText = window.t("calc");
+        }
     });
 
     // ── INFO POPUP TOGGLE ────────────────────────────────────────────────────
