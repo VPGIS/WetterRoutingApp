@@ -198,7 +198,7 @@ def to_osmnx_bbox(bbox):
     north, south, east, west = bbox
     return (west, south, east, north)
 
-def get_graph_cached(bbox, network_type="bike", size_threshold=0.5, precision=5,**kwargs):
+def get_graph_cached(bbox, network_type="bike", size_threshold=0.5, precision=5):
     """
     Lädt einen OSMnx-Graphen aus dem Cache oder erstellt einen neuen basierend auf einer Bounding Box.
     
@@ -218,7 +218,6 @@ def get_graph_cached(bbox, network_type="bike", size_threshold=0.5, precision=5,
         Beispiel: 0.5 bedeutet, dass der gespeicherte Graph höchstens 50% größer sein darf (default: 0.5)
     precision : int, optional
         Anzahl Dezimalstellen zur Rundung der Bounding Box Koordinaten (default: 5)
-    **kwargs : 
     
     Returns
     -------
@@ -267,7 +266,7 @@ def get_graph_cached(bbox, network_type="bike", size_threshold=0.5, precision=5,
         return ox.load_graphml(best_entry["file"])
 
     else:
-        G = ox.graph_from_bbox(to_osmnx_bbox(bbox),network_type=network_type,**kwargs)
+        G = ox.graph_from_bbox(to_osmnx_bbox(bbox),network_type=network_type)
 
         # Graph wird einmal in ein gpdf umgewandelt um die leeren edge Geometrien zu füllen (mit den Nodesgeometrien)
         # anschliessend wird er wieder zurückgenandelt
