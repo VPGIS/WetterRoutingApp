@@ -1,6 +1,6 @@
 import os
 
-def get_nc_file(start_time, parentfolder='nc_folder', valid_time=33*3600):
+def get_nc_file(start_time, valid_time=33*3600):
     """
     Gibt das gültige NC-File mit dem neuesten Zeitstempel zurück.
     
@@ -8,8 +8,6 @@ def get_nc_file(start_time, parentfolder='nc_folder', valid_time=33*3600):
     ----------
     start_time : float
         Referenz-Zeitstempel (z.B. aktuelle Zeit mit time.time())
-    parentfolder : str, optional
-        Pfad zum Ordner mit den NC-Files (default: 'nc_folder')
     valid_time : int, optional
         Gültigkeitsdauer in Sekunden (default: 33 Stunden = 118800 Sekunden)
     
@@ -20,6 +18,8 @@ def get_nc_file(start_time, parentfolder='nc_folder', valid_time=33*3600):
     """
     
     # Sicherstellen, dass der Ordner existiert
+    parentfolder='nc_folder'
+
     if not os.path.exists(parentfolder):
         raise FileNotFoundError(f"Ordner '{parentfolder}' existiert nicht")
     valid_files = []

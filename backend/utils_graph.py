@@ -10,7 +10,7 @@ import xarray as xr
 from scipy.spatial import cKDTree
 
 
-def get_cellid(G, nc_filepath="nc_folder/NC_for_Cellid.nc", lat_name="lat", lon_name="lon"):
+def get_cellid(G, lat_name="lat", lon_name="lon"):
     """
     Ordnet jeder Edge eines OSMnx-Graphen eine Rasterzelle (cell_id) zu.
 
@@ -18,8 +18,6 @@ def get_cellid(G, nc_filepath="nc_folder/NC_for_Cellid.nc", lat_name="lat", lon_
     ----------
     G : networkx.MultiDiGraph
         OSMnx-Graph
-    nc_filepath: str
-        Pfad zur NetCDF-Datei, Standard "backend/nc_folder/NC_for_Cellid.nc"
     lat_name : str
         Name der Latitude-Variable im Dataset
     lon_name : str
@@ -37,6 +35,8 @@ def get_cellid(G, nc_filepath="nc_folder/NC_for_Cellid.nc", lat_name="lat", lon_
     # ═══════════════════════════════════════════════════════════════
     # 1. NetCDF laden
     # ═══════════════════════════════════════════════════════════════
+    nc_filepath="nc_folder/NC_for_Cellid.nc"
+
     ds = xr.open_dataset(nc_filepath)
 
     lat = ds[lat_name].values
