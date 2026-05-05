@@ -2237,13 +2237,12 @@ document.addEventListener("DOMContentLoaded", () => {
         // Handled when the calculate button is clicked.
     });
 
-    // Default departure time to current local time (HH:MM).
     const timeStartInput = document.getElementById('time_start');
     if (timeStartInput && !timeStartInput.value) {
         const now = new Date();
-        const hh = String(now.getHours()).padStart(2, '0');
-        const mm = String(now.getMinutes()).padStart(2, '0');
-        timeStartInput.value = `${hh}:${mm}`;
+        const hours = String(now.getHours()).padStart(2, '0');
+        const minutes = String(now.getMinutes()).padStart(2, '0');
+        timeStartInput.value = `${hours}:${minutes}`;
     }
 
     document.getElementById('rain_resistance').addEventListener('change', () => {
@@ -2275,22 +2274,15 @@ document.addEventListener("DOMContentLoaded", () => {
         const spinner = document.getElementById('calc_spinner');
         const text = document.getElementById('calc_text');
 
-        const parseDepartureToUnix = (timeString) => {
+        const parseTimeToUnix = (timeString) => {
             const now = new Date();
             if (!timeString) {
                 return Math.floor(now.getTime() / 1000);
             }
 
             const [hours, minutes] = timeString.split(':').map(v => parseInt(v, 10) || 0);
-            const departure = new Date(now);
-            departure.setHours(hours, minutes, 0, 0);
-
-            // If chosen clock time is already in the past, use the next day.
-            if (departure.getTime() < now.getTime()) {
-                departure.setDate(departure.getDate() + 1);
-            }
-
-            return Math.floor(departure.getTime() / 1000);
+            now.setHours(hours, minutes, 0, 0);
+            return Math.floor(now.getTime() / 1000);
         };
 
         const routingModelBySlider = {
@@ -2340,7 +2332,7 @@ document.addEventListener("DOMContentLoaded", () => {
             const query = new URLSearchParams({
                 start_point: startValue,
                 end_point: endValue,
-                start_time: String(parseDepartureToUnix(document.getElementById('time_start').value)),
+                start_time: String(parseTimeToUnix(document.getElementById('time_start').value)),
                 speed: String(parseFloat(document.getElementById('ride_spd').value) || 20),
                 routingmodel: routingModelBySlider[document.getElementById('route_type').value] || 'einfach',
                 sensibility: rainSensitivity
