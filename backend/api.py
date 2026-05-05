@@ -113,7 +113,7 @@ def get_route(
     # Aus Start-/ Endpunkt den richtigen Graphen aus dem Cache finden oder herunterladen
     # ——————————————————————————————————————————————————————————————————————————
     bbox = get_bbox_from_points(start_point, end_point)
-    G = get_graph_cached(bbox, nc_filepath=nc_filepath)
+    G = get_graph_cached(bbox)
 
     # ——————————————————————————————————————————————————————————————————————————
     # Aus Start-/ Endpunkt die richtige Node auswählen
