@@ -151,5 +151,50 @@
     "network_type": "bike",
     "file": "data/graphs\\8c5e3f5e8ea24b70a2abf0ae34c1a7ae.graphml",
     "file_light": "data/graphs\\dd4bd552d35746dc93930aa53e77d19d_light.graphml"
+  },
+  {
+    "north": 47.53014,
+    "south": 47.47478,
+    "east": 7.64492,
+    "west": 7.51628,
+    "network_type": "bike",
+    "file": "data/graphs\\0f25fd4743a74add8fe9cf3e6e838fb8.graphml",
+    "file_light": "data/graphs\\14194f4298c14f50b1fe520da16e12ad_light.graphml"
+  },
+  {
+    "north": 47.62435,
+    "south": 47.5483,
+    "east": 7.88342,
+    "west": 7.69136,
+    "network_type": "bike",
+    "file": "data/graphs\\067d2902b7864d0b83f6e093309247ae.graphml",
+    "file_light": "data/graphs\\949f62796c204053a4ae216307e45eb9_light.graphml"
+  },
+  {
+    "north": 47.59429,
+    "south": 47.45819,
+    "east": 7.67385,
+    "west": 7.65106,
+    "network_type": "bike",
+    "file": "data/graphs\\935484c62f1a487f97f7d7022154214c.graphml",
+    "file_light": "data/graphs\\0915ea5e79d54297a0d7a02a5cf32a9c_light.graphml"
+  },
+  {
+    "north": 47.50325,
+    "south": 47.29547,
+    "east": 7.58032,
+    "west": 7.43428,
+    "network_type": "bike",
+    "file": "data/graphs\\8c067ce2c8b9412192f62ad94af80065.graphml",
+    "file_light": "data/graphs\\0ee3103fe709459293534c3dfa97d1ab_light.graphml"
+  },
+  {
+    "north": 47.50325,
+    "south": 47.49679,
+    "east": 7.48102,
+    "west": 7.43428,
+    "network_type": "bike",
+    "file": "data/graphs\\71ca14f972fb4874a373f63862df9c0b.graphml",
+    "file_light": "data/graphs\\47b126a90b0e49c1a4541ea2ca0fe70f_light.graphml"
   }
 ]

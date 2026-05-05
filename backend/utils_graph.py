@@ -11,6 +11,11 @@ from functools import lru_cache
 import xarray as xr
 from scipy.spatial import cKDTree
 
+try:
+    from backend.utils_nc_file import get_latest_nc_file
+except ModuleNotFoundError:
+    from utils_nc_file import get_latest_nc_file
+
 
 @lru_cache(maxsize=16)
 def _load_graphml_cached(filepath):
@@ -45,7 +50,7 @@ def get_cellid(G, nc_filepath=None, lat_name="lat", lon_name="lon"):
     # 1. NetCDF laden
     # ═══════════════════════════════════════════════════════════════
     if nc_filepath is None:
-        nc_filepath = Path(__file__).resolve().parent / "nc_folder" / "RAINY_DATA_DEMO_icon_ch1_TOT_PREC_all_lead_times.nc"
+        nc_filepath = get_latest_nc_file()
     else:
         nc_filepath = Path(nc_filepath)
 
@@ -168,7 +173,7 @@ def to_osmnx_bbox(bbox):
     north, south, east, west = bbox
     return (west, south, east, north)
 
-def get_graph_cached(bbox, network_type="bike", size_threshold=0.5, precision=5,**kwargs):
+def get_graph_cached(bbox, network_type="bike", size_threshold=0.5, precision=5, nc_filepath=None, **kwargs):
     """
     Lädt einen OSMnx-Graphen aus dem Cache oder erstellt einen neuen basierend auf einer Bounding Box.
     
@@ -244,7 +249,7 @@ def get_graph_cached(bbox, network_type="bike", size_threshold=0.5, precision=5,
         gdf_graph = ox.graph_to_gdfs(G, nodes=True, edges=True, fill_edge_geometry=True)
         G = ox.graph_from_gdfs(gdf_graph[0], gdf_graph[1])
         
-        G = get_cellid(G)
+        G = get_cellid(G, nc_filepath=nc_filepath)
 
         filename = f"{uuid.uuid4().hex}.graphml"
         filename_light = f"{uuid.uuid4().hex}_light.graphml"

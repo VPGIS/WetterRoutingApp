@@ -1,6 +1,40 @@
 import os
 from pathlib import Path
 
+
+def _collect_timestamped_nc_files(parentfolder_path):
+    files = []
+    for filename in os.listdir(parentfolder_path):
+        if not filename.endswith('.nc'):
+            continue
+        try:
+            file_timestamp = int(filename[:-3])
+        except ValueError:
+            continue
+        full_path = os.path.join(str(parentfolder_path), filename)
+        files.append((file_timestamp, full_path))
+    return files
+
+
+def get_latest_nc_file(parentfolder='nc_folder'):
+    """Gibt das neueste timestamped .nc File zurück."""
+    base_dir = Path(__file__).resolve().parent
+    parentfolder_path = Path(parentfolder)
+    if not parentfolder_path.is_absolute():
+        parentfolder_path = base_dir / parentfolder_path
+
+    if not parentfolder_path.exists():
+        raise FileNotFoundError(f"Ordner '{parentfolder_path}' existiert nicht")
+
+    timestamped_files = _collect_timestamped_nc_files(parentfolder_path)
+    if not timestamped_files:
+        raise FileNotFoundError(
+            f"Keine timestamped .nc Dateien im Ordner '{parentfolder_path}' gefunden"
+        )
+
+    newest_file = max(timestamped_files, key=lambda x: x[0])
+    return newest_file[1]
+
 def get_nc_file(start_time, parentfolder='nc_folder', valid_time=33*3600):
     """
     Gibt das gültige NC-File mit dem neuesten Zeitstempel zurück.
@@ -28,36 +62,26 @@ def get_nc_file(start_time, parentfolder='nc_folder', valid_time=33*3600):
 
     if not parentfolder_path.exists():
         raise FileNotFoundError(f"Ordner '{parentfolder_path}' existiert nicht")
-    valid_files = []
-    
-    # Alle .nc-Dateien im Ordner durchsuchen
-    for filename in os.listdir(parentfolder_path):
-        if filename.endswith('.nc'):
+    all_timestamped_files = _collect_timestamped_nc_files(parentfolder_path)
+    if not all_timestamped_files:
+        raise FileNotFoundError(
+            f"Keine timestamped .nc Dateien im Ordner '{parentfolder_path}' gefunden"
+        )
 
-            # Zeitstempel aus dem Dateinamen extrahieren
-            # Erwartet Format: "{timestamp}.nc" z.B. "1234567890.nc"
-            try:
-                # Alles vor .nc entfernen und zu Integer konvertieren
-                timestamp_str = filename[:-3]  # Entfernt ".nc"
-                file_timestamp = int(timestamp_str)
-            except ValueError:
-                # Wenn Zeitstempel nicht parsbar ist, Datei überspringen
-                continue
-        
-            # Prüfen ob Datei noch gültig ist
-            age = start_time - file_timestamp
-            if 0 <= age <= valid_time:
-                full_path = os.path.join(str(parentfolder_path), filename)
-                valid_files.append((file_timestamp, full_path))
-            
-    
-    # Neuste Datei oder None
-    if not valid_files:
-        demo_file = parentfolder_path / "RAINY_DATA_DEMO_icon_ch1_TOT_PREC_all_lead_times.nc"
-        if demo_file.exists():
-            return str(demo_file)
-        return None
-    else:
+    valid_files = []
+    for file_timestamp, full_path in all_timestamped_files:
+        age = start_time - file_timestamp
+        if 0 <= age <= valid_time:
+            valid_files.append((file_timestamp, full_path))
+
+    if valid_files:
         newest_files = max(valid_files, key=lambda x: x[0])
         return newest_files[1]
+
+    # Kein valider Modelllauf in der Gültigkeitsdauer gefunden.
+    newest_available = max(all_timestamped_files, key=lambda x: x[0])
+    raise FileNotFoundError(
+        "Kein gültiges .nc File für start_time gefunden. "
+        f"Neueste verfügbare Datei: {newest_available[1]}"
+    )
     
