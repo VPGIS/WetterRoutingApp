@@ -36,6 +36,7 @@ except ModuleNotFoundError:
 
 app = FastAPI()
 
+#test
 
 # ---------------------------------------------------------------------------
 # CORS konfigurieren
