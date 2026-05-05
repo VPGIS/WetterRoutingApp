@@ -9,6 +9,8 @@ __pycache__/
 *.pyo
 *.pyd
 .Python
+backend/cache/
+backend/data/
 
 # ── Native libs (numba/llvmlite, built locally) ───────────────────────────────
 lib/python3.12/site-packages/llvmlite/binding/libllvmlite.so

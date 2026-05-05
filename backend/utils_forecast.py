@@ -3,17 +3,29 @@ import xarray as xr
 
 
 def compute_rain_adjusted_cost(length, forecast, sensitivity):
-    if forecast == 0.0:
+    rain_amount = max(float(forecast), 0.0)
+
+    if rain_amount == 0.0:
         return length
-    
-    if sensitivity == 'low':
-        return length * 2
+
+    rain_amount = min(rain_amount, 10.0)
+
+    if sensitivity in (None, '', 'none', 'off', 'no_rain'):
+        multiplier = 2500.0
+        exponent = 1.8
+    elif sensitivity == 'low':
+        multiplier = 25.0
+        exponent = 1.0
     elif sensitivity == 'medium':
-        return length ** 2
+        multiplier = 100.0
+        exponent = 1.2
     elif sensitivity == 'high':
-        return np.inf
+        multiplier = 400.0
+        exponent = 1.4
     else:
         raise ValueError("sensitivity must be 'low', 'medium', or 'high'")
+
+    return length * (1.0 + multiplier * (rain_amount ** exponent))
 
 
 def get_forecast(
