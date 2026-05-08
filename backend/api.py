@@ -22,6 +22,8 @@ try:
     from backend.utils_graph import _parse_point, get_square_bbox_from_points, get_graph_cached
     from backend.utils_nc_file import get_nc_file
     from backend.utils_forecast import get_forecast, compute_rain_adjusted_cost
+    from utils_routingmodels import static_djikstra, time_dependent_dijkstra
+
 except ModuleNotFoundError:
     backend_dir = str(SysPath(__file__).resolve().parent)
     if backend_dir not in sys.path:
@@ -29,6 +31,8 @@ except ModuleNotFoundError:
     from utils_graph import _parse_point, get_square_bbox_from_points, get_graph_cached
     from utils_nc_file import get_nc_file
     from utils_forecast import get_forecast, compute_rain_adjusted_cost
+    from utils_routingmodels import static_djikstra, time_dependent_dijkstra
+
 
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - 
 # FastAPI
@@ -128,6 +132,8 @@ def get_route(
     # Zeitstempel als integer vorbereiten
     start_time = int(start_time)
     nc_stem = Path(nc_filepath).stem
+
+    '''------------------------TEMP-------------------------'''
     nc_file_timestamp_match = re.search(r"(\d+)", nc_stem)
     if not nc_file_timestamp_match:
         ds.close()
@@ -153,26 +159,23 @@ def get_route(
     if lead_idx > max_lead_idx:
         lead_idx = max_lead_idx
     print(f"[route] clamped lead_idx={lead_idx}, max_lead_idx={max_lead_idx}")
-
+    '''------------------------TEMP-------------------------'''
 
     # ——————————————————————————————————————————————————————————————————————————
     # Routing anhand gewähltem Routingmodel durchführen
     # ——————————————————————————————————————————————————————————————————————————
     if routingmodel == 'einfach':
 
-        for edge in G.edges(keys=True, data=True):
-            u, v, k, data = edge
-            data["forecast"] = get_forecast(G, ds, u, v, k,
-                                        file_timestamp=nc_file_timestamp,
-                                        target_timestamp=start_time,
-                                        interpolate=False)
-           
-            data['cost'] = compute_rain_adjusted_cost(data['length'], data["forecast"], sensibility)
- 
-            data['travel_time'] = int(data['length'] / speed)
+        route = static_djikstra(G=G,
+                                start_node=start_node,
+                                end_node=end_node,
+                                start_time=start_time,
+                                speed=speed,
+                                ds=ds,
+                                nc_file_timestamp=nc_file_timestamp,
+                                sensibility=sensibility)
 
-        route = ox.routing.shortest_path(G, start_node, end_node, weight='cost')
-        print(f"[route] route nodes={len(route) if route else 0}")
+    
     
     # TODO
     elif routingmodel == 'advanced':
@@ -184,7 +187,6 @@ def get_route(
     # NC-File schliessen
     # ——————————————————————————————————————————————————————————————————————————
     ds.close()
-
 
     # ——————————————————————————————————————————————————————————————————————————
     # Ausgabe der Route als geojson

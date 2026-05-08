@@ -37,17 +37,18 @@ def get_cellid(G, lat_name="lat", lon_name="lon"):
     # 1. NetCDF laden   (Pfad relativ für uvicorn startup ändern, falls noch zeit)
     # ═══════════════════════════════════════════════════════════════
   
-    nc_folder = Path(__file__).resolve().parent / "nc_folder"
-    if not nc_folder.exists():
-        raise FileNotFoundError(f"Ordner '{nc_folder}' existiert nicht")
+    NC_DIR = Path(__file__).resolve().parent / "data" / "NC"
+    
+    if not NC_DIR.exists():
+        raise FileNotFoundError(f"Ordner '{NC_DIR}' existiert nicht")
 
-    preferred_file = nc_folder / "NC_for_Cellid.nc"
+    preferred_file = NC_DIR / "NC_for_Cellid.nc"
     if preferred_file.exists():
         nc_filepath = preferred_file
     else:
-        nc_files = sorted(nc_folder.glob("*.nc"), key=lambda p: p.stat().st_mtime, reverse=True)
+        nc_files = sorted(NC_DIR.glob("*.nc"), key=lambda p: p.stat().st_mtime, reverse=True)
         if not nc_files:
-            raise FileNotFoundError(f"Keine .nc Dateien in '{nc_folder}' gefunden")
+            raise FileNotFoundError(f"Keine .nc Dateien in '{NC_DIR}' gefunden")
         nc_filepath = nc_files[0]
 
     ds = xr.open_dataset(nc_filepath)
@@ -124,9 +125,10 @@ def _parse_point(point):
 
     return lat, lon
 
-def get_bbox_from_points(point1, point2, buffer_km=0.0): # ALT
+def get_square_bbox_from_points(point1, point2):
     """
-    Erstellt eine Bounding Box aus zwei Punkten und erweitert sie um einen Puffer in Kilometern.
+    Erstellt eine Quadratische Bounding Box aus zwei Punkten und erweitert sie um einen Puffer in Kilometern.
+    Bei kleinen sbbox wird ein grosse Buffer gegeben, bei grossen ein kleiner.
     
     Parameter
     ----------
@@ -134,37 +136,12 @@ def get_bbox_from_points(point1, point2, buffer_km=0.0): # ALT
         Erster Punkt als (lat, lon)
     point2 : tuple
         Zweiter Punkt als (lat, lon)
-    buffer_km : float, optional
-        Erweiterung der Bounding Box in Kilometern in alle Richtungen (default: 0.0)
-    
+
     Returns
     -------
     tuple
         Bounding Box im Format (north, south, east, west)
     """
-
-    lat1, lon1 = point1
-    lat2, lon2 = point2
-
-    north = max(lat1, lat2)
-    south = min(lat1, lat2)
-    east = max(lon1, lon2)
-    west = min(lon1, lon2)
-
-    if buffer_km > 0:
-        delta_lat = buffer_km / 111.0
-        mean_lat = (north + south) / 2
-        delta_lon = buffer_km / (111.0 * math.cos(math.radians(mean_lat)))
-
-        north += delta_lat
-        south -= delta_lat
-        east += delta_lon
-        west -= delta_lon
-
-    # INTERNES FORMAT
-    return (north, south, east, west)
-
-def get_square_bbox_from_points(point1, point2):
     lat1, lon1 = point1
     lat2, lon2 = point2
 
@@ -238,10 +215,11 @@ def get_graph_cached(bbox, network_type="bike", size_threshold=0.5, precision=5)
         Geladener oder neu erstellter OSMnx-Graph
     """
 
-    INDEX_FILE = "data/index.json"
-    GRAPH_DIR = "data/graphs"
-
+    # Standardspeicherorte
+    GRAPH_DIR = Path("data/graphs")
     os.makedirs(GRAPH_DIR, exist_ok=True)
+
+    INDEX_FILE = GRAPH_DIR / 'index.json'
 
     # Bounding Box runden (internes Format bleibt erhalten)
     north, south, east, west = [round(x, precision) for x in bbox]
@@ -282,7 +260,7 @@ def get_graph_cached(bbox, network_type="bike", size_threshold=0.5, precision=5)
         G = ox.graph_from_bbox(to_osmnx_bbox(bbox),network_type=network_type)
 
         # Graph wird einmal in ein gpdf umgewandelt um die leeren edge Geometrien zu füllen (mit den Nodesgeometrien)
-        # anschliessend wird er wieder zurückgenandelt
+        # anschliessend wird er wieder zurückgewandelt
         gdf_graph = ox.graph_to_gdfs(G, nodes=True, edges=True, fill_edge_geometry=True)
         G = ox.graph_from_gdfs(gdf_graph[0], gdf_graph[1])
         

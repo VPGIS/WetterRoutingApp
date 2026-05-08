@@ -1,4 +1,26 @@
 import heapq
+import osmnx as ox 
+
+from utils_forecast import get_forecast, compute_rain_adjusted_cost
+
+
+def static_djikstra(G, start_node,end_node,start_time,speed,ds,nc_file_timestamp,sensibility):
+    
+    for edge in G.edges(keys=True, data=True):
+        u, v, k, data = edge
+        data["forecast"] = get_forecast(G, ds, u, v, k, 
+                                        file_timestamp=nc_file_timestamp, 
+                                        target_timestamp=start_time,
+                                        interpolate=False)
+            
+        data['cost'] = compute_rain_adjusted_cost(data['length'], data["forecast"], sensibility)
+
+        data['travel_time'] = int(data['length'] / speed)
+
+    route = ox.routing.shortest_path(G, start_node, end_node, weight='cost')
+
+    return route
+
 
 def time_dependent_dijkstra(G, start_node, end_node, start_timestamp, speed, ds, nc_file_timestamp, sensibility):
     """

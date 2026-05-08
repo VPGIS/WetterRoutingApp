@@ -1,4 +1,5 @@
 import os
+from pathlib import Path
 
 def get_nc_file(start_time, valid_time=33*3600):
     """
@@ -17,15 +18,17 @@ def get_nc_file(start_time, valid_time=33*3600):
         Pfad zum neuesten gültigen NC-File, oder None wenn keines gültig ist
     """
     
-    # Sicherstellen, dass der Ordner existiert
-    parentfolder='nc_folder'
+    # Standardspeicherort
+    NC_DIR = Path(__file__).resolve().parent / "data" / "NC"
 
-    if not os.path.exists(parentfolder):
-        raise FileNotFoundError(f"Ordner '{parentfolder}' existiert nicht")
+
+    # Sicherstellen, dass der Ordner existiert
+    if not os.path.exists(NC_DIR):
+        raise FileNotFoundError(f"Ordner '{NC_DIR}' existiert nicht")
     valid_files = []
     
     # Alle .nc-Dateien im Ordner durchsuchen
-    for filename in os.listdir(parentfolder):
+    for filename in os.listdir(NC_DIR):
         if filename.endswith('.nc'):
 
             # Zeitstempel aus dem Dateinamen extrahieren
@@ -41,7 +44,7 @@ def get_nc_file(start_time, valid_time=33*3600):
             # Prüfen ob Datei noch gültig ist
             age = start_time - file_timestamp
             if 0 <= age <= valid_time:
-                full_path = os.path.join(parentfolder, filename)
+                full_path = os.path.join(NC_DIR, filename)
                 valid_files.append((file_timestamp, full_path))
             
     
