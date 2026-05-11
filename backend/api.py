@@ -176,7 +176,7 @@ def get_route(
             "Startzeit als Unix-Timestamp "
             "(Sekunden seit 1970-01-01 UTC)."
         ),
-        example=1712345678,
+        examples=[1712345678],
     ),
 
     speed: float = Query(

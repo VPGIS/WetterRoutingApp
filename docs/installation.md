@@ -10,15 +10,7 @@ Voraussetzungen:
 
 - Git
 - Miniconda, Anaconda oder Mambaforge
-- Internetverbindung fuer Paketinstallation, OpenStreetMap-/OSMnx-Abfragen und Kartendaten
-- NetCDF-Wetterdaten fuer den Betrieb der Routing-API
-
-Die wichtigsten GIS-Systemabhaengigkeiten werden ueber Conda installiert:
-
-- `gdal`
-- `proj`
-- `geos`
-- `libspatialindex`
+- Internetverbindung für Paketinstallation, OpenStreetMap-/OSMnx-Abfragen und Wetterdaten
 
 ## Miniconda / Conda
 
@@ -28,7 +20,7 @@ Falls Conda noch nicht installiert ist, wird Miniconda empfohlen:
 https://docs.conda.io/projects/miniconda/en/latest/
 ```
 
-Nach der Installation sollte Conda im Terminal verfuegbar sein:
+Nach der Installation sollte Conda im Terminal verfügbar sein:
 
 ```bash
 conda --version
@@ -55,7 +47,7 @@ Die Umgebung wird aus der Datei `environment.yml` erstellt:
 conda env create -f environment.yml
 ```
 
-Dabei werden die GIS- und Scientific-Pakete ueber `conda-forge` installiert. Zusaetzliche Python-Abhaengigkeiten werden anschliessend ueber `pip` aus `requirements.txt` installiert.
+Dabei werden die wichtigsten Pakete über `conda-forge` installiert. Zusätzliche Python-Abhängigkeiten werden anschliessend über `pip` aus `requirements.txt` installiert, welches aus `environment.yml` angesteuert wird, deshalb ist keine separate Installation nötig.
 
 ## Umgebung aktivieren
 
@@ -63,50 +55,17 @@ Dabei werden die GIS- und Scientific-Pakete ueber `conda-forge` installiert. Zus
 conda activate vprouting
 ```
 
-## Installation pruefen
-
-Pruefen, ob Python korrekt aus der Conda-Umgebung verwendet wird:
-
-```bash
-python --version
-```
-
-Wichtige Pakete testen:
-
-```bash
-python -c "import numpy, pandas, scipy, xarray, netCDF4; print('Scientific packages OK')"
-python -c "import osmnx, geopandas, rasterio; print('Geo packages OK')"
-```
-
-FastAPI-Backend starten:
-
-```bash
-uvicorn backend.api:app --reload --host 127.0.0.1 --port 8000
-```
-
-Danach kann die Swagger-Dokumentation im Browser geoeffnet werden:
-
-```text
-http://127.0.0.1:8000/docs
-```
-
 ## Umgebung aktualisieren
 
-Wenn `environment.yml` oder `requirements.txt` geaendert wurde, kann die bestehende Umgebung aktualisiert werden:
+Wenn `environment.yml` oder `requirements.txt` geändert wurde, kann die bestehende Umgebung aktualisiert werden:
 
 ```bash
 conda env update -f environment.yml --prune
 ```
 
-Falls nur neue `pip`-Pakete in `requirements.txt` hinzugekommen sind:
-
-```bash
-pip install -r requirements.txt
-```
-
 ## Umgebung entfernen
 
-Falls die Umgebung neu erstellt oder geloescht werden soll:
+Falls die Umgebung neu erstellt oder gelöscht werden soll:
 
 ```bash
 conda deactivate
