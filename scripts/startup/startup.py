@@ -6,11 +6,11 @@ import sys
 PROJECT_ROOT = Path(__file__).resolve().parents[2]
 
 
-# Schritt 1: Aktuelle Wetterdaten vorbereiten
-# TODO: Hier soll später ein Skript aufgerufen werden, das neue .nc-Dateien
-#       herunterlädt, berechnet und unter backend/data/NC speichert.
-#       Platzhalter, bis dieses Vorbereitungsskript fertig erstellt ist.
-print("Schritt 1 übersprungen: Generierung aktueller .nc-Dateien ist noch nicht implementiert.")
+# Schritt 1: Start ICON CH1 data fetcher daemon
+subprocess.Popen(
+    [sys.executable, str(PROJECT_ROOT / "backend" / "fetch_icon.py")],
+    cwd=PROJECT_ROOT
+)
 
 
 # Schritt 2: Erstelle NC_for_Cellid, falls sie noch nicht existiert
