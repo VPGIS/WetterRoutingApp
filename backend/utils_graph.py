@@ -108,11 +108,18 @@ def get_cellid(G, lat_name="lat", lon_name="lon"):
 def _parse_point(point):
     """Konvertiert Adresse oder Koordinaten in (lat, lon)."""
 
-    # Fall 1: Adresse (String)
+    # Fall 1: Adresse oder Koordinaten als String
     if isinstance(point, str):
-        lat, lon = ox.geocode(point)
+        parts = [p.strip() for p in point.split(",")]
+        if len(parts) == 2:
+            try:
+                lat, lon = float(parts[0]), float(parts[1])
+            except ValueError:
+                lat, lon = ox.geocode(point)
+        else:
+            lat, lon = ox.geocode(point)
 
-    # Fall 2: Koordinaten
+    # Fall 2: Koordinaten als Liste
     elif isinstance(point, (list, tuple, np.ndarray)):
         lat, lon = float(point[0]), float(point[1])
 

@@ -1,12 +1,18 @@
 
+# API Starten: uvicorn backend.api:app --reload --host 127.0.0.1 --port 8000
+
+
+
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - 
 # Imports
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - 
 
 # API Libaries
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException, Query
 from fastapi.middleware.cors import CORSMiddleware
 from dotenv import load_dotenv
+
+from typing import Literal
 
 # Sonstige Libaries
 import numpy as np
@@ -16,6 +22,7 @@ from pathlib import Path
 import sys
 from pathlib import Path as SysPath
 import re
+import json
 
 # Utils
 try:
@@ -38,9 +45,16 @@ except ModuleNotFoundError:
 # FastAPI
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - 
 
-app = FastAPI()
-
-#test
+app = FastAPI(
+    # API DOKU
+    title="Wetter Routing API",
+    description=(
+        "API fuer wetterabhaengige Fahrradrouten. "
+        "Die Route wird anhand von OpenStreetMap-Daten und "
+        "NetCDF-Niederschlagsprognosen berechnet."
+    ),
+    version="1.0.0",
+    )
 
 # ---------------------------------------------------------------------------
 # CORS konfigurieren
@@ -71,15 +85,128 @@ app.add_middleware(
 
 #-----------------------------------------------------------------------------
 # Route Endpoint
-@app.get("/WAPapi/v1/route")
+@app.get(
+        # Endpunkt DOKU
+        "/WAPapi/v1/route",
+        tags=["Routing"],
+        summary="Wetterabhaengige Route berechnen",
+        description=(
+            "Berechnet eine Fahrradroute zwischen Start- und Zielpunkt. "
+            "Je nach Routingmodell und Regenempfindlichkeit werden "
+            "Kanten mit hoher Niederschlagsprognose staerker gewichtet."
+        ),
+        responses={
+            200: {
+                "description": "Route als GeoJSON",
+                "content": {
+                    "application/json": {
+                        "example": {
+                            "type": "FeatureCollection",
+                            "features": [
+                                {
+                                    "type": "Feature",
+                                    "properties": {
+                                        "osmid": 123456789,
+                                        "length": 185.4,
+                                        "cost": 231.75,
+                                        "travel_time": 33
+                                    },
+                                    "geometry": {
+                                        "type": "LineString",
+                                        "coordinates": [
+                                            [7.642110, 47.534573],
+                                            [7.643200, 47.535000],
+                                            [7.645191, 47.522711]
+                                        ]
+                                    }
+                                }
+                            ]
+                        }
+                    }
+                },
+            },
+            400: {"description": "Ungueltige Eingabeparameter"},
+            404: {"description": "Keine passende NetCDF-Wetterdatei gefunden"},
+            500: {"description": "Interner Fehler bei Wetter- oder Routingdaten"},
+        },
+)
+
+
 def get_route(
-    start_point: str,
-    end_point: str,
-    start_time: int,
-    speed: float,
-    routingmodel: str,
-    sensibility: str,
-):
+    start_point: str = Query(
+        ...,
+        description=(
+            "Startpunkt der Route. "
+            "Kann entweder als vollständige Adresse "
+            "oder als WGS84-Koordinaten angegeben werden."
+        ),
+        openapi_examples={
+            "address": {
+                "summary": "Adresse",
+                "value": "Hofackerstrasse 30, 4132 Muttenz",
+            },
+            "coordinates": {
+                "summary": "Koordinaten",
+                "value": "47.534573, 7.642110",
+            },
+        },
+    ),
+
+    end_point: str = Query(
+        ...,
+        description=(
+            "Zielpunkt der Route. "
+            "Kann als Adresse oder WGS84-Koordinaten angegeben werden."
+        ),
+        openapi_examples={
+            "address": {
+                "summary": "Adresse",
+                "value": "Domplatz 16, 4144 Arlesheim",
+            },
+            "coordinates": {
+                "summary": "Koordinaten",
+                "value": "47.492048, 7.620853",
+            },
+        },
+    ),
+
+    start_time: int = Query(
+        ...,
+        description=(
+            "Startzeit als Unix-Timestamp "
+            "(Sekunden seit 1970-01-01 UTC)."
+        ),
+        example=1712345678,
+    ),
+
+    speed: float = Query(
+        20,
+        gt=0,
+        description="Fahrgeschwindigkeit in km/h.",
+        examples=[20],
+    ),
+
+    routingmodel: Literal["einfach", "advanced"] = Query(
+        "einfach",
+        description=(
+            "Verwendetes Routingmodell.\n\n"
+            "- einfach: Statisches Routing basierend auf Dijkstra.\n"
+            "- advanced: Dynamisches Routing mit zeitabhängigen Bedingungen."
+        ),
+    ),
+
+    sensibility: Literal["none", "low", "medium", "high"] = Query(
+        "medium",
+        description=(
+            "Regenempfindlichkeit des Nutzers.\n\n"
+            "- none: Keine Berücksichtigung von Regen\n"
+            "- low: Geringe Gewichtung\n"
+            "- medium: Mittlere Gewichtung\n"
+            "- high: Starke Vermeidung von Regen"
+        ),
+    )
+
+    ):
 
     print("[route] request received")
     print(f"[route] start_point={start_point!r}, end_point={end_point!r}, start_time={start_time}, speed={speed}, routingmodel={routingmodel}, sensibility={sensibility}")
@@ -175,12 +302,15 @@ def get_route(
                                 nc_file_timestamp=nc_file_timestamp,
                                 sensibility=sensibility)
 
-    
-    
-    # TODO
     elif routingmodel == 'advanced':
-        print('todo')
-
+        route = time_dependent_dijkstra(G=G,
+                                        start_node=start_node,
+                                        end_node=end_node,
+                                        start_timestamp=start_time,
+                                        speed=speed,
+                                        ds=ds,
+                                        nc_file_timestamp=nc_file_timestamp,
+                                        sensibility=sensibility)
 
 
     # ——————————————————————————————————————————————————————————————————————————
@@ -195,6 +325,6 @@ def get_route(
     route_gdf = ox.routing.route_to_gdf(G, route, weight='cost')
     keep_cols = ["osmid", "length", "cost","travel_time", "geometry"]
     route_gdf = route_gdf[keep_cols]
-    return route_gdf.to_json()
+    return json.loads(route_gdf.to_json())
 
     # für debugging -> return G, route
