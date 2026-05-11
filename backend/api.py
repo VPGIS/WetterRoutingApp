@@ -1,5 +1,6 @@
 
-# API Starten: uvicorn backend.api:app --reload --host 127.0.0.1 --port 8000
+# API Starten: uvicorn backend.api:app --reload --host 0.0.0.0 --port 8000
+# Erreichbar unter: http://<Server-IP>:8000/
 
 
 
@@ -10,6 +11,8 @@
 # API Libaries
 from fastapi import FastAPI, HTTPException, Query
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import FileResponse
+from fastapi.staticfiles import StaticFiles
 from dotenv import load_dotenv
 
 from typing import Literal
@@ -66,17 +69,32 @@ origins = [
     "http://127.0.0.1:8000",
 ]
 
-
+# Pfad zum Frontend-Verzeichnis (relativ zu diesem Skript)
+FRONTEND_DIR = Path(__file__).resolve().parent.parent / "frontend"
 
 app.add_middleware(
     CORSMiddleware,
     allow_origins=origins,
-    allow_origin_regex=r"^null$",
+    # Erlaubt Anfragen von localhost und lokalen Netzwerk-IPs (192.168.x.x, 10.x.x.x)
+    allow_origin_regex=r"^https?://(localhost|127\.0\.0\.1|192\.168\.[0-9]+\.[0-9]+|10\.[0-9]+\.[0-9]+\.[0-9]+)(:[0-9]+)?$",
     allow_credentials=True,
     allow_methods=['GET', 'OPTIONS'],
     allow_headers=["*"],
     max_age= 5961600
 )
+
+# ---------------------------------------------------------------------------
+# Statische Dateien & Frontend
+# ---------------------------------------------------------------------------
+
+# CSS, JS etc. aus dem Frontend-Ordner unter /static/ erreichbar machen
+app.mount("/static", StaticFiles(directory=FRONTEND_DIR), name="static")
+
+
+# Startseite: liefert direkt die HTML-Datei wenn jemand die IP eingibt
+@app.get("/", include_in_schema=False)
+def serve_frontend():
+    return FileResponse(FRONTEND_DIR / "vp_routing.html")
 
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - 
 # API Endpoints 
