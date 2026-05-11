@@ -1,4 +1,4 @@
-# VP Routing
+# Wetter Routing App
 
 Routing-Anwendung mit Wetterdatenintegration auf Basis von OpenStreetMap/OSMnx.
 
@@ -13,6 +13,12 @@ Das Projekt besteht aus:
 Die Installationsanleitung befindet sich unter:
 
 [docs/installation.md](docs/installation.md)
+
+## Startup
+
+Nach der Installation kann das Projekt mit der Startupsanleitung gestartet werden:
+
+[docs/startup.md](docs/startup.md)
 
 ## API-Dokumentation
 
