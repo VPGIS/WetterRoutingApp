@@ -105,63 +105,7 @@ Typische Aufgaben:
 
 #### Ablaufdiagramm Routinganfrage
 
-```mermaid
-flowchart TD
-    A[Frontend sendet GET /WAPapi/v1/route] --> B[FastAPI get_route nimmt Parameter entgegen]
-    B --> C{speed > 0?}
-    C -- nein --> C1[HTTP 400: speed must be > 0]
-    C -- ja --> D[Start und Ziel parsen]
-    D --> E{Adresse oder Koordinaten?}
-    E -- Adresse --> E1[OSMnx geocode]
-    E -- Koordinaten --> E2[lat, lon validieren]
-    E1 --> F[Geschwindigkeit von km/h in m/s umrechnen]
-    E2 --> F
-
-    F --> G[Passende NetCDF-Datei zu start_time suchen]
-    G --> H{Datei gefunden und oeffenbar?}
-    H -- nein --> H1[HTTP 404]
-    H -- ja --> I[xarray Dataset oeffnen]
-
-    I --> J[Quadratische Bounding Box aus Start/Ziel bilden]
-    J --> K[Graph aus Cache laden oder neu erstellen]
-    K --> L{Passender Graph im Index?}
-    L -- ja --> L1[GraphML laden]
-    L -- nein --> L2[OSMnx Graph von OSM herunterladen]
-    L2 --> L3[Edge-Geometrien fuellen]
-    L3 --> L4[Edges per KD-Tree Wetterzellen zuordnen]
-    L4 --> L5[GraphML speichern und Index aktualisieren]
-    L1 --> M[Naechste Graph-Nodes fuer Start/Ziel bestimmen]
-    L5 --> M
-
-    M --> N[Forecast-Zeit aus NC-Dateiname und start_time bestimmen]
-    N --> O{routingmodel}
-    O -- einfach --> P[static_djikstra]
-    O -- advanced --> Q[time_dependent_dijkstra]
-
-    P --> P1[Pro Edge Forecast zur Startzeit lesen]
-    P1 --> P2[Kosten = Laenge + Regen-Penalty berechnen]
-    P2 --> P3[travel_time pro Edge setzen]
-    P3 --> P4[OSMnx shortest_path mit weight=cost]
-
-    Q --> Q1[Priority Queue mit Start-State initialisieren]
-    Q1 --> Q2[Naechsten State mit geringsten Kosten entnehmen]
-    Q2 --> Q3{Ziel erreicht?}
-    Q3 -- ja --> Q4[Pfad aus parent-Tabelle rekonstruieren]
-    Q3 -- nein --> Q5[Ausgehende Kanten pruefen]
-    Q5 --> Q6[Ankunftszeit je Kante berechnen]
-    Q6 --> Q7[Forecast zur Ankunftszeit interpolieren]
-    Q7 --> Q8[Regenangepasste Kosten berechnen]
-    Q8 --> Q9{Besserer Pfad zum State?}
-    Q9 -- ja --> Q10[dist/parent aktualisieren und State einreihen]
-    Q9 -- nein --> Q2
-    Q10 --> Q2
-
-    P4 --> R[NetCDF Dataset schliessen]
-    Q4 --> R
-    R --> S[Route mit ox.routing.route_to_gdf in GeoJSON umwandeln]
-    S --> T[Backend gibt GeoJSON an Frontend zurueck]
-    T --> U[Frontend zeichnet Route auf Karte]
-```
+![Ablaufdiagramm_Verarbeitung_API](docs/Ablaufdiagramm_Verarbeitung_API.drawio.svg)
 
 Die wichtigsten Prozessschritte sind:
 
