@@ -14,6 +14,12 @@ Die Installationsanleitung befindet sich unter:
 
 [docs/installation.md](docs/installation.md)
 
+## Startup
+
+Nach der Installation kann das Projekt mit der Startupsanleitung gestartet werden:
+
+[docs/startup.md](docs/startup.md)
+
 ## API-Dokumentation
 
 Die Swagger-Dokumentation wird automatisch von FastAPI bereitgestellt, sobald das Backend laeuft:
