@@ -2,20 +2,18 @@
 
 Diese Datei beschreibt den technischen Aufbau von VP Routing und das Zusammenspiel der wichtigsten Komponenten.
 
----
-
 ## Überblick
 
 VP Routing besteht aus einem browserbasierten Frontend, einem FastAPI-Backend und einer Routing-Logik, die OpenStreetMap-Daten mit NetCDF-Wetterdaten kombiniert.
 
 Die Anwendung berechnet Routen auf Basis von Straßen- bzw. Wegenetzen und kann zusätzliche Wetterinformationen in die Bewertung der Route einbeziehen.
 
-## Projektstruktur <a id="backend-anker"></a>
+## Projektstruktur
 
 ```text
 VPRouting/
 │
-├── backend/                    # Backend / FastAPI     <a id="backend-anker"></a>
+├── backend/                    # Backend Ordner
 │   ├── api.py                  # API-Einstiegspunkt
 │   ├── utils_forecast.py       # Wetter-/Forecast-Logik
 │   ├── utils_graph.py          # Graph-Handling
@@ -29,7 +27,7 @@ VPRouting/
 │           ├── *.nc
 │           └── NC_for_Cellid.nc
 │
-├── frontend/                   # Browser-Frontend
+├── frontend/                   # Frontend Ordner
 │   └── vp_routing.html
 │
 ├── scripts/
@@ -49,12 +47,6 @@ VPRouting/
 
 ## Frontend
 
-Das Frontend befindet sich im Ordner:
-
-```text
-frontend/
-```
-
 Die Hauptdatei ist:
 
 ```text
@@ -66,21 +58,11 @@ Das Frontend wird lokal im Browser geöffnet und kommuniziert mit dem Backend ü
 Aufgaben des Frontends:
 
 - Darstellung der Karte
-- Auswahl von Start- und Zielpunkten
-- Eingabe von Routingparametern
+- Auswahl von Start- und Zielpunkten sowie der Routingparametern
 - Absenden der Routinganfrage an das Backend
 - Darstellung der berechneten Route
 
----
-
 ## Backend
-
-[backend-anker](backend-anker)
-Das Backend befindet sich im Ordner:
-
-```text
-backend/
-```
 
 Der Einstiegspunkt der API ist:
 
@@ -98,15 +80,11 @@ Aufgaben des Backends:
 - Laden benötigter Wetter- und Kartendaten
 - Rückgabe der berechneten Route an das Frontend
 
-Das Backend wird lokal gestartet mit:
-
-```bash
-uvicorn backend.api:app --reload --host 127.0.0.1 --port 8000
-```
+Das Backend wird lokal gestartet, siehe dafür hier nach: [docs/startup.md](docs/startup.md)
 
 ---
 
-## Routing-Logik
+### Routing-Logik
 
 Die Routing-Logik ist für die Berechnung der Route verantwortlich.
 
@@ -124,6 +102,74 @@ Typische Aufgaben:
 - Bewertung von Kanten
 - Berechnung der optimalen Route
 - Rückgabe der Route als Koordinaten oder GeoJSON-ähnliche Struktur
+
+#### Ablaufdiagramm Routinganfrage
+
+```mermaid
+flowchart TD
+    A[Frontend sendet GET /WAPapi/v1/route] --> B[FastAPI get_route nimmt Parameter entgegen]
+    B --> C{speed > 0?}
+    C -- nein --> C1[HTTP 400: speed must be > 0]
+    C -- ja --> D[Start und Ziel parsen]
+    D --> E{Adresse oder Koordinaten?}
+    E -- Adresse --> E1[OSMnx geocode]
+    E -- Koordinaten --> E2[lat, lon validieren]
+    E1 --> F[Geschwindigkeit von km/h in m/s umrechnen]
+    E2 --> F
+
+    F --> G[Passende NetCDF-Datei zu start_time suchen]
+    G --> H{Datei gefunden und oeffenbar?}
+    H -- nein --> H1[HTTP 404]
+    H -- ja --> I[xarray Dataset oeffnen]
+
+    I --> J[Quadratische Bounding Box aus Start/Ziel bilden]
+    J --> K[Graph aus Cache laden oder neu erstellen]
+    K --> L{Passender Graph im Index?}
+    L -- ja --> L1[GraphML laden]
+    L -- nein --> L2[OSMnx Graph von OSM herunterladen]
+    L2 --> L3[Edge-Geometrien fuellen]
+    L3 --> L4[Edges per KD-Tree Wetterzellen zuordnen]
+    L4 --> L5[GraphML speichern und Index aktualisieren]
+    L1 --> M[Naechste Graph-Nodes fuer Start/Ziel bestimmen]
+    L5 --> M
+
+    M --> N[Forecast-Zeit aus NC-Dateiname und start_time bestimmen]
+    N --> O{routingmodel}
+    O -- einfach --> P[static_djikstra]
+    O -- advanced --> Q[time_dependent_dijkstra]
+
+    P --> P1[Pro Edge Forecast zur Startzeit lesen]
+    P1 --> P2[Kosten = Laenge + Regen-Penalty berechnen]
+    P2 --> P3[travel_time pro Edge setzen]
+    P3 --> P4[OSMnx shortest_path mit weight=cost]
+
+    Q --> Q1[Priority Queue mit Start-State initialisieren]
+    Q1 --> Q2[Naechsten State mit geringsten Kosten entnehmen]
+    Q2 --> Q3{Ziel erreicht?}
+    Q3 -- ja --> Q4[Pfad aus parent-Tabelle rekonstruieren]
+    Q3 -- nein --> Q5[Ausgehende Kanten pruefen]
+    Q5 --> Q6[Ankunftszeit je Kante berechnen]
+    Q6 --> Q7[Forecast zur Ankunftszeit interpolieren]
+    Q7 --> Q8[Regenangepasste Kosten berechnen]
+    Q8 --> Q9{Besserer Pfad zum State?}
+    Q9 -- ja --> Q10[dist/parent aktualisieren und State einreihen]
+    Q9 -- nein --> Q2
+    Q10 --> Q2
+
+    P4 --> R[NetCDF Dataset schliessen]
+    Q4 --> R
+    R --> S[Route mit ox.routing.route_to_gdf in GeoJSON umwandeln]
+    S --> T[Backend gibt GeoJSON an Frontend zurueck]
+    T --> U[Frontend zeichnet Route auf Karte]
+```
+
+Die wichtigsten Prozessschritte sind:
+
+1. **API-Vorbereitung:** `backend/api.py` validiert die Anfrage, parst Start/Ziel, konvertiert die Geschwindigkeit und oeffnet die passende NetCDF-Wetterdatei.
+2. **Graph-Vorbereitung:** Aus Start und Ziel wird eine Bounding Box berechnet. `get_graph_cached` laedt einen passenden Graphen aus `data/graphs/index.json` oder erstellt einen neuen OSMnx-Bike-Graphen. Neue Graphen erhalten direkt `cell_i`, `cell_j` und `cell_id`, damit jede Edge einer Wetterzelle zugeordnet ist.
+3. **Node-Zuordnung:** Start- und Zielkoordinaten werden auf die naechsten Nodes im Graphen gemappt.
+4. **Modellauswahl:** Bei `routingmodel=einfach` werden alle Edge-Kosten einmalig mit dem Forecast zur Startzeit berechnet. Bei `routingmodel=advanced` wird waehrend Dijkstra fuer jede Kante die erwartete Ankunftszeit berechnet und der Forecast fuer diesen Zeitpunkt verwendet.
+5. **Rueckgabe:** Nach der Pfadberechnung wird das NetCDF-Dataset geschlossen, die Route in ein GeoJSON-aehnliches Format konvertiert und ans Frontend zur Darstellung zurueckgegeben.
 
 ---
 
