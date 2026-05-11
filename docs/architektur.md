@@ -10,12 +10,12 @@ VP Routing besteht aus einem browserbasierten Frontend, einem FastAPI-Backend un
 
 Die Anwendung berechnet Routen auf Basis von Straßen- bzw. Wegenetzen und kann zusätzliche Wetterinformationen in die Bewertung der Route einbeziehen.
 
-## Projektstruktur
+## Projektstruktur <a id="backend-anker"></a>
 
 ```text
 VPRouting/
 │
-├── backend/                    # Backend / FastAPI
+├── backend/                    # Backend / FastAPI     <a id="backend-anker"></a>
 │   ├── api.py                  # API-Einstiegspunkt
 │   ├── utils_forecast.py       # Wetter-/Forecast-Logik
 │   ├── utils_graph.py          # Graph-Handling
@@ -75,6 +75,7 @@ Aufgaben des Frontends:
 
 ## Backend
 
+[backend-anker](backend-anker)
 Das Backend befindet sich im Ordner:
 
 ```text

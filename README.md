@@ -1,4 +1,4 @@
-# VP Routing
+# Wetter Routing App
 
 Routing-Anwendung mit Wetterdatenintegration auf Basis von OpenStreetMap/OSMnx.
 
