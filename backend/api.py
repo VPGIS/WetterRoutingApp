@@ -12,12 +12,13 @@
 from fastapi import FastAPI, HTTPException, Query
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse
-from fastapi.staticfiles import StaticFiles
 from dotenv import load_dotenv
+from contextlib import asynccontextmanager
 
 from typing import Literal
 
 # Sonstige Libaries
+import subprocess
 import numpy as np
 import osmnx as ox
 import xarray as xr
@@ -48,6 +49,27 @@ except ModuleNotFoundError:
 # FastAPI
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - 
 
+# ---------------------------------------------------------------------------
+# Fetch-Daemon beim Start automatisch starten
+# ---------------------------------------------------------------------------
+
+BACKEND_DIR = Path(__file__).resolve().parent
+FETCH_SCRIPT = BACKEND_DIR / "fetch_icon_NOMETEO.py"
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    # Fetch-Daemon als Hintergrundprozess starten
+    print("[startup] Starte Fetch-Daemon…")
+    daemon = subprocess.Popen(
+        [sys.executable, str(FETCH_SCRIPT)],
+        cwd=BACKEND_DIR.parent,
+    )
+    print(f"[startup] Fetch-Daemon gestartet (PID {daemon.pid})")
+    yield
+    # Beim Herunterfahren der API den Daemon beenden
+    print("[shutdown] Beende Fetch-Daemon…")
+    daemon.terminate()
+
 app = FastAPI(
     # API DOKU
     title="Wetter Routing API",
@@ -57,6 +79,7 @@ app = FastAPI(
         "NetCDF-Niederschlagsprognosen berechnet."
     ),
     version="1.0.0",
+    lifespan=lifespan,
     )
 
 # ---------------------------------------------------------------------------
@@ -75,8 +98,8 @@ FRONTEND_DIR = Path(__file__).resolve().parent.parent / "frontend"
 app.add_middleware(
     CORSMiddleware,
     allow_origins=origins,
-    # Erlaubt Anfragen von localhost und lokalen Netzwerk-IPs (192.168.x.x, 10.x.x.x)
-    allow_origin_regex=r"^https?://(localhost|127\.0\.0\.1|192\.168\.[0-9]+\.[0-9]+|10\.[0-9]+\.[0-9]+\.[0-9]+)(:[0-9]+)?$",
+    # Erlaubt Anfragen von localhost und lokalen Netzwerk-IPs (192.168.x.x, 10.x.x.x, 172.x.x.x)
+    allow_origin_regex=r"^https?://(localhost|127\.0\.0\.1|192\.168\.[0-9]+\.[0-9]+|10\.[0-9]+\.[0-9]+\.[0-9]+|172\.[0-9]+\.[0-9]+\.[0-9]+)(:[0-9]+)?$",
     allow_credentials=True,
     allow_methods=['GET', 'OPTIONS'],
     allow_headers=["*"],
@@ -86,10 +109,6 @@ app.add_middleware(
 # ---------------------------------------------------------------------------
 # Statische Dateien & Frontend
 # ---------------------------------------------------------------------------
-
-# CSS, JS etc. aus dem Frontend-Ordner unter /static/ erreichbar machen
-app.mount("/static", StaticFiles(directory=FRONTEND_DIR), name="static")
-
 
 # Startseite: liefert direkt die HTML-Datei wenn jemand die IP eingibt
 @app.get("/", include_in_schema=False)
@@ -247,9 +266,15 @@ def get_route(
     # Richtiges NC-File laden
     # ——————————————————————————————————————————————————————————————————————————
     try:
-        nc_filepath = str(get_nc_file(int(start_time)))
+        nc_filepath = get_nc_file(int(start_time))
     except FileNotFoundError as exc:
         raise HTTPException(status_code=404, detail=str(exc))
+
+    if nc_filepath is None:
+        raise HTTPException(
+            status_code=404,
+            detail="Keine gültige Wetterdatei gefunden – Fetch-Daemon läuft noch oder Daten sind veraltet."
+        )
 
     try:
         ds = xr.open_dataset(nc_filepath)
@@ -346,3 +371,15 @@ def get_route(
     return json.loads(route_gdf.to_json())
 
     # für debugging -> return G, route
+
+
+# Einzelne statische Dateien explizit ausliefern
+# (app.mount("/") würde alle API-Routen blockieren)
+@app.get("/style.css", include_in_schema=False)
+def serve_css():
+    return FileResponse(FRONTEND_DIR / "style.css", media_type="text/css")
+
+@app.get("/logo.jpg", include_in_schema=False)
+def serve_logo():
+    return FileResponse(FRONTEND_DIR / "logo.jpg", media_type="image/jpeg")
+

@@ -47,7 +47,7 @@ LON_GRID, LAT_GRID = np.meshgrid(TARGET_LONS, TARGET_LATS)   # (NY, NX)
 TARGET_PTS = np.column_stack([LAT_GRID.ravel(), LON_GRID.ravel()])  # (NY*NX, 2)
 
 BACKEND_DIR = Path(__file__).resolve().parent
-OUTPUT_DIR = BACKEND_DIR / "nc_folder"
+OUTPUT_DIR = BACKEND_DIR / "data" / "NC"
 CACHE_DIR  = BACKEND_DIR / ".fetch_cache"
 
 CLAT_CACHE    = CACHE_DIR / "icon_ch1_clat.npy"
