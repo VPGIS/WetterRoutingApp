@@ -91,8 +91,8 @@ def publish_nc(nc_path: Path):
 
 def check_geoserver_on_startup():
     """
-    Called by uvicorn lifespan. Publishes the newest .nc file to GeoServer
-    if GeoServer is reachable. Silently skips if GeoServer is down.
+    Called by uvicorn lifespan. Publishes the newest _gs.nc file to GeoServer
+    if GeoServer is reachable. Silently skips if GeoServer is down or no file exists.
     """
     try:
         r = requests.get(f"{GS_URL}/rest/workspaces", auth=AUTH, timeout=5)
@@ -103,11 +103,14 @@ def check_geoserver_on_startup():
         print("[geoserver] Not reachable, skipping startup publish")
         return
 
-    nc_files = sorted(NC_DIR.glob("*.nc"), key=lambda p: p.stat().st_mtime)
-    if not nc_files:
+    # Prefer the GeoServer-compatible _gs.nc files; fall back to any .nc
+    gs_files = sorted(NC_DIR.glob("*_gs.nc"), key=lambda p: p.stat().st_mtime)
+    if not gs_files:
+        gs_files = sorted(NC_DIR.glob("*.nc"), key=lambda p: p.stat().st_mtime)
+    if not gs_files:
         print("[geoserver] No .nc files found, skipping startup publish")
         return
 
-    newest = nc_files[-1]
+    newest = gs_files[-1]
     print(f"[geoserver] Startup: publishing {newest.name}")
     publish_nc(newest)
