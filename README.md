@@ -14,6 +14,8 @@ Das Projekt entstand im Rahmen des Vertiefungsprofils Geoinformatik/Raumanalyse 
 
 ## Überblick
 
+![Screenshot_WRA](docs\assets\Screenshot_WRA.png)  
+
 Die Anwendung besteht aus:
 
 - einem browserbasierten Frontend zur Eingabe von Start, Ziel und Routingparametern
