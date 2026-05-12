@@ -1,4 +1,4 @@
-?"""
+"""
 utils_fetch.py
 
 Fetches ICON-CH1-EPS TOT_PREC from MeteoSwiss OGD using ONLY:
@@ -398,7 +398,7 @@ def fetch_and_save(output_dir: Path = OUTPUT_DIR) -> Path:
     print(f"[fetch] Saved -> {output_file}")
 
     # 6b. Write GeoServer-compatible copy (1-D CF lat/lon/time dims)
-    gs_file = write_geoserver_nc(hourly_rain, da_all.coords["ref_time"].values[0], output_dir / f"{ts}_gs.nc")
+    gs_file = write_geoserver_nc(hourly_rain, da_all.coords["ref_time"].values[0], output_dir / f"{ts}_rainWMS_gs.nc")
 
     # 7. Publish fresh data to GeoServer
     try:
