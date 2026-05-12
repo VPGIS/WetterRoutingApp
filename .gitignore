@@ -10,7 +10,10 @@ __pycache__/
 *.pyd
 .Python
 backend/cache/
+backend/.fetch_cache/
 backend/data/
+cache/
+data/graphs/
 
 # ── Native libs (numba/llvmlite, built locally) ───────────────────────────────
 lib/python3.12/site-packages/llvmlite/binding/libllvmlite.so
@@ -24,6 +27,9 @@ meteodata-lab-env/
 .venv/
 venv/
 env/
+bin/
+lib/
+etc/
 
 # ── Jupyter checkpoints ───────────────────────────────────────────────────────
 .ipynb_checkpoints/

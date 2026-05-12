@@ -46,7 +46,9 @@ Die Umgebung wird aus der Datei `environment.yml` erstellt:
 ```bash
 conda env create -f environment.yml
 ```
-
+```bash
+conda env create -f environment_raspi.yml
+```
 Dabei werden die wichtigsten Pakete über `conda-forge` installiert. Zusätzliche Python-Abhängigkeiten werden anschliessend über `pip` aus `requirements.txt` installiert, welches aus `environment.yml` angesteuert wird, deshalb ist keine separate Installation nötig.
 
 ## Umgebung aktivieren
