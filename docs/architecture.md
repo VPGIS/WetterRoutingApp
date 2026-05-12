@@ -1,3 +1,7 @@
+---
+title: Architektur
+---
+
 # Architektur
 
 Diese Datei beschreibt den technischen Aufbau der Wetter Routing App und das Zusammenspiel der wichtigsten Komponenten.
@@ -10,7 +14,7 @@ Die Wetter Routing App besteht aus einem browserbasierten Frontend, einem FastAP
 
 Die Anwendung berechnet Routen auf Basis von Strassen- beziehungsweise Wegenetzen. Wetterinformationen können in die Bewertung der Route einbezogen werden, damit Strecken mit ungünstigen Wetterbedingungen höher gewichtet oder vermieden werden.
 
-Kontext und Fragestellung stehen in [About](about.md). Details zu den Routingmodellen befinden sich in [Routing-Logik](routing.md), Details zur Wetterdatenpipeline in [Wetterdaten](weather-data.md).
+Kontext und Fragestellung stehen in [About](about.html). Details zu den Routingmodellen befinden sich in [Routing-Logik](routing.html), Details zur Wetterdatenpipeline in [Wetterdaten](weather-data.html).
 
 ---
 
@@ -95,7 +99,7 @@ Aufgaben des Backends:
 - Laden benötigter Wetter- und Kartendaten
 - Rückgabe der berechneten Route an das Frontend
 
-Das Backend wird lokal gestartet. Weitere Informationen dazu befinden sich in [Startup](startup.md).
+Das Backend wird lokal gestartet. Weitere Informationen dazu befinden sich in [Startup](startup.html).
 
 ---
 
@@ -135,7 +139,7 @@ Die wichtigsten Prozessschritte:
 
 </details>
 
-Weitere Details zur Berechnung befinden sich in [Routing-Logik](routing.md#einordnung-in-den-api-ablauf).
+Weitere Details zur Berechnung befinden sich in [Routing-Logik](routing.html#einordnung-in-den-api-ablauf).
 
 ---
 
@@ -162,7 +166,7 @@ Gespeicherte Graphen befinden sich unter:
 backend/data/graphs/
 ```
 
-Weitere Details zu Algorithmen, Kostenberechnung und Ergebnisformat stehen in [Routing-Logik](routing.md).
+Weitere Details zu Algorithmen, Kostenberechnung und Ergebnisformat stehen in [Routing-Logik](routing.html).
 
 ---
 
@@ -182,16 +186,16 @@ Beispiel:
 backend/data/NC/1712345678.nc
 ```
 
-Für die Zuordnung von OSM-Kanten zum Wetterraster wird bevorzugt die Datei `NC_for_Cellid.nc` verwendet. Falls diese nicht existiert, wird sie beim Starten des Servers erzeugt. Siehe dazu [Startup: NC_for_Cellid vorbereiten](startup.md#schritt-2-nc_for_cellid-vorbereiten).
+Für die Zuordnung von OSM-Kanten zum Wetterraster wird bevorzugt die Datei `NC_for_Cellid.nc` verwendet. Falls diese nicht existiert, wird sie beim Starten des Servers erzeugt. Siehe dazu [Startup: NC_for_Cellid vorbereiten](startup.html#schritt-2-nc_for_cellid-vorbereiten).
 
-Weitere Details zur Erzeugung, Auswahl und Verwendung der Wetterdaten befinden sich in [Wetterdaten](weather-data.md).
+Weitere Details zur Erzeugung, Auswahl und Verwendung der Wetterdaten befinden sich in [Wetterdaten](weather-data.html).
 
 ---
 
 ## Weiterführende Dokumentation
 
-- [About](about.md)
-- [Installation](installation.md)
-- [Startup](startup.md)
-- [Routing-Logik](routing.md)
-- [Wetterdaten](weather-data.md)
+- [About](about.html)
+- [Installation](installation.html)
+- [Startup](startup.html)
+- [Routing-Logik](routing.html)
+- [Wetterdaten](weather-data.html)

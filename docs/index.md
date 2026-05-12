@@ -2,34 +2,53 @@
 title: Wetter Routing App
 ---
 
-# Wetter Routing App
+# Dokumentation
 
 Die **Wetter Routing App** ist ein Prototyp für wetterabhängiges Routing. Sie kombiniert OpenStreetMap-Daten mit Niederschlagsprognosen von MeteoSwiss, damit Routen nicht nur nach Distanz oder Reisezeit, sondern auch nach erwarteten Wetterbedingungen bewertet werden können.
 
-Das Projekt entstand im Rahmen des Vertiefungsprofils Geoinformatik/Raumanalyse an der FHNW.
+<div class="info-band">
+Das Projekt entstand im Rahmen des Vertiefungsprofils Geoinformatik/Raumanalyse an der FHNW. Diese GitHub Page verwendet die bestehenden Markdown-Dateien aus dem Ordner <code>docs/</code> als Projektdokumentation.
+</div>
 
-## Dokumentation
+## Einstieg
 
-Diese GitHub Page verwendet die Markdown-Dateien aus dem Ordner `docs/` als Projektdokumentation.
-
-| Seite | Inhalt |
-|---|---|
-| [About](about.md) | Projektkontext, Fragestellung, Datenquellen und Team |
-| [Installation](installation.md) | Einrichtung der Conda-Umgebung und Abhängigkeiten |
-| [Server starten](startup.md) | Startprozess, Wetterdatenprüfung, API-Server und Fetch-Daemon |
-| [Architektur](architecture.md) | Technischer Aufbau und Zusammenspiel der Komponenten |
-| [Routing-Logik](routing.md) | Routingmodelle, Kostenfunktion und Ergebnisformat |
-| [Wetterdaten](weather-data.md) | Bezug, Aufbereitung und Zuordnung der MeteoSwiss-Daten |
+<div class="doc-grid">
+  <a class="doc-card" href="about.html">
+    <strong>About</strong>
+    <span>Projektkontext, Fragestellung, Datenquellen und Team.</span>
+  </a>
+  <a class="doc-card" href="installation.html">
+    <strong>Installation</strong>
+    <span>Einrichtung der Conda-Umgebung und benötigte Abhängigkeiten.</span>
+  </a>
+  <a class="doc-card" href="startup.html">
+    <strong>Server starten</strong>
+    <span>Startprozess, Wetterdatenprüfung, API-Server und Fetch-Daemon.</span>
+  </a>
+  <a class="doc-card" href="architecture.html">
+    <strong>Architektur</strong>
+    <span>Technischer Aufbau und Zusammenspiel der Komponenten.</span>
+  </a>
+  <a class="doc-card" href="routing.html">
+    <strong>Routing-Logik</strong>
+    <span>Routingmodelle, Kostenfunktion und Ergebnisformat.</span>
+  </a>
+  <a class="doc-card" href="weather-data.html">
+    <strong>Wetterdaten</strong>
+    <span>Bezug, Aufbereitung und Zuordnung der MeteoSwiss-Daten.</span>
+  </a>
+</div>
 
 ## Projektaufbau
 
-Die Anwendung besteht aus:
+Die Anwendung besteht aus einem browserbasierten Frontend, einem FastAPI-Backend, Routingmodellen auf Basis von OSMnx-Graphen und Wetterdaten im NetCDF-Format. Die Route wird über eine API-Anfrage berechnet und im Browser dargestellt.
 
-- einem browserbasierten Frontend zur Eingabe von Start, Ziel und Routingparametern
-- einem FastAPI-Backend als Schnittstelle zwischen Frontend, Routinglogik und Daten
-- Routingmodellen auf Basis von OSMnx-Graphen
-- Wetterdaten im NetCDF-Format zur Bewertung von Niederschlag entlang der Route
-- Startup-Skripten für Datenvorbereitung und Serverstart
+<div class="quick-links">
+  <a href="architecture.html#aufbau-der-api-verarbeitung">API-Ablauf</a>
+  <a href="routing.html#routingmodelle">Routingmodelle</a>
+  <a href="weather-data.html#aufbereitung-der-netcdf-datei">Wetterdatenpipeline</a>
+  <a href="startup.html#was-passiert-beim-start">Startprozess</a>
+</div>
 
 ## Schnellstart
 
@@ -52,8 +71,6 @@ http://127.0.0.1:8000/docs
 ```
 
 ## Repository
-
-Das Projekt wird auf GitHub verwaltet:
 
 ```text
 https://github.com/calgon854/VPRouting

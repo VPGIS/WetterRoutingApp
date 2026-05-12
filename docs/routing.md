@@ -1,3 +1,7 @@
+---
+title: Routing-Logik
+---
+
 # Routing-Logik
 
 Diese Datei beschreibt die Routingmodelle, die Kostenberechnung und die Verwendung von Wetterdaten in der Routenbewertung.
@@ -26,8 +30,8 @@ backend/utils_nc_file.py
 
 Weitere Einordnung zum gesamten Ablauf befindet sich in:
 
-- [Architektur](architecture.md)
-- [Wetterdaten](weather-data.md)
+- [Architektur](architecture.html)
+- [Wetterdaten](weather-data.html)
 
 ---
 
@@ -268,11 +272,11 @@ Damit eine Kante mit Wetterdaten bewertet werden kann, besitzt sie Verweise auf 
 
 Die Zuordnung wird beim Erstellen eines neuen Graphen berechnet und im gespeicherten Graphen abgelegt. Dadurch kann das Routing später direkt den passenden Forecast-Wert pro Kante lesen.
 
-Die detaillierte Beschreibung der Rasteraufbereitung und Zellzuordnung befindet sich in [Wetterdaten](weather-data.md#zuordnung-von-strassenkanten-zu-wetterzellen).
+Die detaillierte Beschreibung der Rasteraufbereitung und Zellzuordnung befindet sich in [Wetterdaten](weather-data.html#zuordnung-von-strassenkanten-zu-wetterzellen).
 
 ## Wetterdaten im Routing
 
-Im Routing wird die geöffnete NetCDF-Datei nur noch abgefragt. Die Aufbereitung, Aktualisierung, Auswahl der Datei und Zuordnung der Wetterzellen ist in [Wetterdaten](weather-data.md) beschrieben.
+Im Routing wird die geöffnete NetCDF-Datei nur noch abgefragt. Die Aufbereitung, Aktualisierung, Auswahl der Datei und Zuordnung der Wetterzellen ist in [Wetterdaten](weather-data.html) beschrieben.
 
 Beim einfachen Modell wird der Forecast ohne zeitliche Interpolation zur Startzeit gelesen. Beim erweiterten Modell wird der Forecast zur erwarteten Ankunftszeit interpoliert.
 

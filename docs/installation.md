@@ -1,8 +1,12 @@
+---
+title: Installation
+---
+
 # Installationsanleitung
 
 Diese Anleitung beschreibt die Installation des Projekts mit Conda. Die Conda-Umgebung heisst `vprouting` und basiert auf Python 3.12.
 
-Nach der Installation kann der Server gemäss [Startup](startup.md) gestartet werden.
+Nach der Installation kann der Server gemäss [Startup](startup.html) gestartet werden.
 
 ## Voraussetzungen
 
@@ -82,4 +86,4 @@ conda env create -f environment.yml
 
 ## Nächster Schritt
 
-Nach der Installation wird der API-Server mit dem Startup-Skript gestartet. Siehe [Startup](startup.md).
+Nach der Installation wird der API-Server mit dem Startup-Skript gestartet. Siehe [Startup](startup.html).
