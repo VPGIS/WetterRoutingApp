@@ -2304,8 +2304,16 @@ document.addEventListener("DOMContentLoaded", () => {
 
         const startValue = document.getElementById('route_start').value.trim();
         const endValue = document.getElementById('route_end').value.trim();
+        const startLat = document.getElementById('route_start').dataset.lat;
+        const startLon = document.getElementById('route_start').dataset.lon;
+        const endLat   = document.getElementById('route_end').dataset.lat;
+        const endLon   = document.getElementById('route_end').dataset.lon;
         if (!startValue || !endValue) {
             alert('Bitte Start und Ziel setzen.');
+            return;
+        }
+        if (!startLat || !startLon || !endLat || !endLon) {
+            alert('Bitte einen Ort aus der Vorschlagsliste auswaehlen, damit die Koordinaten gesetzt werden.');
             return;
         }
 
@@ -2330,8 +2338,8 @@ document.addEventListener("DOMContentLoaded", () => {
         btn.disabled = true; spinner.style.display = 'block'; text.innerText = window.t("calculating");
         try {
             const query = new URLSearchParams({
-                start_point: startValue,
-                end_point: endValue,
+                start_point: `${startLat}, ${startLon}`,
+                end_point:   `${endLat}, ${endLon}`,
                 start_time: String(parseTimeToUnix(document.getElementById('time_start').value)),
                 speed: String(parseFloat(document.getElementById('ride_spd').value) || 20),
                 routingmodel: routingModelBySlider[document.getElementById('route_type').value] || 'einfach',
