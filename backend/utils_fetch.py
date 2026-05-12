@@ -281,6 +281,45 @@ def read_grib_data(path: Path) -> dict[int, np.ndarray]:
 
 
 # ---------------------------------------------------------------------------
+# GeoServer NC helper
+# ---------------------------------------------------------------------------
+
+def write_geoserver_nc(hourly_rain: "xr.DataArray", ref_time_val: "np.datetime64", out_path: Path) -> Path:
+    """
+    Write a CF-1.6 compliant NetCDF readable by GeoServer's NetCDF plugin.
+    Uses 1-D lat/lon dimension coordinates and a proper absolute time axis.
+    Can be called from fetch_and_save() or from utils_geoserver at startup
+    to rebuild a missing _gs.nc from an existing routing .nc.
+    """
+    lead_hours = hourly_rain.coords["lead_time"].values           # float hours
+    time_vals  = ref_time_val + (lead_hours * 3.6e12).astype("timedelta64[ns]")
+
+    hr_cf = xr.DataArray(
+        hourly_rain.values,
+        dims=["time", "lat", "lon"],
+        coords={
+            "time": time_vals,
+            "lat":  TARGET_LATS.astype(np.float32),
+            "lon":  TARGET_LONS.astype(np.float32),
+        },
+        name="hourly_rain",
+        attrs=hourly_rain.attrs,
+    )
+    hr_cf["time"].attrs = {"standard_name": "time", "axis": "T"}
+    hr_cf["lat"].attrs  = {"units": "degrees_north", "axis": "Y", "standard_name": "latitude"}
+    hr_cf["lon"].attrs  = {"units": "degrees_east",  "axis": "X", "standard_name": "longitude"}
+    gs_encoding = {
+        "time":        {"units": "hours since 1970-01-01", "dtype": "float64", "calendar": "proleptic_gregorian"},
+        "hourly_rain": {"dtype": "float32"},
+    }
+    xr.Dataset({"hourly_rain": hr_cf}, attrs={"Conventions": "CF-1.6"}).to_netcdf(
+        out_path, encoding=gs_encoding
+    )
+    print(f"[fetch] GeoServer copy saved -> {out_path.name}")
+    return out_path
+
+
+# ---------------------------------------------------------------------------
 # Main fetch
 # ---------------------------------------------------------------------------
 
@@ -358,40 +397,8 @@ def fetch_and_save(output_dir: Path = OUTPUT_DIR) -> Path:
     ds.close()
     print(f"[fetch] Saved -> {output_file}")
 
-    # 6b. Write a GeoServer-compatible copy: hourly_rain with 1-D CF lat/lon/time dims.
-    #     GeoServer's NetCDF plugin requires:
-    #       - 1-D dimension coordinates (not 2-D auxiliary)
-    #       - a proper CF time axis (datetime64 → xarray writes "hours since ...")
-    #     The routing system keeps using the main file above; this is GeoServer-only.
-    gs_file = output_dir / f"{ts}_gs.nc"
-    ref_time_val = da_all.coords["ref_time"].values[0]          # numpy datetime64[ns]
-    lead_hours   = hourly_rain.coords["lead_time"].values        # float array, e.g. [1,2,...33]
-    time_vals    = ref_time_val + (lead_hours * 3.6e12).astype("timedelta64[ns]")  # absolute UTC
-
-    hr_cf = xr.DataArray(
-        hourly_rain.values,
-        dims=["time", "lat", "lon"],
-        coords={
-            "time": time_vals,
-            "lat":  TARGET_LATS.astype(np.float32),
-            "lon":  TARGET_LONS.astype(np.float32),
-        },
-        name="hourly_rain",
-        attrs=hourly_rain.attrs,
-    )
-    hr_cf["time"].attrs = {"standard_name": "time", "axis": "T"}
-    hr_cf["lat"].attrs  = {"units": "degrees_north", "axis": "Y", "standard_name": "latitude"}
-    hr_cf["lon"].attrs  = {"units": "degrees_east",  "axis": "X", "standard_name": "longitude"}
-    # GeoServer's Java NetCDF lib can't handle xarray's default int64-nanoseconds encoding.
-    # Force a standard CF time encoding so GeoServer can open the file.
-    gs_encoding = {
-        "time":        {"units": "hours since 1970-01-01", "dtype": "float64", "calendar": "proleptic_gregorian"},
-        "hourly_rain": {"dtype": "float32"},
-    }
-    xr.Dataset({"hourly_rain": hr_cf}, attrs={"Conventions": "CF-1.6"}).to_netcdf(
-        gs_file, encoding=gs_encoding
-    )
-    print(f"[fetch] GeoServer copy saved -> {gs_file.name}")
+    # 6b. Write GeoServer-compatible copy (1-D CF lat/lon/time dims)
+    gs_file = write_geoserver_nc(hourly_rain, da_all.coords["ref_time"].values[0], output_dir / f"{ts}_gs.nc")
 
     # 7. Publish fresh data to GeoServer
     try:

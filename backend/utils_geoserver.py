@@ -139,19 +139,43 @@ def check_geoserver_on_startup():
     """
     Called by uvicorn lifespan.
     1. Ensures GeoServer is running (starts it if needed).
-    2. If a _gs.nc file already exists, publishes it immediately.
+    2. If a _gs.nc already exists, publishes it.
+    3. If no _gs.nc but a routing .nc exists, rebuilds the _gs.nc from it and publishes.
+    4. If nothing exists yet, skips — will publish after first fetch cycle.
     """
     if not ensure_geoserver_running():
         return
 
     gs_files = sorted(NC_DIR.glob("*_gs.nc"), key=lambda p: p.stat().st_mtime)
-    if not gs_files:
-        print("[geoserver] No _gs.nc found — will publish after first fetch")
+    if gs_files:
+        newest = gs_files[-1]
+        print(f"[geoserver] Found existing {newest.name} — publishing to GeoServer")
+        try:
+            publish_nc(newest)
+        except Exception as e:
+            print(f"[geoserver] Startup publish failed: {e}")
         return
 
-    newest = gs_files[-1]
-    print(f"[geoserver] Found existing {newest.name} — publishing to GeoServer")
+    # No _gs.nc — try to rebuild from the newest routing .nc
+    routing_files = sorted(
+        [p for p in NC_DIR.glob("*.nc") if not p.name.endswith("_gs.nc")],
+        key=lambda p: p.stat().st_mtime,
+    )
+    if not routing_files:
+        print("[geoserver] No .nc files found — will publish after first fetch")
+        return
+
+    source = routing_files[-1]
+    print(f"[geoserver] No _gs.nc found — rebuilding from {source.name}")
     try:
-        publish_nc(newest)
+        import xarray as xr
+        from utils_fetch import write_geoserver_nc
+        ds = xr.open_dataset(source)
+        hourly_rain = ds["hourly_rain"]
+        ref_time_val = ds["ref_time"].values[0]
+        gs_path = source.with_name(source.stem + "_gs.nc")
+        write_geoserver_nc(hourly_rain, ref_time_val, gs_path)
+        ds.close()
+        publish_nc(gs_path)
     except Exception as e:
-        print(f"[geoserver] Startup publish failed: {e}")
+        print(f"[geoserver] Rebuild from routing .nc failed: {e}")
