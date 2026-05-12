@@ -4,6 +4,14 @@ title: Wetter Routing App
 
 # Dokumentation
 
+<p align="center">
+  <img src="assets/logo.jpg" alt="Logo der Wetter Routing App" width="180">
+</p>
+
+<p align="center">
+  <strong>Tobias Schulthess und Ignaz Kuczynski</strong>
+</p>
+
 Die **Wetter Routing App** ist ein Prototyp für wetterabhängiges Routing. Sie kombiniert OpenStreetMap-Daten mit Niederschlagsprognosen von MeteoSwiss, damit Routen nicht nur nach Distanz oder Reisezeit, sondern auch nach erwarteten Wetterbedingungen bewertet werden können.
 
 <div class="info-band">
