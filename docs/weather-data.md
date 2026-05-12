@@ -1,3 +1,7 @@
+---
+title: Wetterdaten
+---
+
 # Wetterdaten
 
 Diese Datei beschreibt die Verwendung, Erzeugung und Zuordnung der Wetterdaten im Projekt **Wetter Routing App**.
@@ -8,7 +12,7 @@ Die Wetter Routing App verwendet Wetterdaten im NetCDF-Format, um Routen wettera
 
 Die Wetterdaten ermöglichen es, betroffene Kanten im Routinggraphen zu erkennen und abhängig von der Niederschlagsmenge höher zu gewichten. Dadurch können Routen berechnet werden, die wetterbezogene Einflüsse berücksichtigen.
 
-Der Zusammenhang mit der API-Verarbeitung ist in [Architektur](architecture.md#aufbau-der-api-verarbeitung) beschrieben. Die Verwendung der Wetterwerte in der Kostenfunktion steht in [Routing-Logik](routing.md#kantenbewertung).
+Der Zusammenhang mit der API-Verarbeitung ist in [Architektur](architecture.html#aufbau-der-api-verarbeitung) beschrieben. Die Verwendung der Wetterwerte in der Kostenfunktion steht in [Routing-Logik](routing.html#kantenbewertung).
 
 ## NetCDF-Ablagestruktur
 
@@ -36,7 +40,7 @@ Für die Zuordnung von OSM-Kanten zum Wetterraster wird bevorzugt folgende Datei
 NC_for_Cellid.nc
 ```
 
-Diese Datei enthält eine reduzierte Rastergeometrie und wird beim Erstellen neuer Graphen verwendet. Falls sie beim Start noch nicht existiert, wird sie gemäss [Startup](startup.md#schritt-2-nc_for_cellid-vorbereiten) erzeugt.
+Diese Datei enthält eine reduzierte Rastergeometrie und wird beim Erstellen neuer Graphen verwendet. Falls sie beim Start noch nicht existiert, wird sie gemäss [Startup](startup.html#schritt-2-nc_for_cellid-vorbereiten) erzeugt.
 
 ## Aufbereitung der NetCDF-Datei
 
@@ -126,7 +130,7 @@ Damit orientiert sich die Aktualisierung am dreistündigen Aktualisierungsrhythm
 
 ### Abhängigkeiten
 
-Für das Fetching und die Aufbereitung werden zusätzliche MeteoSwiss- und Wetterdaten-Bibliotheken benötigt. Sie werden über die Projektumgebung installiert, siehe [Installation](installation.md).
+Für das Fetching und die Aufbereitung werden zusätzliche MeteoSwiss- und Wetterdaten-Bibliotheken benötigt. Sie werden über die Projektumgebung installiert, siehe [Installation](installation.html).
 
 Wichtige Pakete sind unter anderem:
 
@@ -189,4 +193,4 @@ Diese Attribute bleiben im gespeicherten Graphen erhalten und können bei späte
 
 Die Zuordnung muss nicht bei jeder Routinganfrage neu berechnet werden. Das verbessert die Laufzeit, reduziert wiederholte Rasterabfragen und macht gespeicherte Graphen wiederverwendbar.
 
-Weitere Informationen zur Verwendung dieser Zellattribute in der Routenberechnung befinden sich in [Routing-Logik](routing.md#wetterzellen-auf-kanten).
+Weitere Informationen zur Verwendung dieser Zellattribute in der Routenberechnung befinden sich in [Routing-Logik](routing.html#wetterzellen-auf-kanten).

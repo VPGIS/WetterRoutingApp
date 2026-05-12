@@ -1,3 +1,7 @@
+---
+title: Server starten
+---
+
 # Server starten
 
 Der API-Server kann über das Startup-Skript gestartet werden. Das Skript führt zuerst die nötige Vorbereitung aus und startet danach das FastAPI-Backend.
@@ -6,7 +10,7 @@ Der API-Server kann über das Startup-Skript gestartet werden. Das Skript führt
 
 ## Voraussetzungen
 
-Die Conda-Umgebung muss aktiviert sein. Siehe dazu [Installation](installation.md).
+Die Conda-Umgebung muss aktiviert sein. Siehe dazu [Installation](installation.html).
 
 ```bash
 conda activate vprouting
@@ -65,7 +69,7 @@ Ziel dieses Schritts:
 - neue NetCDF-Dateien in `backend/data/NC/` speichern
 - sicherstellen, dass die API beim Routing eine passende Wetterdatei findet
 
-Weitere Details zur Wetterdatenaufbereitung befinden sich in [Wetterdaten](weather-data.md).
+Weitere Details zur Wetterdatenaufbereitung befinden sich in [Wetterdaten](weather-data.html).
 
 ---
 
@@ -87,7 +91,7 @@ Das zuständige Skript ist:
 scripts/startup/reduce_nc_to_grid_geometry.py
 ```
 
-Weitere Details zur Zellzuordnung stehen in [Wetterdaten: Zuordnung von Strassenkanten zu Wetterzellen](weather-data.md#zuordnung-von-strassenkanten-zu-wetterzellen).
+Weitere Details zur Zellzuordnung stehen in [Wetterdaten: Zuordnung von Strassenkanten zu Wetterzellen](weather-data.html#zuordnung-von-strassenkanten-zu-wetterzellen).
 
 ---
 

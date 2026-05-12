@@ -1,6 +1,10 @@
+---
+title: About
+---
+
 # About
 
-Diese Seite beschreibt den Projektkontext, die Fragestellung, das Team und die verwendeten Datenquellen. Technische Details sind in [Architektur](architecture.md), [Routing-Logik](routing.md) und [Wetterdaten](weather-data.md) ausgelagert.
+Diese Seite beschreibt den Projektkontext, die Fragestellung, das Team und die verwendeten Datenquellen. Technische Details sind in [Architektur](architecture.html), [Routing-Logik](routing.html) und [Wetterdaten](weather-data.html) ausgelagert.
 
 ## Projektübersicht
 
@@ -67,8 +71,8 @@ ch.meteoschweiz.ogd-forecasting-icon-ch1
 
 Weitere Informationen:
 
-- [Wetterdaten](weather-data.md)
-- [Routing-Logik](routing.md)
+- [Wetterdaten](weather-data.html)
+- [Routing-Logik](routing.html)
 - [MeteoSwiss Open Data Dokumentation](https://opendatadocs.meteoswiss.ch/)
 - [MeteoSwiss STAC Collection ICON-CH1-EPS](https://data.geo.admin.ch/api/stac/v1/collections/ch.meteoschweiz.ogd-forecasting-icon-ch1)
 
@@ -84,10 +88,10 @@ Für Routinganfragen stellt das Projekt eine FastAPI-Schnittstelle bereit. Ein l
 
 Weitere Details:
 
-- [Architektur](architecture.md)
-- [Startup](startup.md)
-- [Routing-Logik](routing.md)
-- [Wetterdaten](weather-data.md)
+- [Architektur](architecture.html)
+- [Startup](startup.html)
+- [Routing-Logik](routing.html)
+- [Wetterdaten](weather-data.html)
 
 ## Reflektion
 
@@ -106,4 +110,3 @@ Mögliche Punkte für die spätere Reflektion:
 ## Lizenz
 
 Das Projekt ist als Open-Source-Projekt vorgesehen.
-
