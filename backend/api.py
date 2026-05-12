@@ -9,9 +9,9 @@
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - 
 
 # API Libaries
-from fastapi import FastAPI, HTTPException, Query
+from fastapi import FastAPI, HTTPException, Query, Request
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import FileResponse
+from fastapi.responses import FileResponse, Response
 from dotenv import load_dotenv
 from contextlib import asynccontextmanager
 
@@ -19,6 +19,7 @@ from typing import Literal
 
 # Sonstige Libaries
 import subprocess
+import requests as http_requests
 import numpy as np
 import osmnx as ox
 import xarray as xr
@@ -54,6 +55,7 @@ except ModuleNotFoundError:
 # ---------------------------------------------------------------------------
 
 BACKEND_DIR = Path(__file__).resolve().parent
+NC_DIR = BACKEND_DIR / "data" / "NC"
 FETCH_SCRIPT = BACKEND_DIR / "utils_fetch.py"
 
 @asynccontextmanager
@@ -122,6 +124,34 @@ app.add_middleware(
 @app.get("/", include_in_schema=False)
 def serve_frontend():
     return FileResponse(FRONTEND_DIR / "vp_routing.html")
+
+
+@app.get("/rain-times", include_in_schema=False)
+def rain_times():
+    """Return ISO timestamp strings from the latest GeoServer NetCDF."""
+    gs_files = sorted(NC_DIR.glob("*_rainWMS_gs.nc"), key=lambda p: p.stat().st_mtime)
+    if not gs_files:
+        return []
+    ds = xr.open_dataset(gs_files[-1])
+    times = [str(t)[:19] + ".000Z" for t in ds["time"].values]
+    ds.close()
+    return times
+
+
+@app.get("/wms", include_in_schema=False)
+def wms_proxy(request: Request):
+    """Proxy WMS tile requests to GeoServer to avoid browser CORS restrictions."""
+    params = dict(request.query_params)
+    r = http_requests.get(
+        "http://localhost:8080/geoserver/vprouting/wms",
+        params=params,
+        timeout=15,
+    )
+    return Response(
+        content=r.content,
+        media_type=r.headers.get("content-type", "image/png"),
+    )
+
 
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - 
 # API Endpoints 
