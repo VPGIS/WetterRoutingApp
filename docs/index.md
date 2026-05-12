@@ -4,14 +4,6 @@ title: Wetter Routing App
 
 # Dokumentation
 
-<p align="center">
-  <img src="assets/logo.jpg" alt="Logo der Wetter Routing App" width="180">
-</p>
-
-<p align="center">
-  <strong>Tobias Schulthess und Ignaz Kuczynski</strong>
-</p>
-
 Die **Wetter Routing App** ist ein Prototyp für wetterabhängiges Routing. Sie kombiniert OpenStreetMap-Daten mit Niederschlagsprognosen von MeteoSwiss, damit Routen nicht nur nach Distanz oder Reisezeit, sondern auch nach erwarteten Wetterbedingungen bewertet werden können.
 
 <div class="info-band">
@@ -58,7 +50,6 @@ Die Anwendung besteht aus einem browserbasierten Frontend, einem FastAPI-Backend
   <a href="startup.html#was-passiert-beim-start">Startprozess</a>
 </div>
 
-
 ## Schnellstart
 
 Nach dem Klonen des Repositorys wird zuerst die Conda-Umgebung erstellt und aktiviert. Danach kann der API-Server mit dem Startup-Skript gestartet werden.
@@ -80,6 +71,7 @@ Die automatisch erzeugte Swagger-Dokumentation befindet sich unter:
 Detaillierte Hinweise zur Einrichtung stehen in [Installation](installation.html), der Startprozess ist in [Startup](startup.html) beschrieben.
 
 ## Repository
+
 Das Repository ist unter folgendem Link aufrufbar:
 [https://github.com/VPGIS/VPRouting](https://github.com/VPGIS/VPRouting)
 
