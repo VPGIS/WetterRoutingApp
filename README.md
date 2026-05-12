@@ -72,3 +72,9 @@ Die GitHub Page des Projekts ist hier erreichbar:
 ```text
 https://calgon854.github.io/VPRouting/
 ```
+
+Die Startseite der GitHub Page befindet sich in:
+
+```text
+docs/index.md
+```
