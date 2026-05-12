@@ -1,0 +1,17 @@
+name: vprouting
+channels:
+  - conda-forge
+dependencies:
+  - python=3.12
+  - pip
+  - gdal
+  - proj
+  - geos
+  - libspatialindex
+  - numpy
+  - pandas
+  - scipy
+  - xarray
+  - netcdf4
+  - pip:
+      - -r requirements.txt

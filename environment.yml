@@ -1,17 +1,43 @@
 name: vprouting
+# conda-forge provides aarch64 (ARM64) builds for all binary packages below.
+# Install: conda env create -f environment.yml
+# Activate: conda activate vprouting
+# Run:      python scripts/startup/startup.py
+
 channels:
   - conda-forge
+
 dependencies:
   - python=3.12
   - pip
-  - gdal
-  - proj
-  - geos
-  - libspatialindex
+
+  # --- Numerics ---
   - numpy
-  - pandas
-  - scipy
+  - scipy          # KD-tree regridding in utils_fetch.py
+
+  # --- GRIB2 decoding (ARM64 C library + Python bindings via conda-forge) ---
+  - eccodes          # libeccodes C library + CLI tools
+  - python-eccodes   # Python bindings (separate package on conda-forge)
+
+  # --- NetCDF / xarray ---
   - xarray
   - netcdf4
+
+  # --- Routing & GIS ---
+  - osmnx          # OpenStreetMap graph download + routing
+  - networkx
+  - geopandas
+  - shapely
+
+  # --- HTTP ---
+  - requests
+
+  # --- Web API ---
+  - fastapi
+  - uvicorn
+  - python-dotenv
+
+  # --- pip-only (pure Python, no binary issues) ---
   - pip:
-      - -r requirements.txt
+    - eccodes-cosmo-resources-python  # ICON/COSMO GRIB2 definitions for eccodes
+    - folium                          # map rendering in frontend
