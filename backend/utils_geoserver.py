@@ -1,4 +1,4 @@
-?"""
+"""
 utils_geoserver.py
 
 Publishes the latest hourly_rain NetCDF to GeoServer as a WMS layer.

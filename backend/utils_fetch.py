@@ -1,4 +1,4 @@
-?"""
+"""
 utils_fetch.py
 
 Fetches ICON-CH1-EPS TOT_PREC from MeteoSwiss OGD using ONLY:
