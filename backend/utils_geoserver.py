@@ -108,7 +108,7 @@ def publish_nc(nc_path: Path):
         requests.delete(f"{store_url}?recurse=true", auth=AUTH)
         print(f"[geoserver] Old store '{STORE}' removed")
 
-    # 4. Create store with configure=all - GeoServer auto-discovers the coverage
+    # 4. Create store (no configure=all - NetCDF stores never auto-create coverages)
     store_body = {"coverageStore": {
         "name":      STORE,
         "type":      "NetCDF",
@@ -119,62 +119,57 @@ def publish_nc(nc_path: Path):
     r = requests.post(
         f"{GS_URL}/rest/workspaces/{WS}/coveragestores",
         auth=AUTH,
-        params={"configure": "all"},
         json=store_body,
     )
     if r.status_code not in (200, 201):
         raise RuntimeError(f"[geoserver] POST store -> {r.status_code}: {r.text}")
     print(f"[geoserver] Store '{STORE}' created -> {nc_path.name}")
 
-    # 5. Discover the actual coverage name GeoServer assigned
-    cov_r = requests.get(
+    # 5. Ask GeoServer which variable names it can see in the file
+    avail_r = requests.get(
         f"{GS_URL}/rest/workspaces/{WS}/coveragestores/{STORE}/coverages",
         auth=AUTH,
         headers={"Accept": "application/json"},
+        params={"list": "available"},
     )
-    cov_name = LAYER  # fallback to expected name
-    print(f"[geoserver] Coverage list HTTP {cov_r.status_code}: {cov_r.text[:300]}")
+    print(f"[geoserver] Available coverages HTTP {avail_r.status_code}: {avail_r.text[:300]}")
+    avail_names = []
     try:
-        if cov_r.status_code == 200:
-            body = cov_r.json()
-            cov_data = body.get("coverages", {}).get("coverage", [])
-            print(f"[geoserver] cov_data type={type(cov_data).__name__} value={cov_data!r}")
-            if isinstance(cov_data, list) and cov_data:
-                first = cov_data[0]
-                cov_name = first if isinstance(first, str) else first.get("name", LAYER)
-            elif isinstance(cov_data, dict):
-                cov_name = cov_data.get("name", LAYER)
-            elif isinstance(cov_data, str) and cov_data:
-                cov_name = cov_data
+        if avail_r.status_code == 200:
+            names = avail_r.json().get("list", {}).get("string", [])
+            if isinstance(names, str):
+                avail_names = [names]
+            elif isinstance(names, list):
+                avail_names = names
     except Exception as e:
-        import traceback
-        print(f"[geoserver] Coverage name parse failed ({e}), falling back to '{LAYER}'")
-        traceback.print_exc()
-    print(f"[geoserver] Using coverage name: '{cov_name}'")
+        print(f"[geoserver] Available parse error: {e}")
 
-    # If GeoServer gave it a different name, rename it to our expected LAYER name
-    if cov_name != LAYER:
-        requests.put(
-            f"{GS_URL}/rest/workspaces/{WS}/coveragestores/{STORE}/coverages/{cov_name}",
-            auth=AUTH,
-            headers={"Content-Type": "application/json"},
-            json={"coverage": {"name": LAYER, "nativeName": cov_name}},
-        )
-        print(f"[geoserver] Coverage renamed '{cov_name}' -> '{LAYER}'")
-        cov_name = LAYER
+    # Prefer our expected name, fall back to first available, then hardcoded default
+    cov_name = LAYER if LAYER in avail_names else (avail_names[0] if avail_names else LAYER)
+    print(f"[geoserver] Publishing coverage: '{cov_name}' (available: {avail_names})")
+
+    # 6. Publish with minimal body - GeoServer auto-detects all metadata from the file
+    pub_r = requests.post(
+        f"{GS_URL}/rest/workspaces/{WS}/coveragestores/{STORE}/coverages",
+        auth=AUTH,
+        json={"coverage": {"name": cov_name}},
+    )
+    print(f"[geoserver] Coverage POST HTTP {pub_r.status_code}: {pub_r.text[:200]}")
+    if pub_r.status_code not in (200, 201):
+        print(f"[geoserver] WARNING: coverage publish failed")
 
     layer_url = f"{GS_URL}/rest/workspaces/{WS}/coveragestores/{STORE}/coverages/{cov_name}"
 
-    # 6. Set rain_blue as the default style (idempotent)
-    requests.put(
+    # 7. Set rain_blue as the default style (idempotent)
+    r = requests.put(
         f"{GS_URL}/rest/layers/{WS}:{cov_name}",
         auth=AUTH,
         json={"layer": {"defaultStyle": {"name": "rain_blue"}}},
     )
-    print("[geoserver] Default style -> 'rain_blue'")
+    print(f"[geoserver] Default style -> 'rain_blue' (HTTP {r.status_code})")
 
-    # 7. Enable TIME dimension so GeoServer honours the TIME= WMS parameter
-    requests.put(
+    # 8. Enable TIME dimension so GeoServer honours the TIME= WMS parameter
+    r = requests.put(
         layer_url,
         auth=AUTH,
         headers={"Content-Type": "application/json"},
@@ -192,7 +187,7 @@ def publish_nc(nc_path: Path):
             },
         }},
     )
-    print("[geoserver] TIME dimension enabled")
+    print(f"[geoserver] TIME dimension enabled (HTTP {r.status_code})")
     print(f"[geoserver] WMS ready -> {GS_URL}/{WS}/wms?LAYERS={WS}:{cov_name}")
 
 
