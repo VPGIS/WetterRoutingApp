@@ -45,6 +45,7 @@ def publish_nc(nc_path: Path):
         "type": "NetCDF",
         "enabled": True,
         "url": f"file:{nc_path.resolve()}",
+        "workspace": {"name": WS},
     }}
     r = requests.post(
         f"{GS_URL}/rest/workspaces/{WS}/coveragestores",
