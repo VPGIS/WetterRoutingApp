@@ -1,5 +1,6 @@
 title: Wetter Routing App
 description: Dokumentation zur Wetter Routing App
+baseurl: "/VPRouting"
 theme: jekyll-theme-cayman
 show_downloads: false
 
