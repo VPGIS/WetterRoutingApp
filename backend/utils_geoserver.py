@@ -108,24 +108,22 @@ def publish_nc(nc_path: Path):
         requests.delete(f"{store_url}?recurse=true", auth=AUTH)
         print(f"[geoserver] Old store '{STORE}' removed")
 
-    # 4. Create store (no configure=all - NetCDF stores never auto-create coverages)
-    store_body = {"coverageStore": {
-        "name":      STORE,
-        "type":      "NetCDF",
-        "enabled":   True,
-        "url":       f"file:{nc_path.resolve()}",
-        "workspace": {"name": WS},
-    }}
-    r = requests.post(
-        f"{GS_URL}/rest/workspaces/{WS}/coveragestores",
+    # 4. Register external NetCDF via REST file API
+    #    external.netcdf properly initialises the NetCDF reader so that
+    #    ?list=available works and variable names are discoverable.
+    r = requests.put(
+        f"{GS_URL}/rest/workspaces/{WS}/coveragestores/{STORE}/external.netcdf",
         auth=AUTH,
-        json=store_body,
+        headers={"Content-Type": "text/plain"},
+        params={"configure": "none"},
+        data=str(nc_path.resolve()),
     )
+    print(f"[geoserver] external.netcdf PUT HTTP {r.status_code}: {r.text[:200]}")
     if r.status_code not in (200, 201):
-        raise RuntimeError(f"[geoserver] POST store -> {r.status_code}: {r.text}")
-    print(f"[geoserver] Store '{STORE}' created -> {nc_path.name}")
+        raise RuntimeError(f"[geoserver] Store registration failed {r.status_code}: {r.text}")
+    print(f"[geoserver] Store '{STORE}' registered -> {nc_path.name}")
 
-    # 5. Ask GeoServer which variable names it can see in the file
+    # 5. Discover the variable names GeoServer sees in the file
     avail_r = requests.get(
         f"{GS_URL}/rest/workspaces/{WS}/coveragestores/{STORE}/coverages",
         auth=AUTH,
@@ -144,17 +142,23 @@ def publish_nc(nc_path: Path):
     except Exception as e:
         print(f"[geoserver] Available parse error: {e}")
 
-    # Prefer our expected name, fall back to first available, then hardcoded default
+    # Prefer our expected name; fall back to first seen; last resort hardcode
     cov_name = LAYER if LAYER in avail_names else (avail_names[0] if avail_names else LAYER)
     print(f"[geoserver] Publishing coverage: '{cov_name}' (available: {avail_names})")
 
-    # 6. Publish with minimal body - GeoServer auto-detects all metadata from the file
+    # 6. Publish coverage with explicit nativeName (required by GeoServer NetCDF plugin)
     pub_r = requests.post(
         f"{GS_URL}/rest/workspaces/{WS}/coveragestores/{STORE}/coverages",
         auth=AUTH,
-        json={"coverage": {"name": cov_name}},
+        json={"coverage": {
+            "name":       cov_name,
+            "nativeName": cov_name,
+            "title":      "Hourly Rain Forecast",
+            "srs":        "EPSG:4326",
+            "enabled":    True,
+        }},
     )
-    print(f"[geoserver] Coverage POST HTTP {pub_r.status_code}: {pub_r.text[:200]}")
+    print(f"[geoserver] Coverage POST HTTP {pub_r.status_code}: {pub_r.text[:300]}")
     if pub_r.status_code not in (200, 201):
         print(f"[geoserver] WARNING: coverage publish failed")
 
