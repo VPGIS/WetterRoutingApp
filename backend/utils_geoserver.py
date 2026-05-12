@@ -40,15 +40,23 @@ def publish_nc(nc_path: Path):
     ensure_workspace()
 
     # Create/update the coverage store pointing at the file
-    _put(
-        f"{GS_URL}/rest/workspaces/{WS}/coveragestores/{STORE}",
-        json={"coverageStore": {
-            "name": STORE,
-            "type": "NetCDF",
-            "enabled": True,
-            "url": f"file:{nc_path.resolve()}",
-        }},
+    store_body = {"coverageStore": {
+        "name": STORE,
+        "type": "NetCDF",
+        "enabled": True,
+        "url": f"file:{nc_path.resolve()}",
+    }}
+    r = requests.post(
+        f"{GS_URL}/rest/workspaces/{WS}/coveragestores",
+        json=store_body, auth=AUTH
     )
+    if r.status_code == 409:  # already exists — update it
+        _put(
+            f"{GS_URL}/rest/workspaces/{WS}/coveragestores/{STORE}",
+            json=store_body,
+        )
+    elif r.status_code not in (200, 201):
+        raise RuntimeError(f"Store create failed {r.status_code}: {r.text}")
     print(f"[geoserver] Store '{STORE}' → {nc_path.name}")
 
     # Publish the hourly_rain variable as a layer (idempotent: delete+recreate)
