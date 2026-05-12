@@ -249,6 +249,11 @@ def get_route(
     print("[route] request received")
     print(f"[route] start_point={start_point!r}, end_point={end_point!r}, start_time={start_time}, speed={speed}, routingmodel={routingmodel}, sensibility={sensibility}")
 
+    # ——————————————————————————————————————————————————————————————————————————
+    # Speed von km/h in m/s
+    # ——————————————————————————————————————————————————————————————————————————
+    speed = speed / 3.6
+
     if speed <= 0:
         raise HTTPException(status_code=400, detail="speed must be > 0")
 
@@ -258,10 +263,7 @@ def get_route(
     start_point = _parse_point(start_point)
     end_point = _parse_point(end_point)
     
-    # ——————————————————————————————————————————————————————————————————————————
-    # Speed von km/h in m/s
-    # ——————————————————————————————————————————————————————————————————————————
-    speed = speed / 3.6
+    
 
     # ——————————————————————————————————————————————————————————————————————————
     # Richtiges NC-File laden
