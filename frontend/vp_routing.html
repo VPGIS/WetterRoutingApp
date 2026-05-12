@@ -585,7 +585,8 @@
             "&LAYERS=vprouting%3Ahourly_rain&STYLES=rain_blue" +
             "&SRS=EPSG%3A4326&WIDTH=858&HEIGHT=590" +
             "&BBOX=-0.817%2C41.183%2C18.183%2C51.183" +
-            "&TIME=" + encodeURIComponent(time)
+            "&TIME=" +
+            encodeURIComponent(time)
           );
         }
 
@@ -605,8 +606,21 @@
               return;
             }
             TIMES = data;
-            const wkdays = ["Sun","Mon","Tue","Wed","Thu","Fri","Sat"];
-            const mons = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
+            const wkdays = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+            const mons = [
+              "Jan",
+              "Feb",
+              "Mar",
+              "Apr",
+              "May",
+              "Jun",
+              "Jul",
+              "Aug",
+              "Sep",
+              "Oct",
+              "Nov",
+              "Dec",
+            ];
             LABELS = data.map((iso, i) => {
               const d = new Date(iso);
               const lead = String(i + 1).padStart(2, "0");

@@ -25,6 +25,8 @@ GS_STARTUP       = Path("/home/calgon/geoserver/bin/startup.sh")
 GS_STARTUP_WAIT  = 60   # max seconds to wait for GeoServer to come up
 
 # SLD for rain_blue style (no ChannelSelection - works reliably with NetCDF)
+# High-contrast debug palette: any value > 0.01 shows solid red/orange/yellow.
+# Once rendering is confirmed, swap back to the subtle blue ramp.
 RAIN_BLUE_SLD = """\
 <?xml version="1.0" encoding="UTF-8"?>
 <StyledLayerDescriptor version="1.0.0"
@@ -32,14 +34,15 @@ RAIN_BLUE_SLD = """\
   <NamedLayer><Name>rain_blue</Name>
   <UserStyle><FeatureTypeStyle><Rule>
   <RasterSymbolizer>
+    <Opacity>1.0</Opacity>
     <ColorMap type="ramp">
-      <ColorMapEntry color="#f7fafd" quantity="0.0"  opacity="0"/>
-      <ColorMapEntry color="#f7fafd" quantity="0.01" opacity="0.82"/>
-      <ColorMapEntry color="#c9dff2" quantity="0.5"  opacity="0.82"/>
-      <ColorMapEntry color="#84b9e0" quantity="1.5"  opacity="0.82"/>
-      <ColorMapEntry color="#3d87c1" quantity="3.0"  opacity="0.82"/>
-      <ColorMapEntry color="#1d5f9a" quantity="6.0"  opacity="0.82"/>
-      <ColorMapEntry color="#0d3a6e" quantity="12.0" opacity="0.82"/>
+      <ColorMapEntry color="#ffffff" quantity="0.0"  opacity="0"/>
+      <ColorMapEntry color="#ff0000" quantity="0.01" opacity="1"/>
+      <ColorMapEntry color="#ff6600" quantity="0.5"  opacity="1"/>
+      <ColorMapEntry color="#ffcc00" quantity="1.5"  opacity="1"/>
+      <ColorMapEntry color="#00cc00" quantity="3.0"  opacity="1"/>
+      <ColorMapEntry color="#0000ff" quantity="6.0"  opacity="1"/>
+      <ColorMapEntry color="#cc00cc" quantity="12.0" opacity="1"/>
     </ColorMap>
   </RasterSymbolizer>
   </Rule></FeatureTypeStyle></UserStyle>
@@ -139,11 +142,18 @@ def publish_nc(nc_path: Path):
         try:
             if avail_r.status_code == 200:
                 body = avail_r.json()
-                # Response may be {"list":{"string":...}} or {"coverages":{"coverage":[...]}}
-                entries = (
-                    body.get("list", {}).get("string")
-                    or body.get("coverages", {}).get("coverage")
-                )
+                # Response shapes seen in the wild:
+                #   {"list":{"string":"hourly_rain"}}
+                #   {"coverages":{"coverage":[{"name":"hourly_rain",...}]}}
+                #   {"coverages":""}  <- empty store, treat as no results
+                cov_section = body.get("coverages", {})
+                if isinstance(cov_section, dict):
+                    entries = (
+                        body.get("list", {}).get("string")
+                        or cov_section.get("coverage")
+                    )
+                else:
+                    entries = None  # empty string or unexpected type
                 if isinstance(entries, str):
                     avail_names = [entries]
                 elif isinstance(entries, list):
