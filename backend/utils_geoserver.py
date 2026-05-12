@@ -58,7 +58,7 @@ def publish_nc(nc_path: Path):
         )
     elif r.status_code not in (200, 201):
         raise RuntimeError(f"Store create failed {r.status_code}: {r.text}")
-    print(f"[geoserver] Store '{STORE}' → {nc_path.name}")
+    print(f"[geoserver] Store '{STORE}' -> {nc_path.name}")
 
     # Publish the hourly_rain variable as a layer (idempotent: delete+recreate)
     del_url = f"{GS_URL}/rest/workspaces/{WS}/coveragestores/{STORE}/coverages/{LAYER}"
