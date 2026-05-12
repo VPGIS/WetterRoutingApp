@@ -137,7 +137,21 @@ def ensure_geoserver_running() -> bool:
 
 def check_geoserver_on_startup():
     """
-    Called by uvicorn lifespan. Ensures GeoServer is running (starts it if needed).
-    NC file publish is NOT done here — it happens after each fetch cycle in utils_fetch.py.
+    Called by uvicorn lifespan.
+    1. Ensures GeoServer is running (starts it if needed).
+    2. If a _gs.nc file already exists, publishes it immediately.
     """
-    ensure_geoserver_running()
+    if not ensure_geoserver_running():
+        return
+
+    gs_files = sorted(NC_DIR.glob("*_gs.nc"), key=lambda p: p.stat().st_mtime)
+    if not gs_files:
+        print("[geoserver] No _gs.nc found — will publish after first fetch")
+        return
+
+    newest = gs_files[-1]
+    print(f"[geoserver] Found existing {newest.name} — publishing to GeoServer")
+    try:
+        publish_nc(newest)
+    except Exception as e:
+        print(f"[geoserver] Startup publish failed: {e}")

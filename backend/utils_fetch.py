@@ -382,7 +382,15 @@ def fetch_and_save(output_dir: Path = OUTPUT_DIR) -> Path:
     hr_cf["time"].attrs = {"standard_name": "time", "axis": "T"}
     hr_cf["lat"].attrs  = {"units": "degrees_north", "axis": "Y", "standard_name": "latitude"}
     hr_cf["lon"].attrs  = {"units": "degrees_east",  "axis": "X", "standard_name": "longitude"}
-    xr.Dataset({"hourly_rain": hr_cf}).to_netcdf(gs_file)
+    # GeoServer's Java NetCDF lib can't handle xarray's default int64-nanoseconds encoding.
+    # Force a standard CF time encoding so GeoServer can open the file.
+    gs_encoding = {
+        "time":        {"units": "hours since 1970-01-01", "dtype": "float64", "calendar": "proleptic_gregorian"},
+        "hourly_rain": {"dtype": "float32"},
+    }
+    xr.Dataset({"hourly_rain": hr_cf}, attrs={"Conventions": "CF-1.6"}).to_netcdf(
+        gs_file, encoding=gs_encoding
+    )
     print(f"[fetch] GeoServer copy saved -> {gs_file.name}")
 
     # 7. Publish fresh data to GeoServer
