@@ -4,14 +4,14 @@ import subprocess
 import sys
 
 PROJECT_ROOT = Path(__file__).resolve().parents[2]
+BACKEND_DIR = PROJECT_ROOT / "backend"
+sys.path.insert(0, str(BACKEND_DIR))
+
+from utils_fetch import check_fetch_on_startup
 
 
-# Schritt 1: Start ICON CH1 data fetcher daemon
-subprocess.Popen(
-    [sys.executable, 
-     str(PROJECT_ROOT / "backend" / "fetch_icon.py")],
-    cwd=PROJECT_ROOT
-)
+# Schritt 1: Stelle sicher, dass aktuelle Wetterdaten vorhanden sind
+check_fetch_on_startup()
 
 
 # Schritt 2: Erstelle NC_for_Cellid, falls sie noch nicht existiert

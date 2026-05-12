@@ -240,14 +240,15 @@ def get_route(
         ),
     ),
 
-    sensibility: Literal["none", "low", "medium", "high"] = Query(
+    sensibility: Literal["lowest", "low", "medium", "high", "highest"] = Query(
         "medium",
         description=(
             "Regenempfindlichkeit des Nutzers.\n\n"
-            "- none: Keine Berücksichtigung von Regen\n"
-            "- low: Geringe Gewichtung\n"
-            "- medium: Mittlere Gewichtung\n"
-            "- high: Starke Vermeidung von Regen"
+            "- lowest: Regen hat keinen Einfluss auf die Kosten\n"
+            "- low: Geringe Gewichtung von Regen\n"
+            "- medium: Mittlere Gewichtung von Regen\n"
+            "- high: Starke Gewichtung von Regen\n"
+            "- highest: Kanten mit Regen werden vollständig vermieden"
         ),
     )
 

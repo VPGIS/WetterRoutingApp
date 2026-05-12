@@ -2,6 +2,8 @@
 
 Diese Anleitung beschreibt die Installation des Projekts mit Conda. Die Conda-Umgebung heisst `vprouting` und basiert auf Python 3.12.
 
+Nach der Installation kann der Server gemäss [Startup](startup.md) gestartet werden.
+
 ## Voraussetzungen
 
 Empfohlen wird eine Installation unter Linux oder Windows mit WSL2. Das Projekt verwendet mehrere GIS- und Geo-Bibliotheken, die unter Windows ohne Conda oft aufwendig zu installieren sind.
@@ -41,15 +43,13 @@ cd VPRouting
 
 ## Conda-Umgebung erstellen
 
-Die Umgebung wird aus der Datei `environment.yml` erstellt:
+Die Standardumgebung wird aus der Datei `environment.yml` erstellt:
 
 ```bash
 conda env create -f environment.yml
 ```
-```bash
-conda env create -f environment_raspi.yml
-```
-Dabei werden die wichtigsten Pakete über `conda-forge` installiert. Zusätzliche Python-Abhängigkeiten werden anschliessend über `pip` aus `requirements.txt` installiert, welches aus `environment.yml` angesteuert wird, deshalb ist keine separate Installation nötig.
+
+Dabei werden die wichtigsten Pakete über `conda-forge` installiert. Zusätzliche Python-Abhängigkeiten werden über `pip` aus `requirements.txt` installiert, sofern diese in der Conda-Umgebung eingebunden sind.
 
 ## Umgebung aktivieren
 
@@ -79,3 +79,7 @@ Anschliessend kann sie bei Bedarf erneut erstellt werden:
 ```bash
 conda env create -f environment.yml
 ```
+
+## Nächster Schritt
+
+Nach der Installation wird der API-Server mit dem Startup-Skript gestartet. Siehe [Startup](startup.md).

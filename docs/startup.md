@@ -1,15 +1,12 @@
 # Server starten
 
-Der API-Server kann über das Startup-Skript gestartet werden.  
-Das Skript führt zuerst die nötige Vorbereitung aus und startet danach das FastAPI-Backend.
+Der API-Server kann über das Startup-Skript gestartet werden. Das Skript führt zuerst die nötige Vorbereitung aus und startet danach das FastAPI-Backend.
 
-> Hinweis: Das Aufstarten kann länger dauern, da zuerst die aktuellen Wetterdaten bezogen werden müssen
+> Hinweis: Das Aufstarten kann länger dauern, wenn zuerst aktuelle Wetterdaten bezogen werden müssen.
 
 ## Voraussetzungen
 
-Die Conda-Umgebung muss aktiviert sein.
-
-Siehe: [Installationsanleitung](INSTALL.md)
+Die Conda-Umgebung muss aktiviert sein. Siehe dazu [Installation](installation.md).
 
 ```bash
 conda activate vprouting
@@ -27,49 +24,48 @@ cd VPRouting
 python scripts/startup/startup.py
 ```
 
-Danach läuft der API-Server unter:  
-Siehe: [Swagger-Dokumentation](http://127.0.0.1:8000/docs)
+Danach läuft der API-Server unter:
 
 ```text
 http://127.0.0.1:8000
 ```
 
+Die lokale Swagger-Dokumentation ist erreichbar unter:
+
+```text
+http://127.0.0.1:8000/docs
+```
+
 ---
 
-### Was passiert beim Start?
+## Was passiert beim Start?
 
-Das Skript `scripts/startup/startup.py` führt ein mehrstufiger Startprozess aus.
+Das Skript `scripts/startup/startup.py` führt einen mehrstufigen Startprozess aus.
 
 Der Startup-Prozess umfasst aktuell folgende Schritte:
 
-1. Aktuelle Wetterdaten vorbereiten
+1. aktuelle Wetterdaten prüfen und bei Bedarf beziehen
 2. `NC_for_Cellid.nc` vorbereiten
 3. API-Server starten
+4. Fetch-Daemon im API-Prozess starten
 
 ---
 
-### Schritt 1: Aktuelle Wetterdaten vorbereiten
+### Schritt 1: Aktuelle Wetterdaten prüfen
 
-Dieser Schritt ist bereits als Platzhalter im Startup-Skript vorbereitet, aber noch nicht implementiert.
+Das Startup-Skript ruft zu Beginn `check_fetch_on_startup()` aus `backend/utils_fetch.py` auf.
 
-Später soll hier ein Skript aufgerufen werden, das aktuelle Wetterdaten lädt, verarbeitet und als `.nc`-Datei im folgenden Ordner speichert:
+Dabei wird geprüft, ob im Ordner `backend/data/NC/` bereits eine aktuelle NetCDF-Datei vorhanden ist.
 
-```text
-backend/data/NC/
-```
+Falls keine aktuelle Datei vorhanden ist, werden neue ICON-CH1-Wetterdaten von MeteoSwiss bezogen, verarbeitet und als timestamp-basierte `.nc`-Datei gespeichert.
 
-Geplanter Zweck dieses Schritts:
+Ziel dieses Schritts:
 
-- aktuelle Wetterdaten herunterladen
-- daraus eine neue NetCDF-Datei erzeugen
-- die Datei im Backend-Datenordner speichern
-- sicherstellen, dass die Routing-API mit aktuellen Wetterdaten arbeiten kann
+- aktuelle Wetterdaten verfügbar machen
+- neue NetCDF-Dateien in `backend/data/NC/` speichern
+- sicherstellen, dass die API beim Routing eine passende Wetterdatei findet
 
-Aktuell wird dieser Schritt beim Start nur gemeldet und danach übersprungen:
-
-```text
-Schritt 1 übersprungen: Generierung aktueller .nc-Dateien ist noch nicht implementiert.
-```
+Weitere Details zur Wetterdatenaufbereitung befinden sich in [Wetterdaten](weather-data.md).
 
 ---
 
@@ -85,6 +81,14 @@ Falls diese Datei noch nicht existiert, wird die erste vorhandene `.nc`-Datei au
 
 Diese reduzierte Datei wird später im Backend verwendet, um Kanten aus dem OSM-Graphen einer Wetterrasterzelle zuzuordnen.
 
+Das zuständige Skript ist:
+
+```text
+scripts/startup/reduce_nc_to_grid_geometry.py
+```
+
+Weitere Details zur Zellzuordnung stehen in [Wetterdaten: Zuordnung von Strassenkanten zu Wetterzellen](weather-data.md#zuordnung-von-strassenkanten-zu-wetterzellen).
+
 ---
 
 ### Schritt 3: API-Server starten
@@ -95,9 +99,35 @@ Anschliessend startet das Startup-Skript den API-Server mit:
 python -m uvicorn backend.api:app --reload --host 127.0.0.1 --port 8000
 ```
 
+Das Frontend wird danach direkt über die API ausgeliefert:
+
+```text
+http://127.0.0.1:8000
+```
+
 ---
 
-# Server stoppen
+### Schritt 4: Fetch-Daemon im API-Prozess
+
+Beim Start von `backend/api.py` wird über den FastAPI-Lifespan zusätzlich ein Hintergrundprozess gestartet:
+
+```text
+backend/utils_fetch.py
+```
+
+Dieser Fetch-Daemon bleibt während der Laufzeit des Servers aktiv. Er prüft beim Start nochmals, ob die Wetterdaten aktuell sind, und lädt danach gemäss Zeitplan neue Daten nach.
+
+Geplante Fetch-Zeiten:
+
+```text
+00:05, 03:05, 06:05, 09:05, 12:05, 15:05, 18:05, 21:05 UTC
+```
+
+Beim Stoppen des API-Servers wird der Hintergrundprozess beendet.
+
+---
+
+## Server stoppen
 
 Der Server läuft im Terminal weiter.
 

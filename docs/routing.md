@@ -1,15 +1,16 @@
 # Routing-Logik
 
-Diese Datei beschreibt die Routing-Modelle, die Kostenberechnung und die Verwendung von Wetterdaten in der Routenbewertung.
+Diese Datei beschreibt die Routingmodelle, die Kostenberechnung und die Verwendung von Wetterdaten in der Routenbewertung.
 
 ---
 
 ## Überblick
 
-VP Routing berechnet Routen auf Basis von OpenStreetMap-Graphen.  
-Die Kanten des Graphen können zusätzlich mit Wetterdaten bewertet werden, sodass Routen mit ungünstigen Wetterbedingungen höhere Kosten erhalten.
+Die Wetter Routing App berechnet Fahrradrouten auf Basis von OpenStreetMap-Graphen. Die Anwendung bewertet Kanten nicht nur nach ihrer Länge, sondern kann zusätzlich Niederschlagsdaten aus MeteoSwiss-Forecasts berücksichtigen. Dadurch werden Streckenabschnitte mit ungünstigen Wetterbedingungen höher gewichtet.
 
-Die Routing-Logik befindet sich hauptsächlich in:
+Die Routinglogik ist Teil der FastAPI-Verarbeitung. Eine Anfrage kommt über den Endpunkt `/WAPapi/v1/route` ins Backend, wird in `backend/api.py` vorbereitet und anschliessend an eines der Routingmodelle übergeben.
+
+Die wichtigste Datei für die Routingmodelle ist:
 
 ```text
 backend/utils_routingmodels.py
@@ -23,16 +24,39 @@ backend/utils_graph.py
 backend/utils_nc_file.py
 ```
 
+Weitere Einordnung zum gesamten Ablauf befindet sich in:
+
+- [Architektur](architecture.md)
+- [Wetterdaten](weather-data.md)
+
 ---
 
-## Routing-Modelle
+## Einordnung in den API-Ablauf
 
-Aktuell stehen zwei Routing-Modelle zur Verfügung:
+Bevor die eigentliche Routenberechnung startet, bereitet das Backend mehrere Daten vor:
 
-| Modell | Beschreibung |
-|---|---|
-| `einfach` | Bewertet alle Kanten einmalig mit dem Forecast zur Startzeit. |
-| `advanced` | Bewertet Kanten zeitabhängig anhand der erwarteten Ankunftszeit. |
+1. Start- und Zielpunkt werden aus Adresse oder Koordinaten in WGS84-Koordinaten umgewandelt.
+2. Die Geschwindigkeit wird von km/h in m/s konvertiert.
+3. Über `get_nc_file(start_time)` wird eine passende NetCDF-Wetterdatei aus `backend/data/NC/` ausgewählt.
+4. Aus Start und Ziel wird eine Bounding Box berechnet.
+5. Ein passender OSM-Graph wird aus `backend/data/graphs/` geladen oder über OSMnx neu erstellt.
+6. Start- und Zielkoordinaten werden den nächstgelegenen Nodes im Graphen zugeordnet.
+7. Abhängig vom Parameter `routingmodel` wird `einfach` oder `advanced` ausgeführt.
+
+Das Ergebnis der Routingfunktion ist eine Sequenz von Node-IDs. Diese wird danach mit OSMnx in ein GeoJSON-ähnliches Format umgewandelt und an das Frontend zurückgegeben.
+
+---
+
+## Routingmodelle
+
+Aktuell stehen zwei Routingmodelle zur Verfügung:
+
+| Routingmodell | Beschreibung                                                     |
+| ------------- | ---------------------------------------------------------------- |
+| `einfach`     | Bewertet alle Kanten einmalig mit dem Forecast zur Startzeit.    |
+| `advanced`    | Bewertet Kanten zeitabhängig anhand der erwarteten Ankunftszeit. |
+
+Beide Modelle verwenden dieselbe Grundidee für die Wetterbewertung: Pro Kante wird ein Forecast-Wert gelesen und daraus mit `compute_rain_adjusted_cost` ein wetterabhängiger Kostenwert berechnet.
 
 ---
 
@@ -40,7 +64,7 @@ Aktuell stehen zwei Routing-Modelle zur Verfügung:
 
 Das Modell `einfach` verwendet einen statischen Dijkstra-Ansatz.
 
-Implementierung:
+Implementierung im Code:
 
 ```text
 static_djikstra
@@ -54,29 +78,25 @@ backend/utils_routingmodels.py
 
 ### Grundidee
 
-Bei diesem Modell werden alle Kanten vor der eigentlichen Wegsuche einmalig bewertet.  
-Der Forecast wird für alle Kanten zur Startzeit der Route gelesen.
+Bei diesem Modell werden alle Kanten vor der eigentlichen Wegsuche einmalig bewertet. Der Forecast wird für alle Kanten zur Startzeit der Route gelesen.
 
-Danach wird mit OSMnx der kürzeste Pfad anhand der berechneten Kosten gesucht.
+Danach wird mit OSMnx der kürzeste Pfad anhand der berechneten Kosten gesucht. Die Route bleibt dadurch einfach nachvollziehbar und ist schneller berechnet als beim zeitabhängigen Modell.
 
 ### Ablauf
 
 ```mermaid
 flowchart TD
     A[Routingmodell einfach] --> B[static_djikstra starten]
-    B --> C[Start- und Zielnode uebergeben]
+    B --> C[Start- und Zielnode übernehmen]
     C --> D[Forecast zur Startzeit bestimmen]
-    D --> E[Alle relevanten Edges durchlaufen]
-    E --> F[Forecast-Wert pro Edge zur Startzeit lesen]
+    D --> E[Alle Edges durchlaufen]
+    E --> F[Forecast-Wert pro Edge lesen]
     F --> G[Regen-Penalty berechnen]
-    G --> H[Kosten pro Edge berechnen]
+    G --> H[cost pro Edge setzen]
     H --> I[travel_time pro Edge setzen]
-    I --> J[cost pro Edge setzen]
-    J --> K[OSMnx shortest_path ausfuehren]
-    K --> L[weight = cost verwenden]
-    L --> M{Route gefunden?}
-    M -- ja --> N[Node-Pfad zurueckgeben]
-    M -- nein --> O[Fehler oder leere Route zurueckgeben]
+    I --> J[OSMnx shortest_path ausführen]
+    J --> K[weight = cost verwenden]
+    K --> L[Node-Pfad zurückgeben]
 ```
 
 ### Vorteile
@@ -112,9 +132,9 @@ backend/utils_routingmodels.py
 
 ### Grundidee
 
-Bei diesem Modell wird nicht nur betrachtet, welche Kante befahren wird, sondern auch zu welchem Zeitpunkt diese Kante voraussichtlich erreicht wird.
+Bei diesem Modell wird nicht nur betrachtet, welche Kante befahren wird, sondern auch zu welchem Zeitpunkt diese Kante voraussichtlich erreicht wird. Dadurch kann dieselbe Kante je nach Ankunftszeit unterschiedliche Kosten erhalten.
 
-Dadurch kann dieselbe Kante je nach Ankunftszeit unterschiedliche Kosten erhalten.
+Im Unterschied zum einfachen Modell wird der Forecast während der Suche laufend anhand der erwarteten Ankunftszeit abgefragt. Zwischen den Forecast-Zeitschritten wird interpoliert.
 
 ### Ablauf
 
@@ -123,31 +143,29 @@ flowchart TD
     A[Routingmodell advanced] --> B[time_dependent_dijkstra starten]
     B --> C[Start-State initialisieren]
     C --> D[Priority Queue erstellen]
-    D --> E[Startnode mit Kosten 0 einfuegen]
+    D --> E[Startnode mit Kosten 0 einfügen]
 
     E --> F{Priority Queue leer?}
     F -- ja --> Z[Keine Route gefunden]
     F -- nein --> G[State mit geringsten Kosten entnehmen]
 
     G --> H{Ziel erreicht?}
-    H -- ja --> I[Pfad aus parent-Tabelle rekonstruieren]
-    H -- nein --> J[Ausgehende Kanten pruefen]
+    H -- ja --> I[Pfad rekonstruieren]
+    H -- nein --> J[Ausgehende Kanten prüfen]
 
     J --> K[Travel Time der Kante berechnen]
-    K --> L[Ankunftszeit an Kante bestimmen]
+    K --> L[Ankunftszeit am Nachbarn bestimmen]
     L --> M[Forecast zur Ankunftszeit interpolieren]
     M --> N[Regen-Penalty berechnen]
-    N --> O[Zeitabhaengige Kosten berechnen]
-    O --> P[Neue Gesamtkosten fuer Nachbar-State berechnen]
+    N --> O[Neue Gesamtkosten berechnen]
 
-    P --> Q{Besserer Pfad gefunden?}
-    Q -- ja --> R[dist aktualisieren]
-    R --> S[parent aktualisieren]
-    S --> T[Neuen State in Priority Queue einfuegen]
-    T --> F
+    O --> P{Besserer Pfad gefunden?}
+    P -- ja --> Q[dist und parent aktualisieren]
+    Q --> R[Neuen State in Priority Queue einfügen]
+    R --> F
 
-    Q -- nein --> F
-    I --> U[Node-Pfad zurueckgeben]
+    P -- nein --> F
+    I --> S[Node-Pfad zurückgeben]
 ```
 
 ### Vorteile
@@ -165,22 +183,9 @@ flowchart TD
 
 ---
 
-## Vergleich der Routing-Modelle
-
-| Eigenschaft | `einfach` | `advanced` |
-|---|---|---|
-| Wetterzeitpunkt | Startzeit | erwartete Ankunftszeit |
-| Algorithmus | statischer Dijkstra | zeitabhängiger Dijkstra |
-| Geschwindigkeit | schneller | langsamer |
-| Genauigkeit bei Wetteränderungen | geringer | höher |
-| Geeignet für | kurze oder einfache Routen | längere Routen mit wechselhaftem Wetter |
-
----
-
 ## Kantenbewertung
 
-Für jede Kante wird eine Kostenfunktion berechnet.  
-Die Kosten basieren auf der Länge der Kante und einem wetterabhängigen Zuschlag.
+Für jede Kante wird eine Kostenfunktion berechnet. Die Kosten basieren auf der Kantenlänge und einem wetterabhängigen Zuschlag.
 
 Die Berechnung erfolgt über:
 
@@ -198,7 +203,6 @@ Grundformel:
 
 ```text
 rain_amount = max(forecast, 0)
-rain_amount = min(rain_amount, 10)
 
 cost = length * (1 + multiplier * rain_amount^exponent)
 ```
@@ -209,46 +213,39 @@ Wenn kein Regen vorhanden ist:
 cost = length
 ```
 
----
-
-## Regenempfindlichkeit `sensibility`
-
-`sensibility` steuert, wie stark Regen die Kosten einer Kante erhöht.
-
-| `sensibility` | `multiplier` | `exponent` | Wirkung |
-|---|---:|---:|---|
-| `low` | 25.0 | 1.0 | Regen erhöht die Kosten leicht. |
-| `medium` | 100.0 | 1.2 | Regen wird deutlich vermieden. |
-| `high` | 400.0 | 1.4 | Regenabschnitte werden stark bestraft. |
-| `none` | 2500.0 | 1.8 | Aktueller Code: sehr starke Regenstrafe. |
-
-> Hinweis:  
-> Der Wert `none` widerspricht aktuell der Bedeutung „keine Regenberücksichtigung“, da im Code eine sehr hohe Regenstrafe gesetzt wird. Das sollte geprüft oder angepasst werden.
-
----
-
-## Beispielrechnung
-
-Beispiel für eine Kante mit:
+Für die höchste Regenempfindlichkeit gilt zusätzlich:
 
 ```text
-length = 100 m
-rain_amount = 0.5
+cost = infinity
 ```
 
-| `sensibility` | Berechnung | Ergebnis |
-|---|---|---:|
-| `low` | `100 * (1 + 25 * 0.5^1.0)` | `1350 m Kosten` |
-| `medium` | `100 * (1 + 100 * 0.5^1.2)` | ca. `4453 m Kosten` |
-| `high` | `100 * (1 + 400 * 0.5^1.4)` | ca. `15258 m Kosten` |
+Damit werden Kanten mit Regen vollständig vermieden, sofern eine alternative Route existiert.
+
+Der berechnete Wert wird als `cost` an der Kante gespeichert und für die Pfadsuche verwendet. Zusätzlich wird aus Länge und Geschwindigkeit eine `travel_time` berechnet.
+
+---
+
+### Regenempfindlichkeit `sensibility`
+
+`sensibility` steuert, wie stark Regen die Kosten einer Kante erhöht. Der Parameter wird über die API übergeben und an `compute_rain_adjusted_cost` weitergereicht.
+
+| `sensibility` | `multiplier` | `exponent` | Wirkung                                        |
+| ------------- | -----------: | ---------: | ---------------------------------------------- |
+| `lowest`      |            - |          - | Regen hat keinen Einfluss auf die Kosten.      |
+| `low`         |         25.0 |        1.0 | Regen erhöht die Kosten leicht.                |
+| `medium`      |        100.0 |        1.2 | Regen wird deutlich vermieden.                 |
+| `high`        |        400.0 |        1.4 | Regenabschnitte werden stark bestraft.         |
+| `highest`     |            - |          - | Kanten mit Regen werden vollständig vermieden. |
+
+Bei `lowest` bleibt `cost = length`, auch wenn Regen vorhergesagt ist. Bei `highest` wird für Kanten mit Regen `cost = infinity` gesetzt.
 
 ---
 
 ## Graphen
 
-Die Routingmodelle arbeiten auf OSM-Graphen.
+Die Routingmodelle arbeiten auf OSMnx-Graphen. Ein Graph enthält Nodes, Kanten, Kantenlängen und Geometrien. Beim Erstellen eines neuen Graphen werden fehlende Kantengeometrien ergänzt und die Kanten anschliessend mit Wetterzellen verknüpft.
 
-Gespeicherte Graphen befinden sich unter:
+Gespeicherte Graphen befinden sich im Ordner:
 
 ```text
 backend/data/graphs/
@@ -256,43 +253,37 @@ backend/data/graphs/
 
 Typische Dateien:
 
-```text
-*.graphml
-index.json
-```
+- `*.graphml`: gecachte und aufbereitete Graphen
+- `index.json`: Verzeichnis der verfügbaren Graphen
 
-Wenn ein passender Graph bereits vorhanden ist, wird er aus dem Cache geladen.  
-Falls kein passender Graph vorhanden ist, wird ein neuer Graph über OSMnx erstellt und gespeichert.
-
----
+Wenn ein passender Graph bereits vorhanden ist, wird er aus dem Cache geladen. Falls kein passender Graph vorhanden ist, wird ein neuer Graph über OSMnx erstellt, mit Wetterzellen ergänzt und gespeichert.
 
 ## Wetterzellen auf Kanten
 
-Damit eine Kante mit Wetterdaten bewertet werden kann, besitzt sie Wetterzellen-Attribute:
+Damit eine Kante mit Wetterdaten bewertet werden kann, besitzt sie Verweise auf eine Zelle im NetCDF-Wetterraster:
 
-```text
-cell_i
-cell_j
-cell_id
-```
+- `cell_i`
+- `cell_j`
+- `cell_id`
 
-Diese Attribute verweisen auf die passende Position im NetCDF-Wetterraster.
+Die Zuordnung wird beim Erstellen eines neuen Graphen berechnet und im gespeicherten Graphen abgelegt. Dadurch kann das Routing später direkt den passenden Forecast-Wert pro Kante lesen.
 
-Weitere Details dazu befinden sich in:
+Die detaillierte Beschreibung der Rasteraufbereitung und Zellzuordnung befindet sich in [Wetterdaten](weather-data.md#zuordnung-von-strassenkanten-zu-wetterzellen).
 
-```text
-docs/weather-data.md
-```
+## Wetterdaten im Routing
 
----
+Im Routing wird die geöffnete NetCDF-Datei nur noch abgefragt. Die Aufbereitung, Aktualisierung, Auswahl der Datei und Zuordnung der Wetterzellen ist in [Wetterdaten](weather-data.md) beschrieben.
+
+Beim einfachen Modell wird der Forecast ohne zeitliche Interpolation zur Startzeit gelesen. Beim erweiterten Modell wird der Forecast zur erwarteten Ankunftszeit interpoliert.
 
 ## Ergebnis
 
-Das Ergebnis der Routenberechnung ist ein Node-Pfad.  
-Dieser wird anschließend in ein GeoJSON-ähnliches Format umgewandelt und an das Frontend zurückgegeben.
+Das Ergebnis der Routenberechnung ist ein Node-Pfad. Dieser wird anschliessend in `backend/api.py` mit OSMnx in ein GeoJSON-ähnliches Format umgewandelt.
 
-Die Darstellung der Route erfolgt im Browser über:
+Die Antwort enthält pro Routensegment unter anderem:
 
-```text
-frontend/vp_routing.html
-```
+- `osmid`
+- `length`
+- `cost`
+- `travel_time`
+- `geometry`
