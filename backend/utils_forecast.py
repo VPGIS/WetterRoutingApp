@@ -3,17 +3,21 @@ import xarray as xr
 
 
 def compute_rain_adjusted_cost(length, forecast, sensitivity):
+    # Regenmenge vorbereiten: negative Werte werden als 0 behandelt
     rain_amount = max(float(forecast), 0.0)
 
+    # Wenn kein Regen vorhergesagt ist, bleibt die Strecke unverändert
     if rain_amount == 0.0:
         return length
 
-    rain_amount = min(rain_amount, 10.0)
+    if sensitivity == 'highest':  # bei Regen wird die Strecke komplett vermieden
+        return np.inf
 
-    if sensitivity in (None, '', 'none', 'off', 'no_rain'):
-        multiplier = 2500.0
-        exponent = 1.8
-    elif sensitivity == 'low':
+    elif sensitivity == 'lowest':  # Regen hat keinen Einfluss auf die Kosten
+        return length
+
+    # Je höher die Sensitivität, desto stärker werden Regenmengen gewichtet
+    if sensitivity == 'low':
         multiplier = 25.0
         exponent = 1.0
     elif sensitivity == 'medium':
@@ -23,8 +27,10 @@ def compute_rain_adjusted_cost(length, forecast, sensitivity):
         multiplier = 400.0
         exponent = 1.4
     else:
-        raise ValueError("sensitivity must be 'low', 'medium', or 'high'")
+        raise ValueError("sensitivity must be 'lowest' 'low', 'medium', 'high' or 'highest'")
 
+    # Berechnung der regenangepassten Streckenkosten
+    # Dadurch bleiben die Kosten mindestens so hoch wie die ursprüngliche Länge und steigen mit zunehmender Regenmenge abhängig von der Sensitivität.
     return length * (1.0 + multiplier * (rain_amount ** exponent))
 
 
