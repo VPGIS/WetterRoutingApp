@@ -1,6 +1,6 @@
 
 """
-fetch_icon_NOMETEO.py
+utils_fetch.py
 
 Fetches ICON-CH1-EPS TOT_PREC from MeteoSwiss OGD using ONLY:
     requests  — HTTP / STAC search
@@ -362,7 +362,7 @@ def fetch_and_save(output_dir: Path = OUTPUT_DIR) -> Path:
 
 
 # ---------------------------------------------------------------------------
-# Scheduler (same logic as fetch_icon.py)
+# Scheduler
 # ---------------------------------------------------------------------------
 
 def check_fetch_on_startup():

@@ -20,6 +20,7 @@ VPRouting/
 ├── backend/                    # Backend Ordner
 │   ├── api.py                  # API-Einstiegspunkt
 │   ├── utils_forecast.py       # Wetter-/Forecast-Logik
+│   ├── utils_fetch.py          # Bezug ICON und Schedule-Deamon
 │   ├── utils_graph.py          # Graph-Handling
 │   ├── utils_nc_file.py        # NetCDF-Dateien
 │   ├── utils_routingmodels.py  # Routing-Modelle

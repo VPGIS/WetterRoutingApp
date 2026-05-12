@@ -54,7 +54,7 @@ except ModuleNotFoundError:
 # ---------------------------------------------------------------------------
 
 BACKEND_DIR = Path(__file__).resolve().parent
-FETCH_SCRIPT = BACKEND_DIR / "fetch_icon_NOMETEO.py"
+FETCH_SCRIPT = BACKEND_DIR / "utils_fetch.py"
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
