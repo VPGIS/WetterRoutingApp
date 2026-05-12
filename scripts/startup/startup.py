@@ -8,7 +8,8 @@ PROJECT_ROOT = Path(__file__).resolve().parents[2]
 
 # Schritt 1: Start ICON CH1 data fetcher daemon
 subprocess.Popen(
-    [sys.executable, str(PROJECT_ROOT / "backend" / "fetch_icon.py")],
+    [sys.executable, 
+     str(PROJECT_ROOT / "backend" / "fetch_icon.py")],
     cwd=PROJECT_ROOT
 )
 

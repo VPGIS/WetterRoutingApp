@@ -22,7 +22,7 @@ Nach der Installation kann das Projekt mit der Startupsanleitung gestartet werde
 
 ## API-Dokumentation
 
-Die Swagger-Dokumentation wird automatisch von FastAPI bereitgestellt, sobald das Backend laeuft:
+Die Swagger-Dokumentation wird automatisch von FastAPI bereitgestellt, sobald das Backend läuft:
 
 ```text
 http://127.0.0.1:8000/docs
