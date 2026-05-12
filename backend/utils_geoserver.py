@@ -1,4 +1,4 @@
-"""
+?"""
 utils_geoserver.py
 
 Publishes the latest hourly_rain NetCDF to GeoServer as a WMS layer.
@@ -49,13 +49,13 @@ def publish_nc(nc_path: Path):
     - Later runs : updates store URL + reloads cache, skips existing layer
     GeoServer persists config across restarts, so no manual re-run needed.
     """
-    # 1. Workspace — create only if missing
+    # 1. Workspace ??? create only if missing
     if not _exists(f"{GS_URL}/rest/workspaces/{WS}"):
         _post(f"{GS_URL}/rest/workspaces",
               json={"workspace": {"name": WS}})
         print(f"[geoserver] Workspace '{WS}' created")
 
-    # 2. Store — create if missing, update URL if exists (new .nc file)
+    # 2. Store ??? create if missing, update URL if exists (new .nc file)
     store_url  = f"{GS_URL}/rest/workspaces/{WS}/coveragestores/{STORE}"
     store_body = {"coverageStore": {
         "name":      STORE,
@@ -72,7 +72,7 @@ def publish_nc(nc_path: Path):
               json=store_body)
         print(f"[geoserver] Store '{STORE}' created -> {nc_path.name}")
 
-    # 3. Layer — create only if missing (persisted across GeoServer restarts)
+    # 3. Layer ??? create only if missing (persisted across GeoServer restarts)
     layer_url = f"{GS_URL}/rest/workspaces/{WS}/coveragestores/{STORE}/coverages/{LAYER}"
     if not _exists(layer_url):
         _post(
@@ -117,7 +117,7 @@ def ensure_geoserver_running() -> bool:
         print(f"[geoserver] Not reachable and startup script not found at {GS_STARTUP}")
         return False
 
-    print(f"[geoserver] Not running — launching {GS_STARTUP}")
+    print(f"[geoserver] Not running ??? launching {GS_STARTUP}")
     subprocess.Popen(
         [str(GS_STARTUP)],
         stdout=subprocess.DEVNULL,
@@ -137,7 +137,45 @@ def ensure_geoserver_running() -> bool:
 
 def check_geoserver_on_startup():
     """
-    Called by uvicorn lifespan. Ensures GeoServer is running (starts it if needed).
-    NC file publish is NOT done here — it happens after each fetch cycle in utils_fetch.py.
+    Called by uvicorn lifespan.
+    1. Ensures GeoServer is running (starts it if needed).
+    2. If a _gs.nc already exists, publishes it.
+    3. If no _gs.nc but a routing .nc exists, rebuilds the _gs.nc from it and publishes.
+    4. If nothing exists yet, skips ??? will publish after first fetch cycle.
     """
-    ensure_geoserver_running()
+    if not ensure_geoserver_running():
+        return
+
+    gs_files = sorted(NC_DIR.glob("*_gs.nc"), key=lambda p: p.stat().st_mtime)
+    if gs_files:
+        newest = gs_files[-1]
+        print(f"[geoserver] Found existing {newest.name} ??? publishing to GeoServer")
+        try:
+            publish_nc(newest)
+        except Exception as e:
+            print(f"[geoserver] Startup publish failed: {e}")
+        return
+
+    # No _gs.nc ??? try to rebuild from the newest routing .nc
+    routing_files = sorted(
+        [p for p in NC_DIR.glob("*.nc") if not p.name.endswith("_gs.nc")],
+        key=lambda p: p.stat().st_mtime,
+    )
+    if not routing_files:
+        print("[geoserver] No .nc files found ??? will publish after first fetch")
+        return
+
+    source = routing_files[-1]
+    print(f"[geoserver] No _gs.nc found ??? rebuilding from {source.name}")
+    try:
+        import xarray as xr
+        from utils_fetch import write_geoserver_nc
+        ds = xr.open_dataset(source)
+        hourly_rain = ds["hourly_rain"]
+        ref_time_val = ds["ref_time"].values[0]
+        gs_path = source.with_name(source.stem + "_gs.nc")
+        write_geoserver_nc(hourly_rain, ref_time_val, gs_path)
+        ds.close()
+        publish_nc(gs_path)
+    except Exception as e:
+        print(f"[geoserver] Rebuild from routing .nc failed: {e}")

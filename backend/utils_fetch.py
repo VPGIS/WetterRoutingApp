@@ -1,18 +1,18 @@
-"""
+?"""
 utils_fetch.py
 
 Fetches ICON-CH1-EPS TOT_PREC from MeteoSwiss OGD using ONLY:
-    requests  — HTTP / STAC search
-    eccodes   — GRIB2 decoding  (C lib, ARM64 wheel on PyPI / conda-forge)
-    eccodes-cosmo-resources-python — ICON grid definitions (pure Python)
-    scipy     — nearest-neighbour regridding via KD-tree
-    numpy, xarray, netcdf4 — array handling + NetCDF output
+    requests  ??? HTTP / STAC search
+    eccodes   ??? GRIB2 decoding  (C lib, ARM64 wheel on PyPI / conda-forge)
+    eccodes-cosmo-resources-python ??? ICON grid definitions (pure Python)
+    scipy     ??? nearest-neighbour regridding via KD-tree
+    numpy, xarray, netcdf4 ??? array handling + NetCDF output
 
 No meteodatalab. No eckitlib. No rasterio. Works on ARM64 (Raspberry Pi).
 
 First run downloads + caches:
   - ICON CH1 grid constants (CLAT/CLON) from the STAC collection
-  - Precomputed nearest-neighbour indices from ICON → regular lat/lon grid
+  - Precomputed nearest-neighbour indices from ICON ??? regular lat/lon grid
 Both are stored in backend/.fetch_cache/ and reused on subsequent runs.
 """
 
@@ -162,7 +162,7 @@ def download_grib(url: str) -> Path:
 
 
 # ---------------------------------------------------------------------------
-# ICON grid coordinates — read from horizontal constants GRIB2 (no shortName)
+# ICON grid coordinates ??? read from horizontal constants GRIB2 (no shortName)
 # ---------------------------------------------------------------------------
 
 def _get_collection_asset_url(key_fragment: str) -> str:
@@ -181,7 +181,7 @@ def _load_icon_grid_coords() -> tuple[np.ndarray, np.ndarray]:
     Return (clat_deg, clon_deg) for every ICON CH1 native grid point.
 
     Reads the first two messages from the STAC horizontal_constants GRIB2
-    positionally — message 0 = CLAT, message 1 = CLON — using only the
+    positionally ??? message 0 = CLAT, message 1 = CLON ??? using only the
     standard 'values' key, so no COSMO definitions are required.
     Auto-detects degrees vs radians from value range.
     Cached after first download.
@@ -189,7 +189,7 @@ def _load_icon_grid_coords() -> tuple[np.ndarray, np.ndarray]:
     if CLAT_CACHE.exists() and CLON_CACHE.exists():
         return np.load(CLAT_CACHE), np.load(CLON_CACHE)
 
-    print("[grid] Downloading ICON CH1 horizontal grid constants (one-time ~200 MB)…")
+    print("[grid] Downloading ICON CH1 horizontal grid constants (one-time ~200 MB)???")
     hc_url = _get_collection_asset_url("horizontal_constants")
     tmp = download_grib(hc_url)
 
@@ -211,12 +211,12 @@ def _load_icon_grid_coords() -> tuple[np.ndarray, np.ndarray]:
 
     if len(messages) < 2:
         raise RuntimeError(
-            f"Expected ≥2 messages in horizontal_constants GRIB2, got {len(messages)}."
+            f"Expected ???2 messages in horizontal_constants GRIB2, got {len(messages)}."
         )
 
     clat, clon = messages[0], messages[1]
 
-    # ICON stores coords in radians if abs-max ≤ π; convert to degrees
+    # ICON stores coords in radians if abs-max ??? ??; convert to degrees
     if np.max(np.abs(clat)) <= np.pi + 0.01:
         clat = np.degrees(clat)
         clon = np.degrees(clon)
@@ -224,7 +224,7 @@ def _load_icon_grid_coords() -> tuple[np.ndarray, np.ndarray]:
     CACHE_DIR.mkdir(parents=True, exist_ok=True)
     np.save(CLAT_CACHE, clat)
     np.save(CLON_CACHE, clon)
-    print(f"[grid] Cached {len(clat):,} ICON grid points → {CACHE_DIR}")
+    print(f"[grid] Cached {len(clat):,} ICON grid points ??? {CACHE_DIR}")
     return clat, clon
 
 
@@ -240,14 +240,14 @@ def _load_regrid_indices(clat: np.ndarray, clon: np.ndarray) -> np.ndarray:
     if INDICES_CACHE.exists():
         return np.load(INDICES_CACHE)
 
-    print("[regrid] Building KD-tree (one-time, may take ~1 min on Pi)…")
+    print("[regrid] Building KD-tree (one-time, may take ~1 min on Pi)???")
     tree = cKDTree(np.column_stack([clat, clon]))
     _, indices = tree.query(TARGET_PTS, workers=-1)  # all CPU cores
     indices = indices.astype(np.int32)
 
     CACHE_DIR.mkdir(parents=True, exist_ok=True)
     np.save(INDICES_CACHE, indices)
-    print(f"[regrid] Indices cached → {INDICES_CACHE}")
+    print(f"[regrid] Indices cached ??? {INDICES_CACHE}")
     return indices
 
 
@@ -281,6 +281,45 @@ def read_grib_data(path: Path) -> dict[int, np.ndarray]:
 
 
 # ---------------------------------------------------------------------------
+# GeoServer NC helper
+# ---------------------------------------------------------------------------
+
+def write_geoserver_nc(hourly_rain: "xr.DataArray", ref_time_val: "np.datetime64", out_path: Path) -> Path:
+    """
+    Write a CF-1.6 compliant NetCDF readable by GeoServer's NetCDF plugin.
+    Uses 1-D lat/lon dimension coordinates and a proper absolute time axis.
+    Can be called from fetch_and_save() or from utils_geoserver at startup
+    to rebuild a missing _gs.nc from an existing routing .nc.
+    """
+    lead_hours = hourly_rain.coords["lead_time"].values           # float hours
+    time_vals  = ref_time_val + (lead_hours * 3.6e12).astype("timedelta64[ns]")
+
+    hr_cf = xr.DataArray(
+        hourly_rain.values,
+        dims=["time", "lat", "lon"],
+        coords={
+            "time": time_vals,
+            "lat":  TARGET_LATS.astype(np.float32),
+            "lon":  TARGET_LONS.astype(np.float32),
+        },
+        name="hourly_rain",
+        attrs=hourly_rain.attrs,
+    )
+    hr_cf["time"].attrs = {"standard_name": "time", "axis": "T"}
+    hr_cf["lat"].attrs  = {"units": "degrees_north", "axis": "Y", "standard_name": "latitude"}
+    hr_cf["lon"].attrs  = {"units": "degrees_east",  "axis": "X", "standard_name": "longitude"}
+    gs_encoding = {
+        "time":        {"units": "hours since 1970-01-01", "dtype": "float64", "calendar": "proleptic_gregorian"},
+        "hourly_rain": {"dtype": "float32"},
+    }
+    xr.Dataset({"hourly_rain": hr_cf}, attrs={"Conventions": "CF-1.6"}).to_netcdf(
+        out_path, encoding=gs_encoding
+    )
+    print(f"[fetch] GeoServer copy saved -> {out_path.name}")
+    return out_path
+
+
+# ---------------------------------------------------------------------------
 # Main fetch
 # ---------------------------------------------------------------------------
 
@@ -292,10 +331,10 @@ def fetch_and_save(output_dir: Path = OUTPUT_DIR) -> Path:
     indices = _load_regrid_indices(clat, clon)
 
     # 2. STAC query
-    print("[fetch] Querying STAC for latest TOT_PREC…")
+    print("[fetch] Querying STAC for latest TOT_PREC???")
     url_map, ref_str = get_latest_urls()
     ref_dt = datetime.strptime(ref_str, "%Y%m%d%H%M").replace(tzinfo=timezone.utc)
-    print(f"[fetch] Reference time: {ref_dt.isoformat()}  —  {len(LEAD_HOURS)} lead times")
+    print(f"[fetch] Reference time: {ref_dt.isoformat()}  ???  {len(LEAD_HOURS)} lead times")
 
     # 3. Download + decode each lead time
     lead_data: dict[int, dict[int, np.ndarray]] = {}  # {lead: {member: (NY,NX)}}
@@ -312,7 +351,7 @@ def fetch_and_save(output_dir: Path = OUTPUT_DIR) -> Path:
             all_members = set(raw.keys())
 
         lead_data[h] = {mem: regrid(vals, indices) for mem, vals in raw.items()}
-        print(f"  ✓ +{h:02d}h  ({len(raw)} members)")
+        print(f"  ??? +{h:02d}h  ({len(raw)} members)")
 
     # 4. Assemble DataArray  shape: (eps, ref_time=1, lead_time, y, x)
     member_ids = sorted(all_members)
@@ -358,32 +397,8 @@ def fetch_and_save(output_dir: Path = OUTPUT_DIR) -> Path:
     ds.close()
     print(f"[fetch] Saved -> {output_file}")
 
-    # 6b. Write a GeoServer-compatible copy: hourly_rain with 1-D CF lat/lon/time dims.
-    #     GeoServer's NetCDF plugin requires:
-    #       - 1-D dimension coordinates (not 2-D auxiliary)
-    #       - a proper CF time axis (datetime64 → xarray writes "hours since ...")
-    #     The routing system keeps using the main file above; this is GeoServer-only.
-    gs_file = output_dir / f"{ts}_gs.nc"
-    ref_time_val = da_all.coords["ref_time"].values[0]          # numpy datetime64[ns]
-    lead_hours   = hourly_rain.coords["lead_time"].values        # float array, e.g. [1,2,...33]
-    time_vals    = ref_time_val + (lead_hours * 3.6e12).astype("timedelta64[ns]")  # absolute UTC
-
-    hr_cf = xr.DataArray(
-        hourly_rain.values,
-        dims=["time", "lat", "lon"],
-        coords={
-            "time": time_vals,
-            "lat":  TARGET_LATS.astype(np.float32),
-            "lon":  TARGET_LONS.astype(np.float32),
-        },
-        name="hourly_rain",
-        attrs=hourly_rain.attrs,
-    )
-    hr_cf["time"].attrs = {"standard_name": "time", "axis": "T"}
-    hr_cf["lat"].attrs  = {"units": "degrees_north", "axis": "Y", "standard_name": "latitude"}
-    hr_cf["lon"].attrs  = {"units": "degrees_east",  "axis": "X", "standard_name": "longitude"}
-    xr.Dataset({"hourly_rain": hr_cf}).to_netcdf(gs_file)
-    print(f"[fetch] GeoServer copy saved -> {gs_file.name}")
+    # 6b. Write GeoServer-compatible copy (1-D CF lat/lon/time dims)
+    gs_file = write_geoserver_nc(hourly_rain, da_all.coords["ref_time"].values[0], output_dir / f"{ts}_gs.nc")
 
     # 7. Publish fresh data to GeoServer
     try:
@@ -418,14 +433,14 @@ def check_fetch_on_startup():
 
     ts = datetime.now(timezone.utc).strftime("%H:%M UTC")
     if needs_fetch:
-        print(f"[{ts}] Data outdated — fetching…")
+        print(f"[{ts}] Data outdated ??? fetching???")
         fetch_and_save()
     else:
         print(f"[{ts}] Data is up-to-date")
 
 
 def scheduler_loop():
-    """Block forever, fetch at 00:05, 03:05, 06:05, …, 21:05 UTC."""
+    """Block forever, fetch at 00:05, 03:05, 06:05, ???, 21:05 UTC."""
     while True:
         now = datetime.now(timezone.utc)
         next_times = [
@@ -440,7 +455,7 @@ def scheduler_loop():
         print(f"[{datetime.now(timezone.utc).strftime('%H:%M UTC')}] "
               f"Next fetch at {nxt.strftime('%H:%M UTC')}")
         time.sleep(max(wait, 1))
-        print(f"[{datetime.now(timezone.utc).strftime('%H:%M UTC')}] Fetching…")
+        print(f"[{datetime.now(timezone.utc).strftime('%H:%M UTC')}] Fetching???")
         fetch_and_save()
 
 
