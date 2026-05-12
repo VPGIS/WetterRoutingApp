@@ -1,121 +1,136 @@
 # Wetterdaten
 
-Diese Datei beschreibt die Verwendung, Erzeugung und Zuordnung der Wetterdaten im Projekt VP Routing.
-
----
+Diese Datei beschreibt die Verwendung, Erzeugung und Zuordnung der Wetterdaten im Projekt **VP Routing**.
 
 ## Überblick
 
-VP Routing verwendet Wetterdaten im NetCDF-Format, um Routen wetterabhängig bewerten zu können.
+VP Routing verwendet Wetterdaten im NetCDF-Format, um Routen wetterabhängig bewerten zu können. Die Daten stammen aus dem Open-Data-Angebot von MeteoSwiss und werden im Projekt insbesondere zur Bewertung von Niederschlag entlang einer Route genutzt.
 
-Die Wetterdaten werden genutzt, um Niederschlag entlang einer Route zu erkennen und betroffene Kanten im Routinggraphen höher zu gewichten.
+Die Wetterdaten ermöglichen es, betroffene Kanten im Routinggraphen zu erkennen und abhängig von der Niederschlagsmenge höher zu gewichten. Dadurch können Routen berechnet werden, die wetterbezogene Einflüsse berücksichtigen.
 
----
-
-## Speicherort
+## NetCDF Ablagestruktur
 
 Die Routing-API erwartet die NetCDF-Dateien im folgenden Ordner:
 
 ```text
 backend/data/NC/
 ```
+### Wetterdaten
+Die Forecast-Dateien enthalten einen Unix-Timestamp im Dateinamen Bsp. `1712345678.nc` dieser dient zur Zuordnung der Startzeit und somit zur Prüfung der zeitlichen Gültigkeit der Datei.  
 
-Beispiel:
+### Hilfsdatei für Wetterzellen
+Für die Zuordnung von OSM-Kanten zum Wetterraster wird bevorzugt folgende Datei verwendet: `NC_for_Cellid.nc`  
+Diese Datei enthält eine reduzierte Rastergeometrie und wird beim Erstellen neuer Graphen verwendet.
 
-```text
-backend/data/NC/1712345678.nc
-```
+## Aufbereitung der NetCDF-Datei
 
----
-
-## Dateibenennung
-
-Die Forecast-Dateien werden als Unix-Timestamp benannt.
-
-Beispiel:
-
-```text
-1712345678.nc
-```
-
-Der Timestamp im Dateinamen wird vom Backend verwendet, um zu prüfen, ob die Datei zur angefragten Startzeit passt.
-
----
-
-## Hilfsdatei für Wetterzellen
-
-Für die Zuordnung von OSM-Kanten zum Wetterraster wird bevorzugt folgende Datei verwendet:
-
-```text
-backend/data/NC/NC_for_Cellid.nc
-```
-
-Diese Datei enthält die reduzierte Rastergeometrie und wird beim Erstellen neuer Graphen verwendet.
-
----
-
-## Entstehung der Wetterdaten
-
-Die Wetterdaten werden durch folgendes Skript erzeugt:
+Die Wetterdaten werden durch folgendes Skript bezogen, verarbeitet und als NetCDF-Datei gespeichert:
 
 ```text
 backend/fetch_icon.py
 ```
+Das Skript greift auf die offenen MeteoSwiss-OGD-Daten zu. Dafür wird das Python-Paket `meteodata-lab` verwendet, genauer die Schnittstelle `meteodatalab.ogd_api`. Die Abfrage holt jeweils den aktuellsten verfügbaren ICON-CH1-Forecast (`reference_datetime="latest"`).
 
-Das Skript bezieht Wetterdaten aus offenen MeteoSwiss-OGD-Daten.
 
-Verwendete Collection:
+| Parameter | Verwendung im Projekt |
+|---|---|
+| MeteoSwiss-Collection | `ch.meteoschweiz.ogd-forecasting-icon-ch1` |
+| Collection im Skript | `ogd-forecasting-icon-ch1` |
+| Forecast-Variable | `TOT_PREC` – kumulierter Niederschlag, Grundlage für die wetterabhängige Bewertung der Route |
 
-```text
-ogd-forecasting-icon-ch1
-```
+### Ablauf im Fetch-Skript
 
-Verwendete Variable:
+Das Skript führt die Wetterdaten-Erzeugung in mehreren Schritten aus:
 
-```text
-TOT_PREC
-```
+1. Für jeden Forecast-Horizont von `+0h` bis `+33h` wird eine Anfrage an MeteoSwiss OGD erstellt.
+2. Für jeden Horizont wird die Variable `TOT_PREC` geladen.
+3. Die ICON-Daten werden von ihrem ursprünglichen ICON-Gitter auf ein reguläres Koordinatengitter in WGS84 (`EPSG:4326`) umgerechnet.
+4. Die einzelnen Forecast-Horizonte werden entlang der Dimension `lead_time` zu einem gemeinsamen Dataset zusammengeführt.
+5. Aus den Ensemble-Membern wird ein Mittelwert gebildet.
+6. Aus dem kumulierten Niederschlag wird mit einer Differenz über die Zeit der stündliche Niederschlag berechnet.
+7. Sehr kleine Werte unter `0.01` werden auf `0.0` gesetzt, damit minimale numerische Restwerte nicht als Regen interpretiert werden.
+8. Das Ergebnis wird als timestamp-basierte `.nc`-Datei gespeichert.
 
----
+### Räumliche Aufbereitung
 
-## Verarbeitungsschritte
+Die MeteoSwiss-ICON-Daten liegen ursprünglich nicht als einfaches reguläres Lat/Lon-Raster vor. Für die spätere Zuordnung zu OSM-Kanten werden sie deshalb im Skript auf ein regelmässiges Raster reprojiziert.
 
-Die Wetterdaten werden in mehreren Schritten verarbeitet:
-
-1. Forecast-Daten werden für mehrere Zeithorizonte geladen.
-2. Die ICON-Daten werden auf ein reguläres Koordinatengitter umgerechnet.
-3. Die einzelnen Forecast-Horizonte werden zu einem gemeinsamen Dataset kombiniert.
-4. Aus dem kumulierten Niederschlag kann stündlicher Regen abgeleitet werden.
-5. Das Ergebnis wird als `.nc`-Datei gespeichert.
-
----
-
-## Forecast-Horizont
-
-Aktuell werden Forecast-Horizonte von:
+Im aktuellen Skript ist folgendes Zielraster definiert:
 
 ```text
-+0h bis +33h
+Koordinatensystem: EPSG:4326
+Ausdehnung:       -0.817, 18.183, 41.183, 51.183
+Rastergrösse:     429 x 295
 ```
 
-verwendet.
+Die Umrechnung erfolgt mit:
 
-Dadurch kann das Backend prüfen, ob eine vorhandene Datei für eine angefragte Startzeit noch gültig ist.
+```text
+meteodatalab.operators.regrid.iconremap
+```
 
----
+Dadurch erhalten die Wetterdaten `lat`- und `lon`-Koordinaten, die später für die Zellzuordnung im Routinggraphen verwendet werden können.
+
+### Zeitliche Aufbereitung
+
+Die Forecast-Horizonte werden im Skript über den Bereich von **0 bis 33 Stunden** geladen:
+
+
+Nach dem Laden werden die einzelnen Horizonte zu einer Zeitreihe kombiniert. Da `TOT_PREC` kumulierten Niederschlag beschreibt, wird daraus der stündliche Niederschlag abgeleitet:
+
+```text
+hourly_rain = mean_precip.diff("lead_time")
+```
+
+Im gespeicherten NetCDF-Dataset stehen dadurch zwei zentrale Variablen zur Verfügung:
+
+```text
+TOT_PREC      # ursprünglicher kumulierter Niederschlag
+hourly_rain   # daraus abgeleiteter stündlicher Niederschlag
+```
+
+Für das Routing ist vor allem `hourly_rain` relevant, da die Kantenbewertung wissen muss, wie stark es zu einem bestimmten Zeitpunkt an einer bestimmten Wetterzelle regnet.
+
+### Dateibenennung und Aktualisierung
+
+Die erzeugten NetCDF-Dateien erhalten den aktuellen Unix-Timestamp als Dateinamen: `1712345678.nc`
+
+Das Skript enthält zusätzlich eine einfache Aktualisierungslogik:
+
+- Beim Start wird geprüft, ob bereits eine aktuelle `.nc`-Datei vorhanden ist.
+- Falls die Daten veraltet sind, wird sofort ein neuer Forecast geladen.
+- Danach läuft ein Scheduler, der neue Daten jeweils kurz nach den ICON-CH1-Modellläufen lädt.
+
+Geplante Fetch-Zeiten im Skript:
+
+```text
+00:05, 03:05, 06:05, 09:05, 12:05, 15:05, 18:05, 21:05 UTC
+```
+
+Damit orientiert sich die Aktualisierung am dreistündigen Aktualisierungsrhythmus der ICON-CH1-Daten.
+
+### Abhängigkeiten
+<span style="color:red">ANPASSEN</span>  
+Für das Fetching und die Aufbereitung werden zusätzliche MeteoSwiss- und Wetterdaten-Bibliotheken benötigt. Diese sind in folgender Datei dokumentiert:
+
+```text
+backend/requirements_meteodata.txt
+```
+
+Wichtige Pakete daraus sind unter anderem:
+
+- `meteodata-lab`
+- `earthkit`
+- `xarray`
+- `netCDF4`
+- `rasterio`
 
 ## Auswahl der passenden NetCDF-Datei
 
-Bei einer Routinganfrage ruft das Backend folgende Funktion auf:
+Bei einer Routinganfrage ruft das Backend die `get_nc_file` Funktion auf:
 
 ```text
-get_nc_file(start_time)
-```
-
-Datei:
-
-```text
-backend/utils_nc_file.py
+backend/utils_nc_file.py - get_nc_file(start_time)
 ```
 
 Die Funktion durchsucht:
@@ -126,11 +141,11 @@ backend/data/NC/
 
 Dabei gilt:
 
-- nur `.nc`-Dateien werden berücksichtigt
-- Dateien ohne numerischen Timestamp werden ignoriert
-- die Datei muss zur angefragten Startzeit passen
-- gültig ist eine Datei, wenn sie maximal 33 Stunden alt ist
-- von allen gültigen Dateien wird die neueste verwendet
+- Nur `.nc`-Dateien werden berücksichtigt.
+- Dateien ohne numerischen Timestamp werden ignoriert.
+- Die Datei muss zur angefragten Startzeit passen.
+- Gültig ist eine Datei, wenn sie maximal 33 Stunden alt ist.
+- Von allen gültigen Dateien wird die neueste verwendet.
 
 Logik:
 
@@ -143,167 +158,24 @@ gültig, wenn:
 
 Wenn keine passende Datei gefunden wird, kann keine wetterbasierte Route berechnet werden.
 
----
 
-## Reduzierte Rasterdatei
+## Zuordnung von Strassenkanten zu Wetterzellen
 
-Die Datei:
+Damit Wetterdaten im Routing verwendet werden können, müssen die Kanten des OSM-Graphen mit dem Wetterraster verknüpft werden. Diese Zuordnung verbindet die räumliche Struktur des Wegenetzes mit den Rasterzellen der NetCDF-Datei.
 
-```text
-NC_for_Cellid.nc
-```
-
-wird durch folgendes Skript erzeugt:
-
-```text
-scripts/startup/reduce_nc_to_grid_geometry.py
-```
-
-Diese Datei enthält nur die für die Zellzuordnung benötigten Koordinateninformationen.
-
-Typische Variablen:
-
-```text
-lat
-lon
-```
-
----
-
-## Zuordnung von Straßenkanten zu Wetterzellen
-
-Damit eine OSM-Kante einen Wetterwert erhalten kann, muss sie einer Wetterzelle zugeordnet werden.
-
-Dieser Prozess passiert beim Erstellen eines neuen Graphen.
+Der Prozess wird beim Erstellen eines neuen Graphen ausgeführt und die berechneten Zellinformationen werden anschliessend direkt im Graphen gespeichert.
 
 Ablauf:
 
 1. Das Wetterraster wird aus `NC_for_Cellid.nc` gelesen.
-2. Aus allen Rasterpunkten wird ein KD-Tree aufgebaut.
-3. Für jede OSM-Kante wird der Mittelpunkt der Geometrie bestimmt.
+2. Aus den Rasterpunkten wird ein KD-Tree aufgebaut.
+3. Für jede OSM-Kante wird ein Referenzpunkt bestimmt, in der Regel der Mittelpunkt der Geometrie.
 4. Der nächstgelegene Rasterpunkt wird gesucht.
-5. Die Kante erhält Wetterzellen-Attribute.
+5. Die Kante erhält die Attribute `cell_i`, `cell_j` und `cell_id`.
 
-Gespeicherte Attribute:
+Diese Attribute bleiben im gespeicherten Graphen erhalten und können bei späteren Routinganfragen direkt wiederverwendet werden.
 
-```text
-cell_i
-cell_j
-cell_id
-```
+### Vorteil der Zellzuordnung
 
-Diese Attribute bleiben im gespeicherten Graphen erhalten.
+Die Zuordnung muss nicht bei jeder Routinganfrage neu berechnet werden. Das verbessert die Laufzeit, reduziert wiederholte Rasterabfragen und macht gespeicherte Graphen wiederverwendbar.
 
----
-
-## Vorteil der Zellzuordnung
-
-Durch die gespeicherten Wetterzellen-Attribute muss die Zuordnung nicht bei jeder Routinganfrage neu berechnet werden.
-
-Das verbessert:
-
-- Laufzeit
-- Wiederverwendbarkeit der Graphen
-- Effizienz der Forecast-Abfragen
-
----
-
-## Verwendung im Routing
-
-Während der Routenberechnung wird für jede relevante Kante ein Forecast-Wert gelesen.
-
-Dazu verwendet das Backend:
-
-```text
-get_forecast
-```
-
-Datei:
-
-```text
-backend/utils_forecast.py
-```
-
-Benötigt werden:
-
-```text
-cell_i
-cell_j
-target_timestamp
-```
-
----
-
-## Unterschied zwischen den Routingmodellen
-
-Beim Modell `einfach` wird der Forecast zur Startzeit verwendet.
-
-```text
-target_timestamp = start_time
-```
-
-Beim Modell `advanced` wird die erwartete Ankunftszeit an der jeweiligen Kante verwendet.
-
-```text
-target_timestamp = arrival_time
-```
-
-Dadurch kann das erweiterte Modell zeitliche Änderungen im Wetter berücksichtigen.
-
----
-
-## Einfluss auf die Kosten
-
-Der gelesene Forecast-Wert wird an folgende Funktion übergeben:
-
-```text
-compute_rain_adjusted_cost
-```
-
-Datei:
-
-```text
-backend/utils_forecast.py
-```
-
-Diese Funktion erhöht die Kosten einer Kante abhängig von:
-
-- Kantenlänge
-- Niederschlagsmenge
-- Regenempfindlichkeit `sensibility`
-
-Weitere Details zur Kostenberechnung befinden sich in:
-
-```text
-docs/routing.md
-```
-
----
-
-## Hinweis zum Ausgabeordner
-
-Aktueller Hinweis zur Implementierung:
-
-```text
-backend/fetch_icon.py
-```
-
-verwendet möglicherweise einen anderen Standard-Ausgabeordner als die Routing-API.
-
-Die Routing-API erwartet produktiv verwendete Wetterdateien hier:
-
-```text
-backend/data/NC/
-```
-
-Falls der Fetcher Dateien in einem anderen Ordner speichert, müssen sie entweder verschoben oder der Ausgabeordner angepasst werden.
-
----
-
-## Zusammenfassung
-
-Die Wetterdaten übernehmen drei zentrale Aufgaben:
-
-1. Bereitstellung von Forecast-Werten für Routinganfragen
-2. Zuordnung von OSM-Kanten zu Wetterzellen
-3. wetterabhängige Gewichtung einzelner Routenabschnitte
