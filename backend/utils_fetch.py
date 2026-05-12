@@ -1,4 +1,3 @@
-
 """
 utils_fetch.py
 
@@ -358,8 +357,16 @@ def fetch_and_save(output_dir: Path = OUTPUT_DIR) -> Path:
     ds.to_netcdf(output_file)
     ds.close()
     print(f"[fetch] Saved → {output_file}")
-    return output_file
+    
 
+    # 7. Publish fresh data to GeoServer
+    try:
+        from utils_geoserver import publish_nc
+        publish_nc(output_file)
+    except Exception as e:
+        print(f"[fetch] GeoServer publish skipped: {e}")
+
+    return output_file
 
 # ---------------------------------------------------------------------------
 # Scheduler
