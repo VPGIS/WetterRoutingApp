@@ -309,11 +309,13 @@ def write_geoserver_nc(hourly_rain: "xr.DataArray", ref_time_val: "np.datetime64
     hr_cf["lat"].attrs  = {"units": "degrees_north", "axis": "Y", "standard_name": "latitude"}
     hr_cf["lon"].attrs  = {"units": "degrees_east",  "axis": "X", "standard_name": "longitude"}
     gs_encoding = {
-        "time":        {"units": "hours since 1970-01-01", "dtype": "float64", "calendar": "proleptic_gregorian"},
+        "time":        {"units": "hours since 1970-01-01", "dtype": "float64", "calendar": "standard"},
         "hourly_rain": {"dtype": "float32"},
     }
+    # NETCDF3_CLASSIC is required - GeoServer's built-in NetCDF plugin does not
+    # support NetCDF4 without a separate plugin that is not installed by default.
     xr.Dataset({"hourly_rain": hr_cf}, attrs={"Conventions": "CF-1.6"}).to_netcdf(
-        out_path, encoding=gs_encoding
+        out_path, encoding=gs_encoding, format="NETCDF3_CLASSIC"
     )
     print(f"[fetch] GeoServer copy saved -> {out_path.name}")
     return out_path
