@@ -135,7 +135,7 @@ Die wichtigsten Prozessschritte:
 <details>
 <summary><strong>📊 Ablaufdiagramm anzeigen / ausblenden</strong></summary>
 
-![Ablaufdiagramm Verarbeitung API](assets/Ablaufdiagramm_Verarbeitung_API.drawio.svg)
+<img src="{{ '/assets/Ablaufdiagramm_Verarbeitung_API.svg' | relative_url }}" alt="Ablaufdiagramm Verarbeitung API">
 
 </details>
 

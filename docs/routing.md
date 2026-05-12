@@ -88,19 +88,18 @@ Danach wird mit OSMnx der kürzeste Pfad anhand der berechneten Kosten gesucht. 
 
 ### Ablauf
 
-```mermaid
-flowchart TD
-    A[Routingmodell einfach] --> B[static_djikstra starten]
-    B --> C[Start- und Zielnode übernehmen]
-    C --> D[Forecast zur Startzeit bestimmen]
-    D --> E[Alle Edges durchlaufen]
-    E --> F[Forecast-Wert pro Edge lesen]
-    F --> G[Regen-Penalty berechnen]
-    G --> H[cost pro Edge setzen]
-    H --> I[travel_time pro Edge setzen]
-    I --> J[OSMnx shortest_path ausführen]
-    J --> K[weight = cost verwenden]
-    K --> L[Node-Pfad zurückgeben]
+```text
+1. Routingmodell starten
+2. Start- und Zielnode übernehmen
+3. Forecast zur Startzeit bestimmen
+4. Für jede Edge:
+   - Forecast-Wert lesen
+   - Regen-Penalty berechnen
+   - Kosten (`cost`) setzen
+   - Reisezeit (`travel_time`) setzen
+5. Kürzesten Pfad mit OSMnx berechnen
+   - Gewichtung: `cost`
+6. Node-Pfad zurückgeben
 ```
 
 ### Vorteile
@@ -142,34 +141,30 @@ Im Unterschied zum einfachen Modell wird der Forecast während der Suche laufend
 
 ### Ablauf
 
-```mermaid
-flowchart TD
-    A[Routingmodell advanced] --> B[time_dependent_dijkstra starten]
-    B --> C[Start-State initialisieren]
-    C --> D[Priority Queue erstellen]
-    D --> E[Startnode mit Kosten 0 einfügen]
-
-    E --> F{Priority Queue leer?}
-    F -- ja --> Z[Keine Route gefunden]
-    F -- nein --> G[State mit geringsten Kosten entnehmen]
-
-    G --> H{Ziel erreicht?}
-    H -- ja --> I[Pfad rekonstruieren]
-    H -- nein --> J[Ausgehende Kanten prüfen]
-
-    J --> K[Travel Time der Kante berechnen]
-    K --> L[Ankunftszeit am Nachbarn bestimmen]
-    L --> M[Forecast zur Ankunftszeit interpolieren]
-    M --> N[Regen-Penalty berechnen]
-    N --> O[Neue Gesamtkosten berechnen]
-
-    O --> P{Besserer Pfad gefunden?}
-    P -- ja --> Q[dist und parent aktualisieren]
-    Q --> R[Neuen State in Priority Queue einfügen]
-    R --> F
-
-    P -- nein --> F
-    I --> S[Node-Pfad zurückgeben]
+```text
+1. Advanced-Routingmodell starten
+2. Start-State initialisieren
+3. Priority Queue erstellen
+4. Startnode mit Kosten `0` einfügen
+5. Solange die Priority Queue nicht leer ist:
+   - State mit den geringsten Kosten entnehmen
+   - Prüfen, ob das Ziel erreicht wurde
+   - Falls ja:
+     - Pfad rekonstruieren
+     - Node-Pfad zurückgeben
+   - Falls nein:
+     - Ausgehende Kanten prüfen
+     - Travel Time der Kante berechnen
+     - Ankunftszeit am Nachbarn bestimmen
+     - Forecast zur Ankunftszeit interpolieren
+     - Regen-Penalty berechnen
+     - Neue Gesamtkosten berechnen
+     - Prüfen, ob ein besserer Pfad gefunden wurde
+     - Falls ja:
+       - `dist` und `parent` aktualisieren
+       - Neuen State in die Priority Queue einfügen
+6. Falls die Priority Queue leer ist:
+   - Keine Route gefunden
 ```
 
 ### Vorteile
