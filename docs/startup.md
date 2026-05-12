@@ -121,7 +121,7 @@ backend/utils_fetch.py
 
 Dieser Fetch-Daemon bleibt während der Laufzeit des Servers aktiv. Er prüft beim Start nochmals, ob die Wetterdaten aktuell sind, und lädt danach gemäss Zeitplan neue Daten nach.
 
-Geplante Fetch-Zeiten:
+Geplante Fetch-Zeiten richten sich nach MeteoSwiss Updateschedule (+5'):
 
 ```text
 00:05, 03:05, 06:05, 09:05, 12:05, 15:05, 18:05, 21:05 UTC

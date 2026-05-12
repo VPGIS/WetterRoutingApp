@@ -4,7 +4,7 @@ title: Wetterdaten
 
 # Wetterdaten
 
-Diese Datei beschreibt die Verwendung, Erzeugung und Zuordnung der Wetterdaten im Projekt **Wetter Routing App**.
+Diese Datei beschreibt die Verwendung, Erzeugung und Zuordnung der Wetterdaten im Projekt Wetter Routing App.
 
 ## Überblick
 

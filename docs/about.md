@@ -8,7 +8,7 @@ Diese Seite beschreibt den Projektkontext, die Fragestellung, das Team und die v
 
 ## Projektübersicht
 
-Die **Wetter Routing App** ist ein studentisches Projekt im Rahmen des Vertiefungsprofils **4230 Geoinformatik Raumanalyse I** an der Fachhochschule Nordwestschweiz FHNW. Das Projekt entstand am Institut Geomatik IGEO im Studiengang BSc Geomatik und wurde im 4. und 6. Semester umgesetzt.
+Die Wetter Routing App entstand im Rahmen des Vertiefungsprofils 4230 Geoinformatik Raumanalyse I an der Fachhochschule Nordwestschweiz FHNW. Das Projekt entstand am Institut Geomatik IGEO im Studiengang BSc Geomatik und wurde im 4. und 6. Semester umgesetzt.
 
 Ziel des Projekts ist die Entwicklung eines Prototyps, der klassische Routingfunktionen mit Wetterinformationen verbindet. Die Anwendung nutzt OpenStreetMap-Daten zur Erstellung eines Wegenetzes und kombiniert dieses mit Wetterdaten von MeteoSwiss. Dadurch kann eine Route nicht nur anhand von Distanz oder Reisezeit berechnet, sondern zusätzlich anhand wetterbezogener Einflüsse wie Niederschlag bewertet werden.
 

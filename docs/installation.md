@@ -15,7 +15,7 @@ Empfohlen wird eine Installation unter Linux oder Windows mit WSL2. Das Projekt 
 Voraussetzungen:
 
 - Git
-- Miniconda, Anaconda oder Mambaforge
+- Miniconda, Anaconda oder Miniforge
 - Internetverbindung für Paketinstallation, OpenStreetMap-/OSMnx-Abfragen und Wetterdaten
 
 ## Miniconda / Conda
@@ -41,7 +41,7 @@ conda update -n base -c defaults conda
 ## Repository klonen
 
 ```bash
-git clone https://github.com/calgon854/VPRouting.git
+git clone https://github.com/VPGIS/VPRouting
 cd VPRouting
 ```
 
