@@ -577,15 +577,23 @@
           },
         ).addTo(map);
 
-        // Rain overlay — GeoServer WMS layer; TIME parameter updated per frame
-        const rainLayer = L.tileLayer.wms("/wms", {
-          layers: "vprouting:hourly_rain",
-          styles: "rain_blue",
-          format: "image/png",
-          transparent: true,
-          version: "1.1.1",
+        // Helper: build a single WMS GetMap URL for a given UTC ISO timestamp
+        function makeWmsUrl(time) {
+          return (
+            "/wms?SERVICE=WMS&VERSION=1.1.1&REQUEST=GetMap" +
+            "&FORMAT=image%2Fpng&TRANSPARENT=true" +
+            "&LAYERS=vprouting%3Ahourly_rain&STYLES=rain_blue" +
+            "&SRS=EPSG%3A4326&WIDTH=858&HEIGHT=590" +
+            "&BBOX=-0.817%2C41.183%2C18.183%2C51.183" +
+            "&TIME=" + encodeURIComponent(time)
+          );
+        }
+
+        // Rain overlay — single WMS GetMap image, refreshed each frame (same
+        // pattern as original base64 approach, avoids tile-pane z-index fights)
+        const overlay = L.imageOverlay("", BOUNDS, {
           opacity: 0.75,
-          zIndex: 10,
+          interactive: false,
         }).addTo(map);
 
         // Load available timesteps from /rain-times then initialise animation
@@ -639,7 +647,7 @@
         function showFrame(idx) {
           if (!TIMES.length) return; // guard until /rain-times loaded
           currentFrame = idx;
-          rainLayer.setParams({ TIME: TIMES[idx] }, false);
+          overlay.setUrl(makeWmsUrl(TIMES[idx]));
 
           const label = LABELS[idx] || TIMES[idx] || "";
           const parts = label.split(" \u00b7 ");
