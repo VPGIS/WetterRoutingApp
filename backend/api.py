@@ -58,6 +58,13 @@ FETCH_SCRIPT = BACKEND_DIR / "utils_fetch.py"
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
+    # GeoServer-Layer pruefen / anlegen
+    try:
+        from utils_geoserver import check_geoserver_on_startup
+        check_geoserver_on_startup()
+    except Exception as e:
+        print(f"[startup] GeoServer startup check skipped: {e}")
+
     # Fetch-Daemon als Hintergrundprozess starten
     print("[startup] Starte Fetch-Daemon...")
     daemon = subprocess.Popen(
