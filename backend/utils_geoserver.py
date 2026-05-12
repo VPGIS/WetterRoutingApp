@@ -135,11 +135,15 @@ def publish_nc(nc_path: Path):
     cov_name = LAYER  # fallback: our expected name
     if cov_r.status_code == 200:
         body = cov_r.json()
-        cov_list = body.get("coverages", {}).get("coverage", [])
-        if isinstance(cov_list, list) and cov_list:
-            cov_name = cov_list[0].get("name", LAYER)
-        elif isinstance(cov_list, dict):
-            cov_name = cov_list.get("name", LAYER)
+        cov_data = body.get("coverages", {}).get("coverage", [])
+        # GeoServer may return: list of dicts, single dict, list of strings, or plain string
+        if isinstance(cov_data, list) and cov_data:
+            first = cov_data[0]
+            cov_name = first if isinstance(first, str) else first.get("name", LAYER)
+        elif isinstance(cov_data, dict):
+            cov_name = cov_data.get("name", LAYER)
+        elif isinstance(cov_data, str) and cov_data:
+            cov_name = cov_data
     print(f"[geoserver] Coverage name: '{cov_name}'")
 
     # If GeoServer gave it a different name, rename it to our expected LAYER name
