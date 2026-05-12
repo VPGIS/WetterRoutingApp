@@ -132,19 +132,25 @@ def publish_nc(nc_path: Path):
         auth=AUTH,
         headers={"Accept": "application/json"},
     )
-    cov_name = LAYER  # fallback: our expected name
-    if cov_r.status_code == 200:
-        body = cov_r.json()
-        cov_data = body.get("coverages", {}).get("coverage", [])
-        # GeoServer may return: list of dicts, single dict, list of strings, or plain string
-        if isinstance(cov_data, list) and cov_data:
-            first = cov_data[0]
-            cov_name = first if isinstance(first, str) else first.get("name", LAYER)
-        elif isinstance(cov_data, dict):
-            cov_name = cov_data.get("name", LAYER)
-        elif isinstance(cov_data, str) and cov_data:
-            cov_name = cov_data
-    print(f"[geoserver] Coverage name: '{cov_name}'")
+    cov_name = LAYER  # fallback to expected name
+    print(f"[geoserver] Coverage list HTTP {cov_r.status_code}: {cov_r.text[:300]}")
+    try:
+        if cov_r.status_code == 200:
+            body = cov_r.json()
+            cov_data = body.get("coverages", {}).get("coverage", [])
+            print(f"[geoserver] cov_data type={type(cov_data).__name__} value={cov_data!r}")
+            if isinstance(cov_data, list) and cov_data:
+                first = cov_data[0]
+                cov_name = first if isinstance(first, str) else first.get("name", LAYER)
+            elif isinstance(cov_data, dict):
+                cov_name = cov_data.get("name", LAYER)
+            elif isinstance(cov_data, str) and cov_data:
+                cov_name = cov_data
+    except Exception as e:
+        import traceback
+        print(f"[geoserver] Coverage name parse failed ({e}), falling back to '{LAYER}'")
+        traceback.print_exc()
+    print(f"[geoserver] Using coverage name: '{cov_name}'")
 
     # If GeoServer gave it a different name, rename it to our expected LAYER name
     if cov_name != LAYER:
