@@ -18,11 +18,16 @@ Both are stored in backend/.fetch_cache/ and reused on subsequent runs.
 """
 
 import re
+import sys
 import tempfile
 import time
 from collections import defaultdict
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
+
+# UTF-8 stdout so Unicode characters work on Windows terminals
+if hasattr(sys.stdout, "reconfigure"):
+    sys.stdout.reconfigure(encoding="utf-8")
 
 import eccodes
 import numpy as np
