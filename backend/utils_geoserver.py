@@ -86,22 +86,29 @@ def _ensure_style():
 
 def publish_nc(nc_path: Path):
     """
-    Idempotent publish:
-    - First run  : creates workspace + store + layer (full setup)
-    - Later runs : updates store URL + reloads cache, skips existing layer
-    GeoServer persists config across restarts, so no manual re-run needed.
+    Publish (or re-publish) a NetCDF file as a WMS layer in GeoServer.
+
+    Strategy: delete the old store+layer (recurse=true) and recreate fresh on
+    every call using configure=all.  This lets GeoServer scan the file itself
+    and register the correct coverage name, which avoids the notorious
+    'geotools_coverage not available' error that occurs when coverage names
+    are set manually and do not match the internal reader mapping.
     """
-    # 1. Ensure rain_blue style exists and is up-to-date
+    # 1. Ensure rain_blue style exists
     _ensure_style()
 
     # 2. Workspace - create only if missing
     if not _exists(f"{GS_URL}/rest/workspaces/{WS}"):
-        _post(f"{GS_URL}/rest/workspaces",
-              json={"workspace": {"name": WS}})
+        _post(f"{GS_URL}/rest/workspaces", json={"workspace": {"name": WS}})
         print(f"[geoserver] Workspace '{WS}' created")
 
-    # 3. Store - create if missing, update URL if exists (new .nc file)
-    store_url  = f"{GS_URL}/rest/workspaces/{WS}/coveragestores/{STORE}"
+    # 3. Delete existing store (cascade-deletes all layers) so we start clean
+    store_url = f"{GS_URL}/rest/workspaces/{WS}/coveragestores/{STORE}"
+    if _exists(store_url):
+        requests.delete(f"{store_url}?recurse=true", auth=AUTH)
+        print(f"[geoserver] Old store '{STORE}' removed")
+
+    # 4. Create store with configure=all - GeoServer auto-discovers the coverage
     store_body = {"coverageStore": {
         "name":      STORE,
         "type":      "NetCDF",
@@ -109,40 +116,54 @@ def publish_nc(nc_path: Path):
         "url":       f"file:{nc_path.resolve()}",
         "workspace": {"name": WS},
     }}
-    if _exists(store_url):
-        _put(store_url, json=store_body)
-        print(f"[geoserver] Store '{STORE}' updated -> {nc_path.name}")
-    else:
-        _post(f"{GS_URL}/rest/workspaces/{WS}/coveragestores",
-              json=store_body)
-        print(f"[geoserver] Store '{STORE}' created -> {nc_path.name}")
+    r = requests.post(
+        f"{GS_URL}/rest/workspaces/{WS}/coveragestores",
+        auth=AUTH,
+        params={"configure": "all"},
+        json=store_body,
+    )
+    if r.status_code not in (200, 201):
+        raise RuntimeError(f"[geoserver] POST store -> {r.status_code}: {r.text}")
+    print(f"[geoserver] Store '{STORE}' created -> {nc_path.name}")
 
-    # 4. Layer - create only if missing (persisted across GeoServer restarts)
-    layer_url = f"{GS_URL}/rest/workspaces/{WS}/coveragestores/{STORE}/coverages/{LAYER}"
-    if not _exists(layer_url):
-        _post(
-            f"{GS_URL}/rest/workspaces/{WS}/coveragestores/{STORE}/coverages",
-            json={"coverage": {
-                "name":       LAYER,
-                "nativeName": "hourly_rain",
-                "title":      "Hourly Rain Forecast",
-                "srs":        "EPSG:4326",
-                "enabled":    True,
-            }},
+    # 5. Discover the actual coverage name GeoServer assigned
+    cov_r = requests.get(
+        f"{GS_URL}/rest/workspaces/{WS}/coveragestores/{STORE}/coverages",
+        auth=AUTH,
+        headers={"Accept": "application/json"},
+    )
+    cov_name = LAYER  # fallback: our expected name
+    if cov_r.status_code == 200:
+        body = cov_r.json()
+        cov_list = body.get("coverages", {}).get("coverage", [])
+        if isinstance(cov_list, list) and cov_list:
+            cov_name = cov_list[0].get("name", LAYER)
+        elif isinstance(cov_list, dict):
+            cov_name = cov_list.get("name", LAYER)
+    print(f"[geoserver] Coverage name: '{cov_name}'")
+
+    # If GeoServer gave it a different name, rename it to our expected LAYER name
+    if cov_name != LAYER:
+        requests.put(
+            f"{GS_URL}/rest/workspaces/{WS}/coveragestores/{STORE}/coverages/{cov_name}",
+            auth=AUTH,
+            headers={"Content-Type": "application/json"},
+            json={"coverage": {"name": LAYER, "nativeName": cov_name}},
         )
-        print(f"[geoserver] Layer '{WS}:{LAYER}' published")
-    else:
-        print(f"[geoserver] Layer '{WS}:{LAYER}' already exists, skipping")
+        print(f"[geoserver] Coverage renamed '{cov_name}' -> '{LAYER}'")
+        cov_name = LAYER
 
-    # 4. Set rain_blue as the default style for this layer (always, idempotent)
+    layer_url = f"{GS_URL}/rest/workspaces/{WS}/coveragestores/{STORE}/coverages/{cov_name}"
+
+    # 6. Set rain_blue as the default style (idempotent)
     requests.put(
-        f"{GS_URL}/rest/layers/{WS}:{LAYER}",
+        f"{GS_URL}/rest/layers/{WS}:{cov_name}",
         auth=AUTH,
         json={"layer": {"defaultStyle": {"name": "rain_blue"}}},
     )
-    print("[geoserver] Default style set to 'rain_blue'")
+    print("[geoserver] Default style -> 'rain_blue'")
 
-    # 5. Enable TIME dimension so GeoServer honours the TIME= WMS parameter
+    # 7. Enable TIME dimension so GeoServer honours the TIME= WMS parameter
     requests.put(
         layer_url,
         auth=AUTH,
@@ -162,11 +183,7 @@ def publish_nc(nc_path: Path):
         }},
     )
     print("[geoserver] TIME dimension enabled")
-
-    # 6. Reload store cache so GeoServer picks up the new file immediately
-    requests.post(f"{store_url}/reset", auth=AUTH)
-    print(f"[geoserver] Store cache reloaded")
-    print(f"[geoserver] WMS ready at {GS_URL}/{WS}/wms")
+    print(f"[geoserver] WMS ready -> {GS_URL}/{WS}/wms?LAYERS={WS}:{cov_name}")
 
 
 def ensure_geoserver_running() -> bool:
