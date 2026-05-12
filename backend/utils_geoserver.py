@@ -6,6 +6,8 @@ Fully idempotent: safe to call on every fetch and on uvicorn startup.
 Creates what is missing, updates what exists, skips what is already correct.
 """
 import glob
+import subprocess
+import time
 import requests
 from pathlib import Path
 
@@ -17,6 +19,10 @@ LAYER  = "hourly_rain"
 
 BACKEND_DIR = Path(__file__).resolve().parent
 NC_DIR      = BACKEND_DIR / "data" / "NC"
+
+# Path to GeoServer startup script on the Raspberry Pi
+GS_STARTUP       = Path("/home/calgon/geoserver/bin/startup.sh")
+GS_STARTUP_WAIT  = 60   # max seconds to wait for GeoServer to come up
 
 
 def _put(url, **kwargs):
@@ -89,28 +95,49 @@ def publish_nc(nc_path: Path):
     print(f"[geoserver] WMS ready at {GS_URL}/{WS}/wms")
 
 
+def ensure_geoserver_running() -> bool:
+    """
+    Check if GeoServer is reachable. If not, launch the startup script and
+    wait up to GS_STARTUP_WAIT seconds for it to come up.
+    Returns True if GeoServer is up, False if it could not be started.
+    The NC publish happens separately after each fetch cycle completes.
+    """
+    def _is_up() -> bool:
+        try:
+            r = requests.get(f"{GS_URL}/rest/workspaces", auth=AUTH, timeout=5)
+            return r.status_code == 200
+        except requests.exceptions.ConnectionError:
+            return False
+
+    if _is_up():
+        print("[geoserver] Already running")
+        return True
+
+    if not GS_STARTUP.exists():
+        print(f"[geoserver] Not reachable and startup script not found at {GS_STARTUP}")
+        return False
+
+    print(f"[geoserver] Not running — launching {GS_STARTUP}")
+    subprocess.Popen(
+        [str(GS_STARTUP)],
+        stdout=subprocess.DEVNULL,
+        stderr=subprocess.DEVNULL,
+    )
+
+    deadline = time.time() + GS_STARTUP_WAIT
+    while time.time() < deadline:
+        time.sleep(5)
+        if _is_up():
+            print("[geoserver] GeoServer is now up")
+            return True
+
+    print(f"[geoserver] GeoServer did not respond within {GS_STARTUP_WAIT}s")
+    return False
+
+
 def check_geoserver_on_startup():
     """
-    Called by uvicorn lifespan. Publishes the newest _gs.nc file to GeoServer
-    if GeoServer is reachable. Silently skips if GeoServer is down or no file exists.
+    Called by uvicorn lifespan. Ensures GeoServer is running (starts it if needed).
+    NC file publish is NOT done here — it happens after each fetch cycle in utils_fetch.py.
     """
-    try:
-        r = requests.get(f"{GS_URL}/rest/workspaces", auth=AUTH, timeout=5)
-        if r.status_code != 200:
-            print(f"[geoserver] Not reachable (status {r.status_code}), skipping startup publish")
-            return
-    except requests.exceptions.ConnectionError:
-        print("[geoserver] Not reachable, skipping startup publish")
-        return
-
-    # Prefer the GeoServer-compatible _gs.nc files; fall back to any .nc
-    gs_files = sorted(NC_DIR.glob("*_gs.nc"), key=lambda p: p.stat().st_mtime)
-    if not gs_files:
-        gs_files = sorted(NC_DIR.glob("*.nc"), key=lambda p: p.stat().st_mtime)
-    if not gs_files:
-        print("[geoserver] No .nc files found, skipping startup publish")
-        return
-
-    newest = gs_files[-1]
-    print(f"[geoserver] Startup: publishing {newest.name}")
-    publish_nc(newest)
+    ensure_geoserver_running()

@@ -358,24 +358,30 @@ def fetch_and_save(output_dir: Path = OUTPUT_DIR) -> Path:
     ds.close()
     print(f"[fetch] Saved -> {output_file}")
 
-    # 6b. Write a GeoServer-compatible copy: hourly_rain with 1-D CF lat/lon dims.
-    #     GeoServer's NetCDF plugin requires dimension coordinates (1-D),
-    #     not 2-D auxiliary coordinates.  The routing system keeps using the
-    #     main file above — this separate file is only consumed by GeoServer.
+    # 6b. Write a GeoServer-compatible copy: hourly_rain with 1-D CF lat/lon/time dims.
+    #     GeoServer's NetCDF plugin requires:
+    #       - 1-D dimension coordinates (not 2-D auxiliary)
+    #       - a proper CF time axis (datetime64 → xarray writes "hours since ...")
+    #     The routing system keeps using the main file above; this is GeoServer-only.
     gs_file = output_dir / f"{ts}_gs.nc"
+    ref_time_val = da_all.coords["ref_time"].values[0]          # numpy datetime64[ns]
+    lead_hours   = hourly_rain.coords["lead_time"].values        # float array, e.g. [1,2,...33]
+    time_vals    = ref_time_val + (lead_hours * 3.6e12).astype("timedelta64[ns]")  # absolute UTC
+
     hr_cf = xr.DataArray(
         hourly_rain.values,
-        dims=["lead_time", "lat", "lon"],
+        dims=["time", "lat", "lon"],
         coords={
-            "lead_time": hourly_rain.coords["lead_time"].values,
-            "lat":       TARGET_LATS.astype(np.float32),
-            "lon":       TARGET_LONS.astype(np.float32),
+            "time": time_vals,
+            "lat":  TARGET_LATS.astype(np.float32),
+            "lon":  TARGET_LONS.astype(np.float32),
         },
         name="hourly_rain",
         attrs=hourly_rain.attrs,
     )
-    hr_cf["lat"].attrs = {"units": "degrees_north", "axis": "Y", "standard_name": "latitude"}
-    hr_cf["lon"].attrs = {"units": "degrees_east",  "axis": "X", "standard_name": "longitude"}
+    hr_cf["time"].attrs = {"standard_name": "time", "axis": "T"}
+    hr_cf["lat"].attrs  = {"units": "degrees_north", "axis": "Y", "standard_name": "latitude"}
+    hr_cf["lon"].attrs  = {"units": "degrees_east",  "axis": "X", "standard_name": "longitude"}
     xr.Dataset({"hourly_rain": hr_cf}).to_netcdf(gs_file)
     print(f"[fetch] GeoServer copy saved -> {gs_file.name}")
 
