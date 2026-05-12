@@ -123,24 +123,40 @@ def publish_nc(nc_path: Path):
         raise RuntimeError(f"[geoserver] Store registration failed {r.status_code}: {r.text}")
     print(f"[geoserver] Store '{STORE}' registered -> {nc_path.name}")
 
-    # 5. Discover the variable names GeoServer sees in the file
-    avail_r = requests.get(
-        f"{GS_URL}/rest/workspaces/{WS}/coveragestores/{STORE}/coverages",
-        auth=AUTH,
-        headers={"Accept": "application/json"},
-        params={"list": "available"},
-    )
-    print(f"[geoserver] Available coverages HTTP {avail_r.status_code}: {avail_r.text[:300]}")
+    # 5. Discover the variable names GeoServer sees in the file.
+    #    GeoServer scans the file asynchronously after external.netcdf PUT,
+    #    so retry for up to ~15 seconds until the list is non-empty.
     avail_names = []
-    try:
-        if avail_r.status_code == 200:
-            names = avail_r.json().get("list", {}).get("string", [])
-            if isinstance(names, str):
-                avail_names = [names]
-            elif isinstance(names, list):
-                avail_names = names
-    except Exception as e:
-        print(f"[geoserver] Available parse error: {e}")
+    for attempt in range(5):
+        avail_r = requests.get(
+            f"{GS_URL}/rest/workspaces/{WS}/coveragestores/{STORE}/coverages",
+            auth=AUTH,
+            headers={"Accept": "application/json"},
+            params={"list": "available"},
+        )
+        raw = avail_r.text[:300]
+        print(f"[geoserver] Available (attempt {attempt+1}) HTTP {avail_r.status_code}: {raw}")
+        try:
+            if avail_r.status_code == 200:
+                body = avail_r.json()
+                # Response may be {"list":{"string":...}} or {"coverages":{"coverage":[...]}}
+                entries = (
+                    body.get("list", {}).get("string")
+                    or body.get("coverages", {}).get("coverage")
+                )
+                if isinstance(entries, str):
+                    avail_names = [entries]
+                elif isinstance(entries, list):
+                    avail_names = [
+                        (e["name"] if isinstance(e, dict) else e) for e in entries
+                    ]
+                elif isinstance(entries, dict):
+                    avail_names = [entries.get("name", "")]
+        except Exception as e:
+            print(f"[geoserver] Available parse error: {e}")
+        if avail_names:
+            break
+        time.sleep(3)
 
     # Prefer our expected name; fall back to first seen; last resort hardcode
     cov_name = LAYER if LAYER in avail_names else (avail_names[0] if avail_names else LAYER)
