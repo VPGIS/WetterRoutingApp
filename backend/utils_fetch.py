@@ -356,13 +356,33 @@ def fetch_and_save(output_dir: Path = OUTPUT_DIR) -> Path:
     ds = xr.Dataset({"TOT_PREC": da_all, "hourly_rain": hourly_rain})
     ds.to_netcdf(output_file)
     ds.close()
-    print(f"[fetch] Saved → {output_file}")
-    
+    print(f"[fetch] Saved -> {output_file}")
+
+    # 6b. Write a GeoServer-compatible copy: hourly_rain with 1-D CF lat/lon dims.
+    #     GeoServer's NetCDF plugin requires dimension coordinates (1-D),
+    #     not 2-D auxiliary coordinates.  The routing system keeps using the
+    #     main file above — this separate file is only consumed by GeoServer.
+    gs_file = output_dir / f"{ts}_gs.nc"
+    hr_cf = xr.DataArray(
+        hourly_rain.values,
+        dims=["lead_time", "lat", "lon"],
+        coords={
+            "lead_time": hourly_rain.coords["lead_time"].values,
+            "lat":       TARGET_LATS.astype(np.float32),
+            "lon":       TARGET_LONS.astype(np.float32),
+        },
+        name="hourly_rain",
+        attrs=hourly_rain.attrs,
+    )
+    hr_cf["lat"].attrs = {"units": "degrees_north", "axis": "Y", "standard_name": "latitude"}
+    hr_cf["lon"].attrs = {"units": "degrees_east",  "axis": "X", "standard_name": "longitude"}
+    xr.Dataset({"hourly_rain": hr_cf}).to_netcdf(gs_file)
+    print(f"[fetch] GeoServer copy saved -> {gs_file.name}")
 
     # 7. Publish fresh data to GeoServer
     try:
         from utils_geoserver import publish_nc
-        publish_nc(output_file)
+        publish_nc(gs_file)
     except Exception as e:
         print(f"[fetch] GeoServer publish skipped: {e}")
 
