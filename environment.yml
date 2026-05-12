@@ -24,10 +24,10 @@ dependencies:
   - netcdf4
 
   # --- Routing & GIS ---
-  - osmnx          # OpenStreetMap graph download + routing
+  - osmnx>=2.0     # OpenStreetMap graph download + routing (requires shapely 2.x)
+  - shapely>=2.0
   - networkx
   - geopandas
-  - shapely
 
   # --- HTTP ---
   - requests
