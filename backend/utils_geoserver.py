@@ -24,6 +24,29 @@ NC_DIR      = BACKEND_DIR / "data" / "NC"
 GS_STARTUP       = Path("/home/calgon/geoserver/bin/startup.sh")
 GS_STARTUP_WAIT  = 60   # max seconds to wait for GeoServer to come up
 
+# SLD for rain_blue style (no ChannelSelection - works reliably with NetCDF)
+RAIN_BLUE_SLD = """\
+<?xml version="1.0" encoding="UTF-8"?>
+<StyledLayerDescriptor version="1.0.0"
+  xmlns="http://www.opengis.net/sld">
+  <NamedLayer><Name>rain_blue</Name>
+  <UserStyle><FeatureTypeStyle><Rule>
+  <RasterSymbolizer>
+    <ColorMap type="ramp">
+      <ColorMapEntry color="#f7fafd" quantity="0.0"  opacity="0"/>
+      <ColorMapEntry color="#f7fafd" quantity="0.01" opacity="0.82"/>
+      <ColorMapEntry color="#c9dff2" quantity="0.5"  opacity="0.82"/>
+      <ColorMapEntry color="#84b9e0" quantity="1.5"  opacity="0.82"/>
+      <ColorMapEntry color="#3d87c1" quantity="3.0"  opacity="0.82"/>
+      <ColorMapEntry color="#1d5f9a" quantity="6.0"  opacity="0.82"/>
+      <ColorMapEntry color="#0d3a6e" quantity="12.0" opacity="0.82"/>
+    </ColorMap>
+  </RasterSymbolizer>
+  </Rule></FeatureTypeStyle></UserStyle>
+  </NamedLayer>
+</StyledLayerDescriptor>
+"""
+
 
 def _put(url, **kwargs):
     r = requests.put(url, auth=AUTH, **kwargs)
@@ -42,6 +65,25 @@ def _exists(url):
     return requests.get(url, auth=AUTH).status_code == 200
 
 
+def _ensure_style():
+    """Create or update the rain_blue SLD style in GeoServer."""
+    style_url = f"{GS_URL}/rest/styles/rain_blue"
+    sld_bytes = RAIN_BLUE_SLD.encode("utf-8")
+    headers = {"Content-Type": "application/vnd.ogc.sld+xml"}
+    if _exists(style_url):
+        requests.put(style_url, auth=AUTH, headers=headers, data=sld_bytes)
+        print("[geoserver] Style 'rain_blue' updated")
+    else:
+        requests.post(
+            f"{GS_URL}/rest/styles",
+            auth=AUTH,
+            headers=headers,
+            params={"name": "rain_blue"},
+            data=sld_bytes,
+        )
+        print("[geoserver] Style 'rain_blue' created")
+
+
 def publish_nc(nc_path: Path):
     """
     Idempotent publish:
@@ -49,13 +91,16 @@ def publish_nc(nc_path: Path):
     - Later runs : updates store URL + reloads cache, skips existing layer
     GeoServer persists config across restarts, so no manual re-run needed.
     """
-    # 1. Workspace - create only if missing
+    # 1. Ensure rain_blue style exists and is up-to-date
+    _ensure_style()
+
+    # 2. Workspace - create only if missing
     if not _exists(f"{GS_URL}/rest/workspaces/{WS}"):
         _post(f"{GS_URL}/rest/workspaces",
               json={"workspace": {"name": WS}})
         print(f"[geoserver] Workspace '{WS}' created")
 
-    # 2. Store - create if missing, update URL if exists (new .nc file)
+    # 3. Store - create if missing, update URL if exists (new .nc file)
     store_url  = f"{GS_URL}/rest/workspaces/{WS}/coveragestores/{STORE}"
     store_body = {"coverageStore": {
         "name":      STORE,
@@ -72,7 +117,7 @@ def publish_nc(nc_path: Path):
               json=store_body)
         print(f"[geoserver] Store '{STORE}' created -> {nc_path.name}")
 
-    # 3. Layer - create only if missing (persisted across GeoServer restarts)
+    # 4. Layer - create only if missing (persisted across GeoServer restarts)
     layer_url = f"{GS_URL}/rest/workspaces/{WS}/coveragestores/{STORE}/coverages/{LAYER}"
     if not _exists(layer_url):
         _post(
@@ -89,7 +134,36 @@ def publish_nc(nc_path: Path):
     else:
         print(f"[geoserver] Layer '{WS}:{LAYER}' already exists, skipping")
 
-    # 4. Reload store cache so GeoServer picks up the new file immediately
+    # 4. Set rain_blue as the default style for this layer (always, idempotent)
+    requests.put(
+        f"{GS_URL}/rest/layers/{WS}:{LAYER}",
+        auth=AUTH,
+        json={"layer": {"defaultStyle": {"name": "rain_blue"}}},
+    )
+    print("[geoserver] Default style set to 'rain_blue'")
+
+    # 5. Enable TIME dimension so GeoServer honours the TIME= WMS parameter
+    requests.put(
+        layer_url,
+        auth=AUTH,
+        headers={"Content-Type": "application/json"},
+        json={"coverage": {
+            "metadata": {
+                "entry": [{
+                    "@key": "time",
+                    "dimensionInfo": {
+                        "enabled": True,
+                        "presentation": "LIST",
+                        "nearestMatchEnabled": False,
+                        "defaultValue": {"strategy": "MAXIMUM"},
+                    },
+                }],
+            },
+        }},
+    )
+    print("[geoserver] TIME dimension enabled")
+
+    # 6. Reload store cache so GeoServer picks up the new file immediately
     requests.post(f"{store_url}/reset", auth=AUTH)
     print(f"[geoserver] Store cache reloaded")
     print(f"[geoserver] WMS ready at {GS_URL}/{WS}/wms")
