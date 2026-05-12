@@ -59,15 +59,16 @@ FETCH_SCRIPT = BACKEND_DIR / "fetch_icon_NOMETEO.py"
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     # Fetch-Daemon als Hintergrundprozess starten
-    print("[startup] Starte Fetch-Daemon…")
+    print("[startup] Starte Fetch-Daemon...")
     daemon = subprocess.Popen(
         [sys.executable, str(FETCH_SCRIPT)],
         cwd=BACKEND_DIR.parent,
+        env={**__import__("os").environ, "PYTHONIOENCODING": "utf-8"},
     )
     print(f"[startup] Fetch-Daemon gestartet (PID {daemon.pid})")
     yield
     # Beim Herunterfahren der API den Daemon beenden
-    print("[shutdown] Beende Fetch-Daemon…")
+    print("[shutdown] Beende Fetch-Daemon...")
     daemon.terminate()
 
 app = FastAPI(
