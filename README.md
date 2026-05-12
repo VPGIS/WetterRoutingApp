@@ -28,15 +28,11 @@ python scripts/startup/startup.py
 
 Nach dem Start ist die Anwendung lokal erreichbar unter:
 
-```text
-http://127.0.0.1:8000
-```
+- [http://127.0.0.1:8000](http://127.0.0.1:8000)
 
 Die automatisch erzeugte Swagger-Dokumentation befindet sich unter:
 
-```text
-http://127.0.0.1:8000/docs
-```
+- [http://127.0.0.1:8000/docs](http://127.0.0.1:8000/docs)
 
 Detaillierte Hinweise zur Einrichtung stehen in [Installation](docs/installation.md), der Startprozess ist in [Startup](docs/startup.md) beschrieben.
 
@@ -44,22 +40,18 @@ Detaillierte Hinweise zur Einrichtung stehen in [Installation](docs/installation
 
 Die wichtigsten Detailinformationen befinden sich in den Markdown-Dateien im Ordner `docs/`:
 
-| Datei | Inhalt |
-|---|---|
-| [About](docs/about.md) | Projektkontext, Fragestellung, Datenquellen und Team |
-| [Installation](docs/installation.md) | Einrichtung der Conda-Umgebung und Abhängigkeiten |
-| [Startup](docs/startup.md) | Startprozess, Wetterdatenprüfung, API-Server und Fetch-Daemon |
-| [Architektur](docs/architecture.md) | Technischer Aufbau und Zusammenspiel der Komponenten |
-| [Routing-Logik](docs/routing.md) | Routingmodelle, Kostenfunktion und Ergebnisformat |
-| [Wetterdaten](docs/weather-data.md) | Bezug, Aufbereitung und Zuordnung der MeteoSwiss-Daten |
+| Datei                                | Inhalt                                                        |
+| ------------------------------------ | ------------------------------------------------------------- |
+| [About](docs/about.md)               | Projektkontext, Fragestellung, Datenquellen und Team          |
+| [Installation](docs/installation.md) | Einrichtung der Conda-Umgebung und Abhängigkeiten             |
+| [Startup](docs/startup.md)           | Startprozess, Wetterdatenprüfung, API-Server und Fetch-Daemon |
+| [Architektur](docs/architecture.md)  | Technischer Aufbau und Zusammenspiel der Komponenten          |
+| [Routing-Logik](docs/routing.md)     | Routingmodelle, Kostenfunktion und Ergebnisformat             |
+| [Wetterdaten](docs/weather-data.md)  | Bezug, Aufbereitung und Zuordnung der MeteoSwiss-Daten        |
 
 ## API
 
-Die wichtigste API-Route ist:
-
-```text
-GET /WAPapi/v1/route
-```
+Die wichtigste API-Route ist: `GET /WAPapi/v1/route`
 
 Sie berechnet eine wetterabhängige Route zwischen Start- und Zielpunkt. Die vollständige API-Beschreibung wird beim laufenden Backend über Swagger bereitgestellt.
 
@@ -69,12 +61,6 @@ Weitere Informationen zum Ablauf einer Routinganfrage befinden sich in [Architek
 
 Die GitHub Page des Projekts ist hier erreichbar:
 
-```text
-https://calgon854.github.io/VPRouting/
-```
+- [https://github.com/VPGIS/VPRouting](https://vpgis.github.io/VPRouting/)
 
-Die Startseite der GitHub Page befindet sich in:
-
-```text
-docs/index.md
-```
+Die Dokumentation des Projekts und die GitHub Page befindet sich in: `docs/index.md`

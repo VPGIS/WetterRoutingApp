@@ -50,7 +50,10 @@ Die Anwendung besteht aus einem browserbasierten Frontend, einem FastAPI-Backend
   <a href="startup.html#was-passiert-beim-start">Startprozess</a>
 </div>
 
+
 ## Schnellstart
+
+Nach dem Klonen des Repositorys wird zuerst die Conda-Umgebung erstellt und aktiviert. Danach kann der API-Server mit dem Startup-Skript gestartet werden.
 
 ```bash
 conda env create -f environment.yml
@@ -60,18 +63,18 @@ python scripts/startup/startup.py
 
 Nach dem Start ist die Anwendung lokal erreichbar unter:
 
-```text
-http://127.0.0.1:8000
-```
+- [http://127.0.0.1:8000](http://127.0.0.1:8000)
 
 Die automatisch erzeugte Swagger-Dokumentation befindet sich unter:
 
-```text
-http://127.0.0.1:8000/docs
-```
+- [http://127.0.0.1:8000/docs](http://127.0.0.1:8000/docs)
+
+Detaillierte Hinweise zur Einrichtung stehen in [Installation](installation.html), der Startprozess ist in [Startup](startup.html) beschrieben.
 
 ## Repository
+Das Repository ist unter folgendem Link aufrufbar:
+[https://github.com/VPGIS/VPRouting](https://github.com/VPGIS/VPRouting)
 
-```text
-https://github.com/calgon854/VPRouting
-```
+## Projektteam
+
+Die Wetter Routing App wurde von **Tobias Schulthess** und **Ignaz Kuczynski** im Rahmen des Vertiefungsprofils Geoinformatik/Raumanalyse an der FHNW umgesetzt.
