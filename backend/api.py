@@ -12,6 +12,7 @@
 from fastapi import FastAPI, HTTPException, Query
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse, Response
+from fastapi import Request
 from dotenv import load_dotenv
 from contextlib import asynccontextmanager
 
@@ -19,7 +20,6 @@ from typing import Literal
 
 # Sonstige Libaries
 import subprocess
-import requests as http_requests
 import numpy as np
 import osmnx as ox
 import xarray as xr
@@ -35,6 +35,7 @@ try:
     from backend.utils_nc_file import get_nc_file
     from backend.utils_forecast import get_forecast, compute_rain_adjusted_cost
     from utils_routingmodels import static_djikstra, time_dependent_dijkstra
+    from backend.utils_geoserver import check_geoserver_on_startup
 
 except ModuleNotFoundError:
     backend_dir = str(SysPath(__file__).resolve().parent)
@@ -44,6 +45,7 @@ except ModuleNotFoundError:
     from utils_nc_file import get_nc_file
     from utils_forecast import get_forecast, compute_rain_adjusted_cost
     from utils_routingmodels import static_djikstra, time_dependent_dijkstra
+    from utils_geoserver import check_geoserver_on_startup
 
 
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - 
@@ -58,6 +60,8 @@ BACKEND_DIR = Path(__file__).resolve().parent
 NC_DIR = BACKEND_DIR / "data" / "NC"
 FETCH_SCRIPT = BACKEND_DIR / "utils_fetch.py"
 
+import requests as http_requests
+
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     # Fetch-Daemon als Hintergrundprozess starten
@@ -68,6 +72,10 @@ async def lifespan(app: FastAPI):
         env={**__import__("os").environ, "PYTHONIOENCODING": "utf-8"},
     )
     print(f"[startup] Fetch-Daemon gestartet (PID {daemon.pid})")
+    
+    # GeoServer überprüfen/starten
+    check_geoserver_on_startup()
+    
     yield
     # Beim Herunterfahren der API den Daemon beenden
     print("[shutdown] Beende Fetch-Daemon...")
@@ -121,7 +129,7 @@ def serve_frontend():
 
 @app.get("/rain-times", include_in_schema=False)
 def rain_times():
-    """Return ISO timestamp strings from the latest rain NetCDF."""
+    """Return ISO timestamp strings from the latest GeoServer NetCDF."""
     gs_files = sorted(NC_DIR.glob("*_rainWMS_gs.nc"), key=lambda p: p.stat().st_mtime)
     if not gs_files:
         return []
@@ -129,6 +137,21 @@ def rain_times():
     times = [str(t)[:19] + ".000Z" for t in ds["time"].values]
     ds.close()
     return times
+
+
+@app.get("/wms", include_in_schema=False)
+def wms_proxy(request: Request):
+    """Proxy WMS tile requests to GeoServer to avoid browser CORS restrictions."""
+    params = dict(request.query_params)
+    r = http_requests.get(
+        "http://localhost:8080/geoserver/vprouting/wms",
+        params=params,
+        timeout=15,
+    )
+    return Response(
+        content=r.content,
+        media_type=r.headers.get("content-type", "image/png"),
+    )
 
 
 

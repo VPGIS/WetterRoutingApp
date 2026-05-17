@@ -578,10 +578,17 @@
           },
         ).addTo(map);
 
-        // Rain overlay — rendered by /rain-frame as a transparent PNG
+        // Rain overlay — rendered by GeoServer WMS
         // Sits above the basemap but below the city/road label layer
-        function makeRainUrl(time) {
-          return "/rain-frame?time=" + encodeURIComponent(time);
+        function makeWmsUrl(time) {
+          return (
+            "http://localhost:8080/geoserver/vprouting/wms?SERVICE=WMS&VERSION=1.1.1&REQUEST=GetMap" +
+            "&FORMAT=image%2Fpng&TRANSPARENT=true" +
+            "&LAYERS=vprouting%3Ahourly_rain&STYLES=rain_blue" +
+            "&SRS=EPSG%3A4326&WIDTH=858&HEIGHT=590" +
+            "&BBOX=-0.817%2C41.183%2C18.183%2C51.183" +
+            "&TIME=" + encodeURIComponent(time)
+          );
         }
 
         const overlay = L.imageOverlay("", BOUNDS, {
@@ -667,7 +674,7 @@
         function showFrame(idx) {
           if (!TIMES.length) return; // guard until /rain-times loaded
           currentFrame = idx;
-          overlay.setUrl(makeRainUrl(TIMES[idx]));
+          overlay.setUrl(makeWmsUrl(TIMES[idx]));
 
           const label = LABELS[idx] || TIMES[idx] || "";
           const parts = label.split(" \u00b7 ");

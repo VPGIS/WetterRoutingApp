@@ -180,28 +180,29 @@ def _load_icon_grid_coords() -> tuple[np.ndarray, np.ndarray]:
     """
     Return (clat_deg, clon_deg) for every ICON CH1 native grid point.
 
-    Reads the first two messages from the STAC horizontal_constants GRIB2
-    positionally ??? message 0 = CLAT, message 1 = CLON ??? using only the
-    standard 'values' key, so no COSMO definitions are required.
-    Auto-detects degrees vs radians from value range.
+    Reads 'tlat' and 'tlon' messages from the STAC horizontal_constants GRIB2.
     Cached after first download.
     """
     if CLAT_CACHE.exists() and CLON_CACHE.exists():
         return np.load(CLAT_CACHE), np.load(CLON_CACHE)
 
-    print("[grid] Downloading ICON CH1 horizontal grid constants (one-time ~200 MB)???")
+    print("[grid] Downloading ICON CH1 horizontal grid constants (one-time ~200 MB)...")
     hc_url = _get_collection_asset_url("horizontal_constants")
     tmp = download_grib(hc_url)
 
-    messages: list[np.ndarray] = []
+    clat, clon = None, None
     try:
         with open(tmp, "rb") as f:
-            while len(messages) < 2:  # only need first two messages
+            while True:
                 gid = eccodes.codes_grib_new_from_file(f)
                 if gid is None:
                     break
                 try:
-                    messages.append(eccodes.codes_get_array(gid, "values").copy())
+                    name = eccodes.codes_get(gid, "shortName")
+                    if name == "tlat":
+                        clat = eccodes.codes_get_array(gid, "values").copy()
+                    elif name == "tlon":
+                        clon = eccodes.codes_get_array(gid, "values").copy()
                 except eccodes.CodesInternalError:
                     pass
                 finally:
@@ -209,14 +210,10 @@ def _load_icon_grid_coords() -> tuple[np.ndarray, np.ndarray]:
     finally:
         _safe_unlink(tmp)
 
-    if len(messages) < 2:
-        raise RuntimeError(
-            f"Expected ???2 messages in horizontal_constants GRIB2, got {len(messages)}."
-        )
+    if clat is None or clon is None:
+        raise RuntimeError("Could not find 'tlat' and 'tlon' messages in horizontal_constants GRIB2.")
 
-    clat, clon = messages[0], messages[1]
-
-    # ICON stores coords in radians if abs-max ??? ??; convert to degrees
+    # ICON stores coords in radians if abs-max <= pi; convert to degrees
     if np.max(np.abs(clat)) <= np.pi + 0.01:
         clat = np.degrees(clat)
         clon = np.degrees(clon)
@@ -224,7 +221,7 @@ def _load_icon_grid_coords() -> tuple[np.ndarray, np.ndarray]:
     CACHE_DIR.mkdir(parents=True, exist_ok=True)
     np.save(CLAT_CACHE, clat)
     np.save(CLON_CACHE, clon)
-    print(f"[grid] Cached {len(clat):,} ICON grid points ??? {CACHE_DIR}")
+    print(f"[grid] Cached {len(clat):,} ICON grid points -> {CACHE_DIR}")
     return clat, clon
 
 
@@ -382,7 +379,19 @@ def fetch_and_save(output_dir: Path = OUTPUT_DIR) -> Path:
 
     # 5. Hourly rain from ensemble mean
     mean_precip = da_all.mean("eps").squeeze("ref_time")      # (lead_time, y, x)
-    hourly_rain = mean_precip.diff("lead_time")                # (lead_time=33, y, x)
+    hourly_rain = mean_precip.diff("lead_time")                # (lead_time, y, x)
+
+    # 7. Pre-render all PNG frames
+    try:
+        import sys
+        if str(BACKEND_DIR) not in sys.path:
+            sys.path.append(str(BACKEND_DIR))
+        from utils_render import render_all_frames
+        render_all_frames(hourly_rain, da_all.coords["ref_time"].values[0])
+    except Exception as e:
+        print(f"[fetch] PNG render failed: {e}")
+
+    # 7. Clean up for routing: zero noise, round to 2 dp
     hourly_rain.values = np.where(
         hourly_rain.values < 0.01, 0.0, np.round(hourly_rain.values, 2)
     )
@@ -391,23 +400,23 @@ def fetch_and_save(output_dir: Path = OUTPUT_DIR) -> Path:
         "units": "mm/m2",
     }
 
-    # 6. Save with Unix-timestamp filename
+    # 8. Save with Unix-timestamp filename
     ts = int(datetime.now(timezone.utc).timestamp())
     output_file = output_dir / f"{ts}.nc"
     ds = xr.Dataset({"TOT_PREC": da_all, "hourly_rain": hourly_rain})
     ds.to_netcdf(output_file)
     ds.close()
     print(f"[fetch] Saved -> {output_file}")
-
-    # 6b. Write GeoServer-compatible copy (1-D CF lat/lon/time dims)
-    gs_file = write_geoserver_nc(hourly_rain, da_all.coords["ref_time"].values[0], output_dir / f"{ts}_rainWMS_gs.nc")
-
-    # 7. Publish fresh data to GeoServer
+    
+    # 9. Duplicate for GeoServer and publish
     try:
         from utils_geoserver import publish_nc
-        publish_nc(gs_file)
+        import shutil
+        out_gs = output_file.with_name(f"{output_file.stem}_rainWMS_gs.nc")
+        shutil.copy2(output_file, out_gs)
+        publish_nc(out_gs)
     except Exception as e:
-        print(f"[fetch] GeoServer publish skipped: {e}")
+        print(f"[fetch] GeoServer publish failed: {e}")
 
     return output_file
 
@@ -439,6 +448,21 @@ def check_fetch_on_startup():
         fetch_and_save()
     else:
         print(f"[{ts}] Data is up-to-date")
+        # Ensure GS is up to date (idempotent)
+        try:
+            from utils_geoserver import publish_nc
+            nc = sorted(
+                [f for f in OUTPUT_DIR.glob("*.nc") if not f.name.endswith("_gs.nc")],
+                key=lambda p: p.stat().st_mtime,
+            )
+            if nc:
+                out_gs = nc[-1].with_name(nc[-1].stem + "_rainWMS_gs.nc")
+                if not out_gs.exists():
+                    import shutil
+                    shutil.copy2(nc[-1], out_gs)
+                publish_nc(out_gs)
+        except Exception as e:
+            print(f"[startup] geoserver publish skipped: {e}")
 
 
 def scheduler_loop():
