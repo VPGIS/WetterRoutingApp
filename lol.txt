@@ -1,7 +1,0 @@
-<ServiceExceptionReport version="1.3.0" xsi:schemaLocation="http://www.opengis.net/ogc http://127.0.0.1:8080/geoserver/schemas/wms/1.3.0/exceptions_1_3_0.xsd">
-<ServiceException code="MissingParameterValue" locator="request">
-Could not determine geoserver request from http request org.geoserver.platform.AdvancedDispatchFilter$AdvancedDispatchHttpRequest@3ee9ffd
-</ServiceException>
-</ServiceExceptionReport>
-
-http://127.0.0.1:8080/geoserver/vprouting/wms
