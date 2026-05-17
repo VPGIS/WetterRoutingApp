@@ -408,13 +408,12 @@ def fetch_and_save(output_dir: Path = OUTPUT_DIR) -> Path:
     ds.close()
     print(f"[fetch] Saved -> {output_file}")
     
-    # 9. Duplicate for GeoServer and publish
+    # 9. Publish to GeoServer
     try:
         from utils_geoserver import publish_nc
-        import shutil
-        out_gs = output_file.with_name(f"{output_file.stem}_rainWMS_gs.nc")
-        shutil.copy2(output_file, out_gs)
-        publish_nc(out_gs)
+        gs_file = output_dir / f"{ts}_gs.nc"
+        write_geoserver_nc(hourly_rain, da_all.coords["ref_time"].values[0], gs_file)
+        publish_nc(gs_file)
     except Exception as e:
         print(f"[fetch] GeoServer publish failed: {e}")
 
@@ -451,16 +450,9 @@ def check_fetch_on_startup():
         # Ensure GS is up to date (idempotent)
         try:
             from utils_geoserver import publish_nc
-            nc = sorted(
-                [f for f in OUTPUT_DIR.glob("*.nc") if not f.name.endswith("_gs.nc")],
-                key=lambda p: p.stat().st_mtime,
-            )
+            nc = sorted(OUTPUT_DIR.glob("*.nc"), key=lambda p: p.stat().st_mtime)
             if nc:
-                out_gs = nc[-1].with_name(nc[-1].stem + "_rainWMS_gs.nc")
-                if not out_gs.exists():
-                    import shutil
-                    shutil.copy2(nc[-1], out_gs)
-                publish_nc(out_gs)
+                publish_nc(nc[-1])
         except Exception as e:
             print(f"[startup] geoserver publish skipped: {e}")
 
