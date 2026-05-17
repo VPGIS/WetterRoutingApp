@@ -9,7 +9,7 @@
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - 
 
 # API Libaries
-from fastapi import FastAPI, HTTPException, Query, Request
+from fastapi import FastAPI, HTTPException, Query
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse, Response
 from dotenv import load_dotenv
@@ -60,13 +60,6 @@ FETCH_SCRIPT = BACKEND_DIR / "utils_fetch.py"
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    # GeoServer-Layer pruefen / anlegen
-    try:
-        from utils_geoserver import check_geoserver_on_startup
-        check_geoserver_on_startup()
-    except Exception as e:
-        print(f"[startup] GeoServer startup check skipped: {e}")
-
     # Fetch-Daemon als Hintergrundprozess starten
     print("[startup] Starte Fetch-Daemon...")
     daemon = subprocess.Popen(
@@ -128,7 +121,7 @@ def serve_frontend():
 
 @app.get("/rain-times", include_in_schema=False)
 def rain_times():
-    """Return ISO timestamp strings from the latest GeoServer NetCDF."""
+    """Return ISO timestamp strings from the latest rain NetCDF."""
     gs_files = sorted(NC_DIR.glob("*_rainWMS_gs.nc"), key=lambda p: p.stat().st_mtime)
     if not gs_files:
         return []
@@ -137,20 +130,6 @@ def rain_times():
     ds.close()
     return times
 
-
-@app.get("/wms", include_in_schema=False)
-def wms_proxy(request: Request):
-    """Proxy WMS tile requests to GeoServer to avoid browser CORS restrictions."""
-    params = dict(request.query_params)
-    r = http_requests.get(
-        "http://localhost:8080/geoserver/vprouting/wms",
-        params=params,
-        timeout=15,
-    )
-    return Response(
-        content=r.content,
-        media_type=r.headers.get("content-type", "image/png"),
-    )
 
 
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - 
