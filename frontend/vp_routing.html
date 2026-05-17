@@ -578,11 +578,11 @@
           },
         ).addTo(map);
 
-        // Rain overlay — rendered by GeoServer WMS
+        // Rain overlay — rendered by GeoServer WMS (proxied through FastAPI to avoid CORS)
         // Sits above the basemap but below the city/road label layer
         function makeWmsUrl(time) {
           return (
-            "http://localhost:8080/geoserver/vprouting/wms?SERVICE=WMS&VERSION=1.1.1&REQUEST=GetMap" +
+            "/wms?SERVICE=WMS&VERSION=1.1.1&REQUEST=GetMap" +
             "&FORMAT=image%2Fpng&TRANSPARENT=true" +
             "&LAYERS=vprouting%3Ahourly_rain&STYLES=rain_blue" +
             "&SRS=EPSG%3A4326&WIDTH=858&HEIGHT=590" +

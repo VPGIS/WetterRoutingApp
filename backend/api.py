@@ -129,11 +129,12 @@ def serve_frontend():
 
 @app.get("/rain-times", include_in_schema=False)
 def rain_times():
-    """Return ISO timestamp strings from the latest NetCDF."""
-    nc_files = sorted(NC_DIR.glob("*.nc"), key=lambda p: p.stat().st_mtime)
-    if not nc_files:
+    """Return ISO timestamp strings from the latest GeoServer NetCDF."""
+    # Find files matching the gs patterns
+    gs_files = sorted(NC_DIR.glob("*_gs.nc"), key=lambda p: p.stat().st_mtime)
+    if not gs_files:
         return []
-    ds = xr.open_dataset(nc_files[-1])
+    ds = xr.open_dataset(gs_files[-1])
     times = [str(t)[:19] + ".000Z" for t in ds["time"].values]
     ds.close()
     return times

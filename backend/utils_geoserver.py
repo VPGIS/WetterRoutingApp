@@ -258,7 +258,7 @@ def check_geoserver_on_startup():
         ds = xr.open_dataset(source)
         hourly_rain = ds["hourly_rain"]
         ref_time_val = ds["ref_time"].values[0]
-        gs_path = source.with_name(source.stem + "_rainWMS_gs.nc")
+        gs_path = source.with_name(source.stem + "_gs.nc")
         write_geoserver_nc(hourly_rain, ref_time_val, gs_path)
         ds.close()
         publish_nc(gs_path)
