@@ -144,6 +144,14 @@ def rain_times():
 def wms_proxy(request: Request):
     """Proxy WMS tile requests to GeoServer to avoid browser CORS restrictions."""
     params = dict(request.query_params)
+    
+    # Temporarily strip TIME parameter so GeoServer renders the default/MAX time
+    # This prevents the transparent layers caused by the NetCDF TIME dimension parsing bug
+    if "TIME" in params:
+        del params["TIME"]
+    if "time" in params:
+        del params["time"]
+
     r = http_requests.get(
         "http://localhost:8080/geoserver/vprouting/wms",
         params=params,
