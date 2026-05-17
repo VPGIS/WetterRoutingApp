@@ -229,7 +229,7 @@ def check_geoserver_on_startup():
     if not ensure_geoserver_running():
         return
 
-    gs_files = sorted(NC_DIR.glob("*_rainWMS_gs.nc"), key=lambda p: p.stat().st_mtime)
+    gs_files = sorted(NC_DIR.glob("*_gs.nc"), key=lambda p: p.stat().st_mtime)
     if gs_files:
         newest = gs_files[-1]
         print(f"[geoserver] Found existing {newest.name} - publishing to GeoServer")
