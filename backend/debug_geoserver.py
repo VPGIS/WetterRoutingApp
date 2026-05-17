@@ -65,19 +65,20 @@ def check_coverage():
         cov_data = r.json()
         logger.info(f"Coverage '{LAYER}' exists.")
         
-        # Check dimensions (like TIME)
+        # Check dimensions
         coverage = cov_data.get("coverage", {})
-        dimensions = coverage.get("dimensions", {}).get("coverageDimension", [])
-        logger.info(f"Dimensions: {json.dumps(dimensions, indent=2)}")
         
         # Check LatLon Bounding Box
         bbox = coverage.get("latLonBoundingBox", {})
         logger.info(f"LatLon Bounding Box: {json.dumps(bbox, indent=2)}")
         
-        # Check Time Info specifically
-        metadata = coverage.get("metadata", {}).get("entry", [])
-        time_meta = [m for m in metadata if m.get("@key") == "dirName"] # just checking if it exists
-        logger.info(f"Metadata entries (count={len(metadata)}). Time metadata might be embedded here.")
+        # Print all metadata to see how time is stored
+        metadata = coverage.get("metadata", {})
+        logger.info(f"Metadata: {json.dumps(metadata, indent=2)}")
+        
+        # Print dimensions to see if time is a dimension
+        dimensions = coverage.get("dimensions", {})
+        logger.info(f"Dimensions dictionary: {json.dumps(dimensions, indent=2)}")
     else:
         logger.error(f"Coverage '{LAYER}' missing or error: {r.status_code}")
 
