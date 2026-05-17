@@ -47,7 +47,7 @@ NX, NY = 429, 295
 LEAD_HOURS = list(range(34))
 
 TARGET_LONS = np.linspace(LON_MIN, LON_MAX, NX)
-TARGET_LATS = np.linspace(LAT_MIN, LAT_MAX, NY)
+TARGET_LATS = np.linspace(LAT_MAX, LAT_MIN, NY) # Descending lat required by GeoServer Geotools
 LON_GRID, LAT_GRID = np.meshgrid(TARGET_LONS, TARGET_LATS)   # (NY, NX)
 TARGET_PTS = np.column_stack([LAT_GRID.ravel(), LON_GRID.ravel()])  # (NY*NX, 2)
 
@@ -57,7 +57,7 @@ CACHE_DIR  = BACKEND_DIR / ".fetch_cache"
 
 CLAT_CACHE    = CACHE_DIR / "icon_ch1_clat.npy"
 CLON_CACHE    = CACHE_DIR / "icon_ch1_clon.npy"
-INDICES_CACHE = CACHE_DIR / "icon_ch1_regrid_indices.npy"
+INDICES_CACHE = CACHE_DIR / "icon_ch1_regrid_indices_v2.npy"
 
 SCHEDULED_HOURS = [0, 3, 6, 9, 12, 15, 18, 21]
 
