@@ -36,7 +36,7 @@ RAIN_BLUE_SLD = """\
   <RasterSymbolizer>
     <Opacity>1.0</Opacity>
     <ColorMap type="ramp">
-      <ColorMapEntry color="#ffffff" quantity="0.0"  opacity="0"/>
+        <ColorMapEntry color="#888888" quantity="0.0"  opacity="0.5"/>
       <ColorMapEntry color="#ff0000" quantity="0.01" opacity="1"/>
       <ColorMapEntry color="#ff6600" quantity="0.5"  opacity="1"/>
       <ColorMapEntry color="#ffcc00" quantity="1.5"  opacity="1"/>

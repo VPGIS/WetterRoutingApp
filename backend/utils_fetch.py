@@ -306,7 +306,7 @@ def write_geoserver_nc(hourly_rain: "xr.DataArray", ref_time_val: "np.datetime64
     hr_cf["lat"].attrs  = {"units": "degrees_north", "axis": "Y", "standard_name": "latitude"}
     hr_cf["lon"].attrs  = {"units": "degrees_east",  "axis": "X", "standard_name": "longitude"}
     gs_encoding = {
-        "time":        {"units": "hours since 1970-01-01", "dtype": "float64", "calendar": "standard"},
+        "time":        {"units": "hours since 1970-01-01 00:00:00", "dtype": "float64", "calendar": "standard"},
         "hourly_rain": {"dtype": "float32"},
     }
     # NETCDF3_CLASSIC is required - GeoServer's built-in NetCDF plugin does not
