@@ -111,88 +111,45 @@ def publish_nc(nc_path: Path):
         requests.delete(f"{store_url}?recurse=true", auth=AUTH)
         print(f"[geoserver] Old store '{STORE}' removed")
 
-    # 4. Register external NetCDF via REST file API
-    #    external.netcdf properly initialises the NetCDF reader so that
-    #    ?list=available works and variable names are discoverable.
+    # 4. Register external NetCDF via REST file API with auto-configure.
+    #    By using configure=first or configure=all, GeoServer automatically
+    #    determines the native name correctly without tripping over the 
+    #    'geotools_coverage' mapping bug internally.
     r = requests.put(
         f"{GS_URL}/rest/workspaces/{WS}/coveragestores/{STORE}/external.netcdf",
         auth=AUTH,
         headers={"Content-Type": "text/plain"},
-        params={"configure": "none"},
+        params={"configure": "all"},
         data=str(nc_path.resolve()),
     )
     print(f"[geoserver] external.netcdf PUT HTTP {r.status_code}: {r.text[:200]}")
     if r.status_code not in (200, 201):
         raise RuntimeError(f"[geoserver] Store registration failed {r.status_code}: {r.text}")
     print(f"[geoserver] Store '{STORE}' registered -> {nc_path.name}")
+    
+    # 5. Let GeoServer create the coverage automatically. We just fetch the
+    #    auto-created coverage to configure it further (like default styles and time).
+    cov_name = LAYER
+    
+    # Wait a few seconds for async creation
+    time.sleep(2)
 
-    # 5. Discover the variable names GeoServer sees in the file.
-    #    GeoServer scans the file asynchronously after external.netcdf PUT,
-    #    so retry for up to ~15 seconds until the list is non-empty.
-    avail_names = []
-    for attempt in range(5):
-        avail_r = requests.get(
-            f"{GS_URL}/rest/workspaces/{WS}/coveragestores/{STORE}/coverages",
-            auth=AUTH,
-            headers={"Accept": "application/json"},
-            params={"list": "available"},
-        )
-        raw = avail_r.text[:300]
-        print(f"[geoserver] Available (attempt {attempt+1}) HTTP {avail_r.status_code}: {raw}")
-        try:
-            if avail_r.status_code == 200:
-                body = avail_r.json()
-                # Response shapes seen in the wild:
-                #   {"list":{"string":"hourly_rain"}}
-                #   {"coverages":{"coverage":[{"name":"hourly_rain",...}]}}
-                #   {"coverages":""}  <- empty store, treat as no results
-                cov_section = body.get("coverages", {})
-                if isinstance(cov_section, dict):
-                    entries = (
-                        body.get("list", {}).get("string")
-                        or cov_section.get("coverage")
-                    )
-                else:
-                    entries = None  # empty string or unexpected type
-                if isinstance(entries, str):
-                    avail_names = [entries]
-                elif isinstance(entries, list):
-                    avail_names = [
-                        (e["name"] if isinstance(e, dict) else e) for e in entries
-                    ]
-                elif isinstance(entries, dict):
-                    avail_names = [entries.get("name", "")]
-        except Exception as e:
-            print(f"[geoserver] Available parse error: {e}")
-        if avail_names:
-            break
-        time.sleep(3)
-
-    # Prefer our expected name; fall back to first seen; last resort hardcode
-    cov_name = LAYER if LAYER in avail_names else (avail_names[0] if avail_names else LAYER)
-    print(f"[geoserver] Publishing coverage: '{cov_name}' (available: {avail_names})")
-
-    # 6. Publish coverage with explicit nativeName (required by GeoServer NetCDF plugin)
-    pub_r = requests.post(
-        f"{GS_URL}/rest/workspaces/{WS}/coveragestores/{STORE}/coverages",
+    # 6. Apply proper naming to the auto-generated coverage
+    update_r = requests.put(
+        f"{GS_URL}/rest/workspaces/{WS}/coveragestores/{STORE}/coverages/{LAYER}",
         auth=AUTH,
         json={"coverage": {
-            "name":       cov_name,
-            "nativeName": cov_name,
-            "title":      "Hourly Rain Forecast",
-            "srs":        "EPSG:4326",
-            "enabled":    True,
+            "title": "Hourly Rain Forecast",
+            "srs": "EPSG:4326"
         }},
     )
-    print(f"[geoserver] Coverage POST HTTP {pub_r.status_code}: {pub_r.text[:300]}")
-    if pub_r.status_code not in (200, 201):
-        print(f"[geoserver] WARNING: coverage publish failed")
+    print(f"[geoserver] Coverage update (HTTP {update_r.status_code})")
 
-    layer_url = f"{GS_URL}/rest/workspaces/{WS}/coveragestores/{STORE}/coverages/{cov_name}"
+    layer_url = f"{GS_URL}/rest/workspaces/{WS}/coveragestores/{STORE}/coverages/{LAYER}"
 
     # 7. Set rain_blue as the default style (idempotent)
     r = requests.put(
-        f"{GS_URL}/rest/layers/{WS}:{cov_name}",
+        f"{GS_URL}/rest/layers/{WS}:{LAYER}",
         auth=AUTH,
         json={"layer": {"defaultStyle": {"name": "rain_blue"}}},
     )
