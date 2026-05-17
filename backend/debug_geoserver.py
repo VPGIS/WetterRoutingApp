@@ -11,7 +11,7 @@ GS_USER = os.getenv("GEOSERVER_USER", "admin")
 GS_PASS = os.getenv("GEOSERVER_PASS", "geoserver")
 AUTH = (GS_USER, GS_PASS)
 WORKSPACE = "vprouting"
-STORE = "weather_data"
+STORE = "rain_forecast"
 LAYER = "hourly_rain"
 STYLE = "rain_blue"
 
