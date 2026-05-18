@@ -520,8 +520,10 @@ def fetch_and_save(output_dir: Path = OUTPUT_DIR) -> Path:
               f"peak lt_idx={_pk}: min={_pf.min():.4f} max={_pf.max():.4f} "
               f"std={_pf.std():.6f} nonzero={int((_pf > 0.01).sum())}/{_pf.size}")
 
-    # 6. Save with Unix-timestamp filename
-    ts = int(datetime.now(timezone.utc).timestamp())
+    # 6. Save with ref_time as Unix-timestamp filename (not download time).
+    # The routing endpoint derives lead_hours = (departure_unix - filename_stem) / 3600,
+    # so the stem must be the forecast reference time, not the wall-clock download time.
+    ts = int(ref_dt.timestamp())
     output_file = output_dir / f"{ts}.nc"
     ds = xr.Dataset({"TOT_PREC": da_all, "hourly_rain": hourly_rain, "hourly_rain_p90": hourly_rain_p90})
     ds.to_netcdf(output_file)
