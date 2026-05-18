@@ -182,58 +182,126 @@ def _load_icon_grid_coords() -> tuple[np.ndarray, np.ndarray]:
     """
     Return (clat_deg, clon_deg) for every ICON CH1 native grid point.
 
-    Reads the first two messages from the STAC horizontal_constants GRIB2
-    positionally ??? message 0 = CLAT, message 1 = CLON ??? using only the
-    standard 'values' key, so no COSMO definitions are required.
-    Auto-detects degrees vs radians from value range.
-    Cached after first download.
+    Scans all messages in the horizontal_constants GRIB2 and identifies
+    CLAT/CLON by their value content (Europe lat/lon ranges + high uniqueness),
+    not by message position.  This is robust across eccodes versions and
+    architectures (ARM64 vs x86).  Cache is validated on every load and
+    auto-deleted if corrupt.
     """
+    def _validate(clat: np.ndarray, clon: np.ndarray) -> bool:
+        """True if arrays look like real ICON CH1 Europe coordinates."""
+        return (
+            len(clat) > 100_000
+            and 35.0 <= float(clat.mean()) <= 60.0
+            and -20.0 <= float(clon.mean()) <= 30.0
+            and len(np.unique(clat.round(2))) > 10_000
+        )
+
+    def _to_degrees(arr: np.ndarray) -> np.ndarray:
+        """Convert radians to degrees if values are in radian range."""
+        if np.max(np.abs(arr)) <= np.pi + 0.01:
+            return np.degrees(arr)
+        return arr
+
+    def _looks_like_lat(arr: np.ndarray) -> bool:
+        d = _to_degrees(arr)
+        return (
+            len(d) > 100_000
+            and 30.0 <= float(d.mean()) <= 65.0
+            and -90.0 <= float(d.min())
+            and float(d.max()) <= 90.0
+            and len(np.unique(d.round(2))) > 10_000
+        )
+
+    def _looks_like_lon(arr: np.ndarray) -> bool:
+        d = _to_degrees(arr)
+        return (
+            len(d) > 100_000
+            and -20.0 <= float(d.mean()) <= 30.0
+            and -180.0 <= float(d.min())
+            and float(d.max()) <= 360.0
+            and len(np.unique(d.round(2))) > 10_000
+        )
+
     if CLAT_CACHE.exists() and CLON_CACHE.exists():
         clat, clon = np.load(CLAT_CACHE), np.load(CLON_CACHE)
-        print(f"[grid] Cache loaded: {len(clat):,} pts  "
-              f"lat=[{clat.min():.3f}..{clat.max():.3f}]  "
-              f"lon=[{clon.min():.3f}..{clon.max():.3f}]")
-        if clat.max() < 2.0:
-            print("[grid] *** WARNING: CLAT values look like RADIANS — "
-                  "delete .fetch_cache/ and restart to rebuild!")
-        return clat, clon
+        if _validate(clat, clon):
+            print(f"[grid] Cache loaded: {len(clat):,} pts  "
+                  f"lat=[{clat.min():.3f}..{clat.max():.3f}]  "
+                  f"lon=[{clon.min():.3f}..{clon.max():.3f}]")
+            return clat, clon
+        print(f"[grid] Cache validation FAILED "
+              f"(lat mean={clat.mean():.2f}, lon mean={clon.mean():.2f}, "
+              f"unique lat={len(np.unique(clat.round(2)))}) -- rebuilding from GRIB2")
+        CLAT_CACHE.unlink(missing_ok=True)
+        CLON_CACHE.unlink(missing_ok=True)
+        INDICES_CACHE.unlink(missing_ok=True)
 
     print("[grid] Downloading ICON CH1 horizontal grid constants (one-time ~200 MB)???")
     hc_url = _get_collection_asset_url("horizontal_constants")
     tmp = download_grib(hc_url)
 
-    messages: list[np.ndarray] = []
+    # Scan ALL messages; identify CLAT/CLON by content, not by position.
+    # This is robust across eccodes versions and architectures (ARM64 vs x86).
+    clat_candidate: np.ndarray | None = None
+    clon_candidate: np.ndarray | None = None
     try:
         with open(tmp, "rb") as f:
-            while len(messages) < 2:  # only need first two messages
+            msg_idx = 0
+            while True:
                 gid = eccodes.codes_grib_new_from_file(f)
                 if gid is None:
                     break
                 try:
-                    messages.append(eccodes.codes_get_array(gid, "values").copy())
+                    vals = eccodes.codes_get_array(gid, "values").copy()
+                    try:
+                        param = eccodes.codes_get(gid, "paramId")
+                    except Exception:
+                        param = "?"
+                    if clat_candidate is None and _looks_like_lat(vals):
+                        clat_candidate = _to_degrees(vals)
+                        print(f"[grid] msg {msg_idx} (paramId={param}): "
+                              f"identified as CLAT  "
+                              f"mean={clat_candidate.mean():.3f} "
+                              f"unique={len(np.unique(clat_candidate.round(2))):,}")
+                    elif clon_candidate is None and _looks_like_lon(vals):
+                        clon_candidate = _to_degrees(vals)
+                        print(f"[grid] msg {msg_idx} (paramId={param}): "
+                              f"identified as CLON  "
+                              f"mean={clon_candidate.mean():.3f} "
+                              f"unique={len(np.unique(clon_candidate.round(2))):,}")
+                    else:
+                        print(f"[grid] msg {msg_idx} (paramId={param}): skipped "
+                              f"size={len(vals)} min={vals.min():.4f} max={vals.max():.4f}")
                 except eccodes.CodesInternalError:
-                    pass
+                    print(f"[grid] msg {msg_idx}: CodesInternalError (skipped)")
                 finally:
                     eccodes.codes_release(gid)
+                msg_idx += 1
+                if clat_candidate is not None and clon_candidate is not None:
+                    break  # found both — no need to read further
     finally:
         _safe_unlink(tmp)
 
-    if len(messages) < 2:
+    if clat_candidate is None or clon_candidate is None:
         raise RuntimeError(
-            f"Expected ???2 messages in horizontal_constants GRIB2, got {len(messages)}."
+            f"Could not identify CLAT/CLON in horizontal_constants GRIB2 "
+            f"(clat={'found' if clat_candidate is not None else 'MISSING'}, "
+            f"clon={'found' if clon_candidate is not None else 'MISSING'}). "
+            "Check eccodes installation."
         )
 
-    clat, clon = messages[0], messages[1]
-
-    # ICON stores coords in radians if abs-max ??? ??; convert to degrees
-    if np.max(np.abs(clat)) <= np.pi + 0.01:
-        clat = np.degrees(clat)
-        clon = np.degrees(clon)
+    clat, clon = clat_candidate, clon_candidate
+    if not _validate(clat, clon):
+        raise RuntimeError(
+            f"CLAT/CLON candidates failed final validation: "
+            f"lat mean={clat.mean():.2f}, lon mean={clon.mean():.2f}"
+        )
 
     CACHE_DIR.mkdir(parents=True, exist_ok=True)
     np.save(CLAT_CACHE, clat)
     np.save(CLON_CACHE, clon)
-    print(f"[grid] Cached {len(clat):,} ICON grid points ??? {CACHE_DIR}")
+    print(f"[grid] Cached {len(clat):,} ICON grid points -> {CACHE_DIR}")
     return clat, clon
 
 
@@ -245,6 +313,8 @@ def _load_regrid_indices(clat: np.ndarray, clon: np.ndarray) -> np.ndarray:
     """
     Precomputed flat index array: for each target pixel (NY*NX,), which
     ICON native grid point is nearest. Cached after first build.
+    Cache is validated on load; a corrupt cache (too few unique values)
+    is deleted and rebuilt automatically.
     """
     if INDICES_CACHE.exists():
         indices = np.load(INDICES_CACHE)
@@ -252,13 +322,12 @@ def _load_regrid_indices(clat: np.ndarray, clon: np.ndarray) -> np.ndarray:
         print(f"[regrid] Cache loaded: {len(indices):,} entries  "
               f"range=[{indices.min()}..{indices.max()}]  "
               f"unique={unique_idx:,}")
-        if unique_idx < 1000:
-            print(f"[regrid] *** WARNING: only {unique_idx} unique index values — "
-                  "regrid maps almost all pixels to the same ICON point!")
-            print("[regrid] *** DELETE .fetch_cache/ and restart to rebuild.")
-        return indices
+        if unique_idx >= 1000:
+            return indices
+        print(f"[regrid] Cache invalid (only {unique_idx} unique values) -- rebuilding...")
+        INDICES_CACHE.unlink(missing_ok=True)
 
-    print("[regrid] Building KD-tree (one-time, may take ~1 min on Pi)???")
+    print("[regrid] Building KD-tree (one-time, may take ~1 min on Pi)...")
     tree = cKDTree(np.column_stack([clat, clon]))
     _, indices = tree.query(TARGET_PTS, workers=-1)  # all CPU cores
     indices = indices.astype(np.int32)
