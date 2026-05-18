@@ -203,6 +203,34 @@ def render_all_frames(
     return target_dir
 
 
+def _mean_and_p90_diff(
+    precip: xr.DataArray,
+) -> tuple[xr.DataArray, xr.DataArray]:
+    """
+    Compute ensemble mean and p90 diffs using a numpy sort instead of
+    xarray's quantile(), which delegates to nanquantile() and hits the slow
+    apply_along_axis path on every numpy version that includes NaN checks.
+
+    precip shape: (eps, lead_time, y, x)
+    Returns: (mean_diff, p90_diff) — both without the eps dimension, diffed
+             along lead_time.
+    """
+    arr = np.nan_to_num(precip.values, nan=0.0)   # float copy, NaN → 0
+    arr.sort(axis=0)                               # in-place sort along eps
+
+    n_eps   = arr.shape[0]
+    p90_idx = min(int(np.floor(0.9 * n_eps)), n_eps - 1)
+
+    non_eps_dims   = [d for d in precip.dims   if d != "eps"]
+    non_eps_coords = {k: v for k, v in precip.coords.items() if k != "eps"}
+
+    # mean is order-invariant, so we can compute it on the already-sorted arr
+    mean_da = xr.DataArray(arr.mean(axis=0), dims=non_eps_dims, coords=non_eps_coords)
+    p90_da  = xr.DataArray(arr[p90_idx],     dims=non_eps_dims, coords=non_eps_coords)
+
+    return mean_da.diff("lead_time"), p90_da.diff("lead_time")
+
+
 def render_from_nc(nc_path: Path) -> Path:
     """
     Load *nc_path*, compute ensemble-mean and p90 hourly diffs from TOT_PREC,
@@ -212,10 +240,8 @@ def render_from_nc(nc_path: Path) -> Path:
     try:
         if np.issubdtype(ds["lead_time"].dtype, np.timedelta64):
             ds["lead_time"] = (ds["lead_time"] / np.timedelta64(1, 'h')).astype(float)
-        precip = ds["TOT_PREC"].squeeze("ref_time")                     # (eps, lead, y, x)
-        precip_clean = precip.fillna(0.0)                                # avoid slow nanquantile path
-        mean_diff = precip_clean.mean("eps").diff("lead_time")           # colour class
-        p90_diff  = precip_clean.quantile(0.9, dim="eps").diff("lead_time")    # opacity
+        precip = ds["TOT_PREC"].squeeze("ref_time")             # (eps, lead, y, x)
+        mean_diff, p90_diff = _mean_and_p90_diff(precip)
         return render_all_frames(mean_diff, p90_diff, ds.coords["ref_time"].values[0])
     finally:
         ds.close()
@@ -228,9 +254,7 @@ def render_demo_nc(nc_path: Path) -> Path:
         if np.issubdtype(ds["lead_time"].dtype, np.timedelta64):
             ds["lead_time"] = (ds["lead_time"] / np.timedelta64(1, 'h')).astype(float)
         precip = ds["TOT_PREC"].squeeze("ref_time")
-        precip_clean = precip.fillna(0.0)                                # avoid slow nanquantile path
-        mean_diff = precip_clean.mean("eps").diff("lead_time")
-        p90_diff  = precip_clean.quantile(0.9, dim="eps").diff("lead_time")
+        mean_diff, p90_diff = _mean_and_p90_diff(precip)
         return render_all_frames(mean_diff, p90_diff, ds.coords["ref_time"].values[0],
                                  output_dir=DEMO_RAIN_LAYERS_DIR)
     finally:
