@@ -213,8 +213,9 @@ def render_from_nc(nc_path: Path) -> Path:
         if np.issubdtype(ds["lead_time"].dtype, np.timedelta64):
             ds["lead_time"] = (ds["lead_time"] / np.timedelta64(1, 'h')).astype(float)
         precip = ds["TOT_PREC"].squeeze("ref_time")                     # (eps, lead, y, x)
-        mean_diff = precip.mean("eps").diff("lead_time")                 # colour class
-        p90_diff  = precip.quantile(0.9, dim="eps").diff("lead_time")    # opacity
+        precip_clean = precip.fillna(0.0)                                # avoid slow nanquantile path
+        mean_diff = precip_clean.mean("eps").diff("lead_time")           # colour class
+        p90_diff  = precip_clean.quantile(0.9, dim="eps").diff("lead_time")    # opacity
         return render_all_frames(mean_diff, p90_diff, ds.coords["ref_time"].values[0])
     finally:
         ds.close()
@@ -227,8 +228,9 @@ def render_demo_nc(nc_path: Path) -> Path:
         if np.issubdtype(ds["lead_time"].dtype, np.timedelta64):
             ds["lead_time"] = (ds["lead_time"] / np.timedelta64(1, 'h')).astype(float)
         precip = ds["TOT_PREC"].squeeze("ref_time")
-        mean_diff = precip.mean("eps").diff("lead_time")
-        p90_diff  = precip.quantile(0.9, dim="eps").diff("lead_time")
+        precip_clean = precip.fillna(0.0)                                # avoid slow nanquantile path
+        mean_diff = precip_clean.mean("eps").diff("lead_time")
+        p90_diff  = precip_clean.quantile(0.9, dim="eps").diff("lead_time")
         return render_all_frames(mean_diff, p90_diff, ds.coords["ref_time"].values[0],
                                  output_dir=DEMO_RAIN_LAYERS_DIR)
     finally:
