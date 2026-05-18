@@ -233,16 +233,30 @@ def _mean_and_p90_diff(
 
 def render_from_nc(nc_path: Path) -> Path:
     """
-    Load *nc_path*, compute ensemble-mean and p90 hourly diffs from TOT_PREC,
-    and call render_all_frames() with Option 1 dual-layer logic.
+    Load *nc_path* and render all rain-layer PNGs.
+
+    New NC files (written by the current fetch code) include pre-computed
+    ``hourly_rain`` and ``hourly_rain_p90`` variables — these are read directly
+    so no heavy ensemble computation happens at render time, which avoids any
+    architecture-specific issues on ARM64 (Raspberry Pi).
+
+    Legacy NC files that only contain ``TOT_PREC`` fall back to
+    ``_mean_and_p90_diff()``.
     """
     ds = xr.open_dataset(nc_path)
     try:
         if np.issubdtype(ds["lead_time"].dtype, np.timedelta64):
             ds["lead_time"] = (ds["lead_time"] / np.timedelta64(1, 'h')).astype(float)
-        precip = ds["TOT_PREC"].squeeze("ref_time")             # (eps, lead, y, x)
-        mean_diff, p90_diff = _mean_and_p90_diff(precip)
-        return render_all_frames(mean_diff, p90_diff, ds.coords["ref_time"].values[0])
+        ref_time = ds.coords["ref_time"].values[0]
+        if "hourly_rain_p90" in ds:
+            # Pre-computed at fetch time — direct read, architecture-independent.
+            mean_diff = ds["hourly_rain"]
+            p90_diff  = ds["hourly_rain_p90"]
+        else:
+            # Legacy NC without pre-computed p90 — recompute from TOT_PREC.
+            precip = ds["TOT_PREC"].squeeze("ref_time")
+            mean_diff, p90_diff = _mean_and_p90_diff(precip)
+        return render_all_frames(mean_diff, p90_diff, ref_time)
     finally:
         ds.close()
 
@@ -253,9 +267,14 @@ def render_demo_nc(nc_path: Path) -> Path:
     try:
         if np.issubdtype(ds["lead_time"].dtype, np.timedelta64):
             ds["lead_time"] = (ds["lead_time"] / np.timedelta64(1, 'h')).astype(float)
-        precip = ds["TOT_PREC"].squeeze("ref_time")
-        mean_diff, p90_diff = _mean_and_p90_diff(precip)
-        return render_all_frames(mean_diff, p90_diff, ds.coords["ref_time"].values[0],
+        ref_time = ds.coords["ref_time"].values[0]
+        if "hourly_rain_p90" in ds:
+            mean_diff = ds["hourly_rain"]
+            p90_diff  = ds["hourly_rain_p90"]
+        else:
+            precip = ds["TOT_PREC"].squeeze("ref_time")
+            mean_diff, p90_diff = _mean_and_p90_diff(precip)
+        return render_all_frames(mean_diff, p90_diff, ref_time,
                                  output_dir=DEMO_RAIN_LAYERS_DIR)
     finally:
         ds.close()

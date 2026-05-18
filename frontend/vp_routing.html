@@ -49,8 +49,22 @@
     <div id="about-panel">
       <div class="about-header-row">
         <h3 id="about-heading">Über dieses Projekt</h3>
-        <button id="about-toggle" aria-label="About this project" title="About this project">
-          <svg aria-hidden="true" fill="none" height="26" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" viewbox="0 0 24 24" width="26">
+        <button
+          id="about-toggle"
+          aria-label="About this project"
+          title="About this project"
+        >
+          <svg
+            aria-hidden="true"
+            fill="none"
+            height="26"
+            stroke="currentColor"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            stroke-width="1.8"
+            viewbox="0 0 24 24"
+            width="26"
+          >
             <circle cx="12" cy="12" r="10"></circle>
             <line x1="12" x2="12" y1="16" y2="12"></line>
             <line x1="12" x2="12.01" y1="8" y2="8"></line>
@@ -59,48 +73,175 @@
       </div>
       <div id="about-body">
         <div class="about-content" data-lang="en" hidden>
-          <p><span class="about-highlight">Enter a start and end point, pick a departure time — VPRouting finds a route that keeps you as dry as possible.</span></p>
-          <p>The project was built as part of the Vertiefungsprofil Geoinformatik/Raumanalyse at FHNW to explore a practical question: can weather data meaningfully change which route you should take?</p>
+          <p>
+            <span class="about-highlight"
+              >Enter a start and end point, pick a departure time — VPRouting
+              finds a route that keeps you as dry as possible.</span
+            >
+          </p>
+          <p>
+            The project was built as part of the Vertiefungsprofil
+            Geoinformatik/Raumanalyse at FHNW to explore a practical question:
+            can weather data meaningfully change which route you should take?
+          </p>
           <h4 class="about-section-title">Weather Data</h4>
-          <p>Precipitation forecasts come from MeteoSwiss ICON-CH1-EPS, a 1 km ensemble model for Switzerland. Its high spatial resolution and hourly time steps make it well-suited for assigning rainfall values to individual road edges. The two map layers show the mean forecast and the p90 envelope — likely rain versus worst-case rain.</p>
+          <p>
+            Precipitation forecasts come from MeteoSwiss ICON-CH1-EPS, a 1 km
+            ensemble model for Switzerland. Its high spatial resolution and
+            hourly time steps make it well-suited for assigning rainfall values
+            to individual road edges. The two map layers show the mean forecast
+            and the p90 envelope — likely rain versus worst-case rain.
+          </p>
           <h4 class="about-section-title">Routing</h4>
-          <p>Routing runs Dijkstra's algorithm on an OSMnx graph built from OpenStreetMap. Edge weights are raised where rain is forecast, so the algorithm naturally prefers drier paths. For time-aware models, weights shift as travel progresses — edges further along the route are evaluated against the forecast valid at the estimated arrival time.</p>
+          <p>
+            Routing runs Dijkstra's algorithm on an OSMnx graph built from
+            OpenStreetMap. Edge weights are raised where rain is forecast, so
+            the algorithm naturally prefers drier paths. For time-aware models,
+            weights shift as travel progresses — edges further along the route
+            are evaluated against the forecast valid at the estimated arrival
+            time.
+          </p>
           <h4 class="about-section-title">Under the Hood</h4>
-          <p>One of the more satisfying solutions was assigning weather grid cells to road edges without a costly spatial intersection. We replaced it with an attribute-based lookup — same result, far faster. The rain animation is pre-rendered server-side from NetCDF data and served as PNGs, keeping the browser light across all 33 forecast steps.</p>
-          <p class="about-thanks">Thanks for reading — and may your rides stay dry.</p>
+          <p>
+            One of the more satisfying solutions was assigning weather grid
+            cells to road edges without a costly spatial intersection. We
+            replaced it with an attribute-based lookup — same result, far
+            faster. The rain animation is pre-rendered server-side from NetCDF
+            data and served as PNGs, keeping the browser light across all 33
+            forecast steps.
+          </p>
+          <p class="about-thanks">
+            Thanks for reading — and may your rides stay dry.
+          </p>
         </div>
         <div class="about-content" data-lang="de">
-          <p><span class="about-highlight">Start und Ziel eingeben, Abfahrtszeit wählen — VPRouting findet die Route, bei der ihr möglichst trocken bleibt.</span></p>
-          <p>Das Projekt entstand im Rahmen des Vertiefungsprofils Geoinformatik/Raumanalyse an der FHNW mit einer konkreten Frage: Können Wetterdaten die Routenwahl sinnvoll beeinflussen?</p>
+          <p>
+            <span class="about-highlight"
+              >Start und Ziel eingeben, Abfahrtszeit wählen — VPRouting findet
+              die Route, bei der ihr möglichst trocken bleibt.</span
+            >
+          </p>
+          <p>
+            Das Projekt entstand im Rahmen des Vertiefungsprofils
+            Geoinformatik/Raumanalyse an der FHNW mit einer konkreten Frage:
+            Können Wetterdaten die Routenwahl sinnvoll beeinflussen?
+          </p>
           <h4 class="about-section-title">Wetterdaten</h4>
-          <p>Die Niederschlagsvorhersagen stammen von MeteoSwiss ICON-CH1-EPS, einem Ensemble-Modell mit 1 km Gitterauflösung für die Schweiz. Die hohe räumliche Auflösung und stündliche Zeitschritte ermöglichen es, Regenwerte einzelnen Strassenkanten zuzuordnen. Die zwei Kartenebenen zeigen den mittleren Forecast und das p90-Perzentil — wahrscheinlicher und ungünstigster Fall.</p>
+          <p>
+            Die Niederschlagsvorhersagen stammen von MeteoSwiss ICON-CH1-EPS,
+            einem Ensemble-Modell mit 1 km Gitterauflösung für die Schweiz. Die
+            hohe räumliche Auflösung und stündliche Zeitschritte ermöglichen es,
+            Regenwerte einzelnen Strassenkanten zuzuordnen. Die zwei
+            Kartenebenen zeigen den mittleren Forecast und das p90-Perzentil —
+            wahrscheinlicher und ungünstigster Fall.
+          </p>
           <h4 class="about-section-title">Routing</h4>
-          <p>Das Routing läuft mit Dijkstras Algorithmus auf einem OSMnx-Graphen aus OpenStreetMap. Kanten mit vorhergesagtem Niederschlag erhalten höhere Kosten, sodass der Algorithmus trockenere Wege bevorzugt. Beim zeitabhängigen Modell werden Kantengewichte laufend aktualisiert — spätere Kanten werden anhand der Vorhersage zum erwarteten Ankunftszeitpunkt bewertet.</p>
+          <p>
+            Das Routing läuft mit Dijkstras Algorithmus auf einem OSMnx-Graphen
+            aus OpenStreetMap. Kanten mit vorhergesagtem Niederschlag erhalten
+            höhere Kosten, sodass der Algorithmus trockenere Wege bevorzugt.
+            Beim zeitabhängigen Modell werden Kantengewichte laufend
+            aktualisiert — spätere Kanten werden anhand der Vorhersage zum
+            erwarteten Ankunftszeitpunkt bewertet.
+          </p>
           <h4 class="about-section-title">Interessantes</h4>
-          <p>Eine elegante Lösung war die Zuweisung von Wetterzellen zu Strassenkanten ohne räumliche Verschneidung: Wir ersetzten sie durch eine attributbasierte Suche — gleiche Ergebnisse, deutlich schneller. Die Regenanimation wird serverseitig aus NetCDF-Daten vorgerendert und als PNGs ausgeliefert, damit der Browser bei allen 33 Vorhersageschritten leicht bleibt.</p>
-          <p class="about-thanks">Danke fürs Lesen — und viel Erfolg beim trockenen Ankommen.</p>
+          <p>
+            Eine elegante Lösung war die Zuweisung von Wetterzellen zu
+            Strassenkanten ohne räumliche Verschneidung: Wir ersetzten sie durch
+            eine attributbasierte Suche — gleiche Ergebnisse, deutlich
+            schneller. Die Regenanimation wird serverseitig aus NetCDF-Daten
+            vorgerendert und als PNGs ausgeliefert, damit der Browser bei allen
+            33 Vorhersageschritten leicht bleibt.
+          </p>
+          <p class="about-thanks">
+            Danke fürs Lesen — und viel Erfolg beim trockenen Ankommen.
+          </p>
         </div>
         <div class="about-content" data-lang="fr" hidden>
-          <p><span class="about-highlight">Entrez un départ et une destination, choisissez l'heure — VPRouting calcule l'itinéraire le plus sec possible.</span></p>
-          <p>Ce projet a été développé dans le cadre du Vertiefungsprofil Geoinformatik/Raumanalyse à la FHNW pour répondre à une question concrète : les données météo peuvent-elles influencer significativement le choix d'itinéraire ?</p>
+          <p>
+            <span class="about-highlight"
+              >Entrez un départ et une destination, choisissez l'heure —
+              VPRouting calcule l'itinéraire le plus sec possible.</span
+            >
+          </p>
+          <p>
+            Ce projet a été développé dans le cadre du Vertiefungsprofil
+            Geoinformatik/Raumanalyse à la FHNW pour répondre à une question
+            concrète : les données météo peuvent-elles influencer
+            significativement le choix d'itinéraire ?
+          </p>
           <h4 class="about-section-title">Données météo</h4>
-          <p>Les prévisions de précipitations proviennent de ICON-CH1-EPS de MétéoSuisse, un modèle d'ensemble à 1 km pour la Suisse. Sa haute résolution spatiale et ses pas de temps horaires permettent d'attribuer des valeurs de pluie à chaque tronçon. Les deux couches montrent la prévision moyenne et l'enveloppe p90 — pluie probable contre pluie maximale.</p>
+          <p>
+            Les prévisions de précipitations proviennent de ICON-CH1-EPS de
+            MétéoSuisse, un modèle d'ensemble à 1 km pour la Suisse. Sa haute
+            résolution spatiale et ses pas de temps horaires permettent
+            d'attribuer des valeurs de pluie à chaque tronçon. Les deux couches
+            montrent la prévision moyenne et l'enveloppe p90 — pluie probable
+            contre pluie maximale.
+          </p>
           <h4 class="about-section-title">Calcul d'itinéraire</h4>
-          <p>Le calcul d'itinéraire utilise l'algorithme de Dijkstra sur un graphe OSMnx issu d'OpenStreetMap. Les arêtes avec pluie prévue reçoivent un coût plus élevé, guidant l'algorithme vers les chemins les plus secs. Dans les modèles temporels, les poids évoluent au fil du trajet — les arêtes lointaines sont évaluées selon la prévision valable à l'heure d'arrivée estimée.</p>
+          <p>
+            Le calcul d'itinéraire utilise l'algorithme de Dijkstra sur un
+            graphe OSMnx issu d'OpenStreetMap. Les arêtes avec pluie prévue
+            reçoivent un coût plus élevé, guidant l'algorithme vers les chemins
+            les plus secs. Dans les modèles temporels, les poids évoluent au fil
+            du trajet — les arêtes lointaines sont évaluées selon la prévision
+            valable à l'heure d'arrivée estimée.
+          </p>
           <h4 class="about-section-title">Sous le capot</h4>
-          <p>Une solution élégante fut l'attribution des cellules météo aux arêtes sans intersection spatiale coûteuse : nous l'avons remplacée par une recherche attributaire — même résultat, bien plus rapide. L'animation de pluie est pré-rendue côté serveur depuis des fichiers NetCDF et servie en PNG, gardant le navigateur léger sur les 33 pas de prévision.</p>
+          <p>
+            Une solution élégante fut l'attribution des cellules météo aux
+            arêtes sans intersection spatiale coûteuse : nous l'avons remplacée
+            par une recherche attributaire — même résultat, bien plus rapide.
+            L'animation de pluie est pré-rendue côté serveur depuis des fichiers
+            NetCDF et servie en PNG, gardant le navigateur léger sur les 33 pas
+            de prévision.
+          </p>
           <p class="about-thanks">Merci d'avoir lu — et bonne route au sec.</p>
         </div>
         <div class="about-content" data-lang="it" hidden>
-          <p><span class="about-highlight">Inserite partenza e destinazione, scegliete l'orario — VPRouting trova il percorso che vi mantiene più asciutti possibile.</span></p>
-          <p>Il progetto è stato sviluppato nell'ambito del Vertiefungsprofil Geoinformatik/Raumanalyse alla FHNW per rispondere a una domanda concreta: i dati meteorologici possono influenzare significativamente la scelta del percorso?</p>
+          <p>
+            <span class="about-highlight"
+              >Inserite partenza e destinazione, scegliete l'orario — VPRouting
+              trova il percorso che vi mantiene più asciutti possibile.</span
+            >
+          </p>
+          <p>
+            Il progetto è stato sviluppato nell'ambito del Vertiefungsprofil
+            Geoinformatik/Raumanalyse alla FHNW per rispondere a una domanda
+            concreta: i dati meteorologici possono influenzare
+            significativamente la scelta del percorso?
+          </p>
           <h4 class="about-section-title">Dati meteorologici</h4>
-          <p>Le previsioni di precipitazioni provengono da ICON-CH1-EPS di MeteoSvizzera, un modello ensemble a 1 km per la Svizzera. L'alta risoluzione spaziale e i passi temporali orari consentono di assegnare valori di pioggia ai singoli segmenti stradali. I due strati mostrano la previsione media e l'inviluppo p90 — pioggia probabile contro scenario peggiore.</p>
+          <p>
+            Le previsioni di precipitazioni provengono da ICON-CH1-EPS di
+            MeteoSvizzera, un modello ensemble a 1 km per la Svizzera. L'alta
+            risoluzione spaziale e i passi temporali orari consentono di
+            assegnare valori di pioggia ai singoli segmenti stradali. I due
+            strati mostrano la previsione media e l'inviluppo p90 — pioggia
+            probabile contro scenario peggiore.
+          </p>
           <h4 class="about-section-title">Routing</h4>
-          <p>Il routing utilizza l'algoritmo di Dijkstra su un grafo OSMnx costruito da OpenStreetMap. Gli archi con pioggia prevista ricevono un peso maggiore, così l'algoritmo preferisce percorsi più asciutti. Nei modelli temporali, i pesi si aggiornano lungo il tragitto — gli archi più lontani vengono valutati in base alla previsione valida all'ora di arrivo stimata.</p>
+          <p>
+            Il routing utilizza l'algoritmo di Dijkstra su un grafo OSMnx
+            costruito da OpenStreetMap. Gli archi con pioggia prevista ricevono
+            un peso maggiore, così l'algoritmo preferisce percorsi più asciutti.
+            Nei modelli temporali, i pesi si aggiornano lungo il tragitto — gli
+            archi più lontani vengono valutati in base alla previsione valida
+            all'ora di arrivo stimata.
+          </p>
           <h4 class="about-section-title">Dettagli tecnici</h4>
-          <p>Una soluzione elegante fu l'assegnazione delle celle meteorologiche agli archi senza costose intersezioni spaziali: l'abbiamo sostituita con una ricerca per attributi — stesso risultato, molto più veloce. L'animazione della pioggia è pre-renderizzata lato server da file NetCDF e servita come PNG, mantenendo il browser leggero su tutti i 33 passi di previsione.</p>
-          <p class="about-thanks">Grazie per aver letto — e buon viaggio all'asciutto.</p>
+          <p>
+            Una soluzione elegante fu l'assegnazione delle celle meteorologiche
+            agli archi senza costose intersezioni spaziali: l'abbiamo sostituita
+            con una ricerca per attributi — stesso risultato, molto più veloce.
+            L'animazione della pioggia è pre-renderizzata lato server da file
+            NetCDF e servita come PNG, mantenendo il browser leggero su tutti i
+            33 passi di previsione.
+          </p>
+          <p class="about-thanks">
+            Grazie per aver letto — e buon viaggio all'asciutto.
+          </p>
         </div>
       </div>
     </div>
@@ -267,8 +408,12 @@
         >
           <input id="time_start" type="time" style="flex: 1; min-width: 0" />
           <div class="day-toggle" id="day-toggle">
-            <button class="day-btn active" data-offset="0" data-i18n="today">Heute</button>
-            <button class="day-btn" data-offset="1" data-i18n="tomorrow">Morgen</button>
+            <button class="day-btn active" data-offset="0" data-i18n="today">
+              Heute
+            </button>
+            <button class="day-btn" data-offset="1" data-i18n="tomorrow">
+              Morgen
+            </button>
           </div>
         </div>
       </div>
@@ -561,7 +706,9 @@
           <div class="legend-rows">
             <div class="legend-row">
               <span class="legend-swatch" style="background: #a8dcff"></span
-              ><span data-i18n="rain_light">Leichter Regen 0.2&#8211;0.6 mm/h</span>
+              ><span data-i18n="rain_light"
+                >Leichter Regen 0.2&#8211;0.6 mm/h</span
+              >
             </div>
             <div class="legend-row">
               <span class="legend-swatch" style="background: #4db3ff"></span
@@ -573,18 +720,24 @@
             </div>
             <div class="legend-row">
               <span class="legend-swatch" style="background: #002090"></span
-              ><span data-i18n="rain_very_heavy">Sehr starker Regen 8&#8211;30 mm/h</span>
+              ><span data-i18n="rain_very_heavy"
+                >Sehr starker Regen 8&#8211;30 mm/h</span
+              >
             </div>
             <div class="legend-row">
               <span class="legend-swatch" style="background: #ff8800"></span
-              ><span data-i18n="rain_violent">Heftiger Regen 30&#8211;100 mm/h</span>
+              ><span data-i18n="rain_violent"
+                >Heftiger Regen 30&#8211;100 mm/h</span
+              >
             </div>
             <div class="legend-row">
               <span class="legend-swatch" style="background: #cc1100"></span
               ><span data-i18n="rain_extreme">Extremregen &gt;100 mm/h</span>
             </div>
           </div>
-          <p class="legend-note" data-i18n="rain_legend_note">Transparenz zeigt Unsicherheit (Ensemble-Streuung)</p>
+          <p class="legend-note" data-i18n="rain_legend_note">
+            Transparenz zeigt Unsicherheit (Ensemble-Streuung)
+          </p>
         </div>
       </div>
 
@@ -742,10 +895,19 @@
         // Layer 2 (p90):  semi-transparent halo — "what's possible"
         // Both sit above the basemap but below the label layer.
         function makeRainUrl(time) {
-          return (demoMode ? "/demo-rain-frame" : "/rain-frame") + "?time=" + encodeURIComponent(time);
+          return (
+            (demoMode ? "/demo-rain-frame" : "/rain-frame") +
+            "?time=" +
+            encodeURIComponent(time)
+          );
         }
         function makeP90Url(time) {
-          return (demoMode ? "/demo-rain-frame" : "/rain-frame") + "?time=" + encodeURIComponent(time) + "&layer=p90";
+          return (
+            (demoMode ? "/demo-rain-frame" : "/rain-frame") +
+            "?time=" +
+            encodeURIComponent(time) +
+            "&layer=p90"
+          );
         }
 
         // Bottom: ensemble mean — certain rain core
@@ -782,70 +944,70 @@
         // Load available timesteps from /rain-times then initialise animation
         function loadRainData() {
           const timesUrl = demoMode ? "/demo-rain-times" : "/rain-times";
-          const infoUrl  = demoMode ? "/demo-nc-info"  : "/nc-info";
+          const infoUrl = demoMode ? "/demo-nc-info" : "/nc-info";
           Promise.all([
             fetch(timesUrl).then((r) => r.json()),
             fetch(infoUrl)
               .then((r) => r.json())
               .catch(() => ({ downloaded_unix: null })),
           ])
-          .then(([data, ncInfo]) => {
-            if (!data || data.length === 0) {
-              console.warn("[rain-times] API returned no timesteps");
-              return;
-            }
-            TIMES = data;
-            const utcFmt = new Intl.DateTimeFormat("en-GB", {
-              timeZone: "UTC",
-              weekday: "short",
-              day: "2-digit",
-              month: "short",
-              hour: "2-digit",
-              minute: "2-digit",
-              hour12: false,
-            });
-            const localFmt = new Intl.DateTimeFormat("de-CH", {
-              timeZone: "Europe/Zurich",
-              weekday: "short",
-              day: "2-digit",
-              month: "2-digit",
-              year: "numeric",
-              hour: "2-digit",
-              minute: "2-digit",
-              hour12: false,
-            });
-            const baselLabelFmt = new Intl.DateTimeFormat("en-GB", {
-              timeZone: "Europe/Zurich",
-              weekday: "short",
-              day: "2-digit",
-              month: "short",
-              hour: "2-digit",
-              minute: "2-digit",
-              hour12: false,
-            });
-            LABELS = data.map((iso, i) => {
-              const d = new Date(iso);
-              const lead = String(i + 1).padStart(2, "0");
-              const parts = baselLabelFmt.formatToParts(d);
-              const r = {};
-              parts.forEach((p) => (r[p.type] = p.value));
-              return `+${lead}h · ${r.weekday} ${r.day} ${r.month} ${r.hour}:${r.minute} CE(S)T`;
-            });
-            slider.max = TIMES.length - 1;
+            .then(([data, ncInfo]) => {
+              if (!data || data.length === 0) {
+                console.warn("[rain-times] API returned no timesteps");
+                return;
+              }
+              TIMES = data;
+              const utcFmt = new Intl.DateTimeFormat("en-GB", {
+                timeZone: "UTC",
+                weekday: "short",
+                day: "2-digit",
+                month: "short",
+                hour: "2-digit",
+                minute: "2-digit",
+                hour12: false,
+              });
+              const localFmt = new Intl.DateTimeFormat("de-CH", {
+                timeZone: "Europe/Zurich",
+                weekday: "short",
+                day: "2-digit",
+                month: "2-digit",
+                year: "numeric",
+                hour: "2-digit",
+                minute: "2-digit",
+                hour12: false,
+              });
+              const baselLabelFmt = new Intl.DateTimeFormat("en-GB", {
+                timeZone: "Europe/Zurich",
+                weekday: "short",
+                day: "2-digit",
+                month: "short",
+                hour: "2-digit",
+                minute: "2-digit",
+                hour12: false,
+              });
+              LABELS = data.map((iso, i) => {
+                const d = new Date(iso);
+                const lead = String(i + 1).padStart(2, "0");
+                const parts = baselLabelFmt.formatToParts(d);
+                const r = {};
+                parts.forEach((p) => (r[p.type] = p.value));
+                return `+${lead}h · ${r.weekday} ${r.day} ${r.month} ${r.hour}:${r.minute} CE(S)T`;
+              });
+              slider.max = TIMES.length - 1;
 
-            // Model run time = first frame minus 1 hour (UTC display)
-            if (TIMES.length > 0) {
-              const runDt = new Date(new Date(TIMES[0]).getTime() - 3600000);
-              const p = utcFmt.formatToParts(runDt);
-              const r = {};
-              p.forEach((x) => (r[x.type] = x.value));
-            }
+              // Model run time = first frame minus 1 hour (UTC display)
+              if (TIMES.length > 0) {
+                const runDt = new Date(new Date(TIMES[0]).getTime() - 3600000);
+                const p = utcFmt.formatToParts(runDt);
+                const r = {};
+                p.forEach((x) => (r[x.type] = x.value));
+              }
 
-            showFrame(0);
-            if (typeof window.forceUpdateTicks !== "undefined")
-              window.forceUpdateTicks();
-          })
-          .catch((err) => console.error("[rain-times] fetch failed:", err));
+              showFrame(0);
+              if (typeof window.forceUpdateTicks !== "undefined")
+                window.forceUpdateTicks();
+            })
+            .catch((err) => console.error("[rain-times] fetch failed:", err));
         }
         loadRainData();
 
@@ -853,10 +1015,15 @@
         function showDemoToast(entering) {
           const toast = document.getElementById("demo-toast");
           if (!toast) return;
-          toast.textContent = entering ? "🔧 Demo-Modus aktiv" : "Demo-Modus beendet";
+          toast.textContent = entering
+            ? "🔧 Demo-Modus aktiv"
+            : "Demo-Modus beendet";
           toast.classList.remove("hidden");
           clearTimeout(toast._hideTimer);
-          toast._hideTimer = setTimeout(() => toast.classList.add("hidden"), 3000);
+          toast._hideTimer = setTimeout(
+            () => toast.classList.add("hidden"),
+            3000,
+          );
         }
 
         function toggleDemoMode() {
@@ -864,9 +1031,11 @@
           const badge = document.getElementById("demo-badge");
           if (badge) badge.style.display = demoMode ? "block" : "none";
           showDemoToast(demoMode);
-          TIMES = []; LABELS = [];
+          TIMES = [];
+          LABELS = [];
           loadRainData();
-          if (window.updateDepartureDateLabel) window.updateDepartureDateLabel();
+          if (window.updateDepartureDateLabel)
+            window.updateDepartureDateLabel();
         }
 
         // 5-click Easter egg on logo
@@ -878,14 +1047,15 @@
           logoEl.addEventListener("click", () => {
             _demoClickCount++;
             clearTimeout(_demoClickTimer);
-            _demoClickTimer = setTimeout(() => { _demoClickCount = 0; }, 2000);
+            _demoClickTimer = setTimeout(() => {
+              _demoClickCount = 0;
+            }, 2000);
             if (_demoClickCount >= 5) {
               _demoClickCount = 0;
               toggleDemoMode();
             }
           });
         }
-
 
         map.once("load", hideLoading);
         setTimeout(hideLoading, 1200); // fallback
@@ -1292,7 +1462,8 @@
           if (!departureDateEl) return;
           const d = demoMode ? new Date(DEMO_NC_UNIX * 1000) : new Date();
           d.setDate(d.getDate() + departureDayOffset);
-          const label = departureDayOffset === 0 ? window.t("today") : window.t("tomorrow");
+          const label =
+            departureDayOffset === 0 ? window.t("today") : window.t("tomorrow");
           departureDateEl.textContent =
             label +
             ", " +
@@ -1301,7 +1472,7 @@
             String(d.getMonth() + 1).padStart(2, "0") +
             "." +
             d.getFullYear();
-        }
+        };
 
         document.querySelectorAll(".day-btn").forEach((btn) => {
           btn.addEventListener("click", () => {
@@ -1404,9 +1575,13 @@
             const text = document.getElementById("calc_text");
 
             const parseTimeToUnix = (timeString) => {
-              const baseDate = demoMode ? new Date(DEMO_NC_UNIX * 1000) : new Date();
+              const baseDate = demoMode
+                ? new Date(DEMO_NC_UNIX * 1000)
+                : new Date();
               if (!timeString) {
-                return demoMode ? DEMO_NC_UNIX : Math.floor(baseDate.getTime() / 1000);
+                return demoMode
+                  ? DEMO_NC_UNIX
+                  : Math.floor(baseDate.getTime() / 1000);
               }
               const [hours, minutes] = timeString
                 .split(":")
@@ -1415,7 +1590,9 @@
                 baseDate.setUTCHours(hours, minutes, 0, 0);
                 baseDate.setUTCDate(
                   baseDate.getUTCDate() +
-                    (typeof departureDayOffset !== "undefined" ? departureDayOffset : 0),
+                    (typeof departureDayOffset !== "undefined"
+                      ? departureDayOffset
+                      : 0),
                 );
               } else {
                 baseDate.setHours(hours, minutes, 0, 0);
@@ -1606,7 +1783,8 @@
           rain_very_heavy: "Sehr starker Regen 8–30 mm/h",
           rain_violent: "Heftiger Regen 30–100 mm/h",
           rain_extreme: "Extremregen >100 mm/h",
-          rain_legend_note: "Transparenz zeigt Unsicherheit (Ensemble-Streuung)",
+          rain_legend_note:
+            "Transparenz zeigt Unsicherheit (Ensemble-Streuung)",
         },
         en: {
           start: "Start Location",
@@ -1678,7 +1856,8 @@
           rain_very_heavy: "Pioggia molto intensa 8–30 mm/h",
           rain_violent: "Pioggia violenta 30–100 mm/h",
           rain_extreme: "Pioggia estrema >100 mm/h",
-          rain_legend_note: "L'opacità indica l'incertezza (dispersione ensemble)",
+          rain_legend_note:
+            "L'opacità indica l'incertezza (dispersione ensemble)",
         },
         fr: {
           start: "Point de départ",
@@ -1714,7 +1893,8 @@
           rain_very_heavy: "Pluie très forte 8–30 mm/h",
           rain_violent: "Pluie violente 30–100 mm/h",
           rain_extreme: "Pluie extrême >100 mm/h",
-          rain_legend_note: "L'opacité représente l'incertitude (dispersion d'ensemble)",
+          rain_legend_note:
+            "L'opacité représente l'incertitude (dispersion d'ensemble)",
         },
       };
 
@@ -1754,7 +1934,8 @@
           currentLang = e.target.value;
           applyTranslations();
           updateAboutLang(currentLang);
-          if (window.updateDepartureDateLabel) window.updateDepartureDateLabel();
+          if (window.updateDepartureDateLabel)
+            window.updateDepartureDateLabel();
           // Update calculate button specifically if it's not currently calculating
           const calcText = document.getElementById("calc_text");
           if (calcText.innerText !== window.t("calculating")) {
@@ -1993,6 +2174,6 @@
 
     <!-- Demo mode elements -->
     <div id="demo-toast" class="demo-toast hidden"></div>
-    <div id="demo-badge" style="display:none">DEMO</div>
+    <div id="demo-badge" style="display: none">DEMO</div>
   </body>
 </html>

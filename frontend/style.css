@@ -1106,7 +1106,9 @@ label:has(.ctrl-info) {
   justify-content: center;
   color: var(--accent);
   border-left: 1px solid rgba(0, 0, 0, 0.06);
-  transition: background 0.15s, color 0.15s;
+  transition:
+    background 0.15s,
+    color 0.15s;
 }
 
 #about-toggle:hover {
@@ -1133,12 +1135,16 @@ label:has(.ctrl-info) {
   overflow: hidden;
   opacity: 0;
   padding: 0 20px;
-  transition: max-height 0.4s ease, opacity 0.28s ease;
+  transition:
+    max-height 0.4s ease,
+    opacity 0.28s ease;
   border-top: 0px solid var(--border-soft);
 }
 
 #about-panel.content-visible #about-body {
-  max-height: calc(100vh - 162px); /* 100vh - 86px top - 56px header - 20px bottom */
+  max-height: calc(
+    100vh - 162px
+  ); /* 100vh - 86px top - 56px header - 20px bottom */
   overflow-y: auto;
   scrollbar-width: thin;
   scrollbar-color: rgba(0, 0, 0, 0.15) transparent;
@@ -1232,5 +1238,3 @@ label:has(.ctrl-info) {
   z-index: 9998;
   pointer-events: none;
 }
-
-

@@ -352,10 +352,35 @@ def fetch_and_save(output_dir: Path = OUTPUT_DIR) -> Path:
         "units": "mm/m2",
     }
 
+    # 5b. Hourly p90 — computed directly from the raw numpy array while it is still
+    #     in memory.  axis=0 is unambiguously eps here (shape: n_eps, n_lead, NY, NX),
+    #     so there is no architecture-specific NC-reading involved.  Storing the result
+    #     in the NC file lets render_from_nc skip all heavy computation entirely.
+    arr_eps    = data[:, 0, :, :, :]              # view: (eps, lead_time, y, x)
+    arr_sorted = np.sort(arr_eps, axis=0)         # sorted copy along eps axis
+    p90_idx    = min(int(np.floor(0.9 * n_eps)), n_eps - 1)
+    p90_da     = xr.DataArray(
+        arr_sorted[p90_idx],                      # shape (lead_time, y, x), float32
+        dims=["lead_time", "y", "x"],
+        coords={
+            "lead_time": [float(h) for h in LEAD_HOURS],
+            "lat": (["y", "x"], LAT_GRID.astype(np.float32)),
+            "lon": (["y", "x"], LON_GRID.astype(np.float32)),
+        },
+    )
+    hourly_rain_p90 = p90_da.diff("lead_time")    # (lead_time=33, y, x)
+    hourly_rain_p90.values = np.where(
+        hourly_rain_p90.values < 0.01, 0.0, np.round(hourly_rain_p90.values, 2)
+    )
+    hourly_rain_p90.attrs = {
+        "long_name": "Hourly precipitation (90th percentile)",
+        "units": "mm/m2",
+    }
+
     # 6. Save with Unix-timestamp filename
     ts = int(datetime.now(timezone.utc).timestamp())
     output_file = output_dir / f"{ts}.nc"
-    ds = xr.Dataset({"TOT_PREC": da_all, "hourly_rain": hourly_rain})
+    ds = xr.Dataset({"TOT_PREC": da_all, "hourly_rain": hourly_rain, "hourly_rain_p90": hourly_rain_p90})
     ds.to_netcdf(output_file)
     ds.close()
     print(f"[fetch] Saved -> {output_file}")
