@@ -47,7 +47,7 @@ NX, NY = 429, 295
 LEAD_HOURS = list(range(34))
 
 TARGET_LONS = np.linspace(LON_MIN, LON_MAX, NX)
-TARGET_LATS = np.linspace(LAT_MAX, LAT_MIN, NY) # Descending lat required by GeoServer Geotools
+TARGET_LATS = np.linspace(LAT_MIN, LAT_MAX, NY)
 LON_GRID, LAT_GRID = np.meshgrid(TARGET_LONS, TARGET_LATS)   # (NY, NX)
 TARGET_PTS = np.column_stack([LAT_GRID.ravel(), LON_GRID.ravel()])  # (NY*NX, 2)
 
@@ -57,7 +57,7 @@ CACHE_DIR  = BACKEND_DIR / ".fetch_cache"
 
 CLAT_CACHE    = CACHE_DIR / "icon_ch1_clat.npy"
 CLON_CACHE    = CACHE_DIR / "icon_ch1_clon.npy"
-INDICES_CACHE = CACHE_DIR / "icon_ch1_regrid_indices_v2.npy"
+INDICES_CACHE = CACHE_DIR / "icon_ch1_regrid_indices.npy"
 
 SCHEDULED_HOURS = [0, 3, 6, 9, 12, 15, 18, 21]
 
@@ -122,6 +122,8 @@ def get_latest_urls() -> tuple[dict[int, str], str]:
 
     required = set(LEAD_HOURS)
     complete = [r for r, leads in by_ref.items() if required.issubset(leads)]
+    print(f"[fetch] All ref_times with TOT_PREC hits: {sorted(by_ref.keys())}")
+    print(f"[fetch] Complete runs (all {len(LEAD_HOURS)} leads): {sorted(complete)}")
     if not complete:
         raise RuntimeError(
             f"No complete ICON CH1 forecast found with all {len(LEAD_HOURS)} lead times. "
@@ -180,29 +182,28 @@ def _load_icon_grid_coords() -> tuple[np.ndarray, np.ndarray]:
     """
     Return (clat_deg, clon_deg) for every ICON CH1 native grid point.
 
-    Reads 'tlat' and 'tlon' messages from the STAC horizontal_constants GRIB2.
+    Reads the first two messages from the STAC horizontal_constants GRIB2
+    positionally ??? message 0 = CLAT, message 1 = CLON ??? using only the
+    standard 'values' key, so no COSMO definitions are required.
+    Auto-detects degrees vs radians from value range.
     Cached after first download.
     """
     if CLAT_CACHE.exists() and CLON_CACHE.exists():
         return np.load(CLAT_CACHE), np.load(CLON_CACHE)
 
-    print("[grid] Downloading ICON CH1 horizontal grid constants (one-time ~200 MB)...")
+    print("[grid] Downloading ICON CH1 horizontal grid constants (one-time ~200 MB)???")
     hc_url = _get_collection_asset_url("horizontal_constants")
     tmp = download_grib(hc_url)
 
-    clat, clon = None, None
+    messages: list[np.ndarray] = []
     try:
         with open(tmp, "rb") as f:
-            while True:
+            while len(messages) < 2:  # only need first two messages
                 gid = eccodes.codes_grib_new_from_file(f)
                 if gid is None:
                     break
                 try:
-                    name = eccodes.codes_get(gid, "shortName")
-                    if name == "tlat":
-                        clat = eccodes.codes_get_array(gid, "values").copy()
-                    elif name == "tlon":
-                        clon = eccodes.codes_get_array(gid, "values").copy()
+                    messages.append(eccodes.codes_get_array(gid, "values").copy())
                 except eccodes.CodesInternalError:
                     pass
                 finally:
@@ -210,10 +211,14 @@ def _load_icon_grid_coords() -> tuple[np.ndarray, np.ndarray]:
     finally:
         _safe_unlink(tmp)
 
-    if clat is None or clon is None:
-        raise RuntimeError("Could not find 'tlat' and 'tlon' messages in horizontal_constants GRIB2.")
+    if len(messages) < 2:
+        raise RuntimeError(
+            f"Expected ???2 messages in horizontal_constants GRIB2, got {len(messages)}."
+        )
 
-    # ICON stores coords in radians if abs-max <= pi; convert to degrees
+    clat, clon = messages[0], messages[1]
+
+    # ICON stores coords in radians if abs-max ??? ??; convert to degrees
     if np.max(np.abs(clat)) <= np.pi + 0.01:
         clat = np.degrees(clat)
         clon = np.degrees(clon)
@@ -221,7 +226,7 @@ def _load_icon_grid_coords() -> tuple[np.ndarray, np.ndarray]:
     CACHE_DIR.mkdir(parents=True, exist_ok=True)
     np.save(CLAT_CACHE, clat)
     np.save(CLON_CACHE, clon)
-    print(f"[grid] Cached {len(clat):,} ICON grid points -> {CACHE_DIR}")
+    print(f"[grid] Cached {len(clat):,} ICON grid points ??? {CACHE_DIR}")
     return clat, clon
 
 
@@ -275,47 +280,6 @@ def read_grib_data(path: Path) -> dict[int, np.ndarray]:
             members[mem] = eccodes.codes_get_array(gid, "values").copy()
             eccodes.codes_release(gid)
     return members
-
-
-# ---------------------------------------------------------------------------
-# GeoServer NC helper
-# ---------------------------------------------------------------------------
-
-def write_geoserver_nc(hourly_rain: "xr.DataArray", ref_time_val: "np.datetime64", out_path: Path) -> Path:
-    """
-    Write a CF-1.6 compliant NetCDF readable by GeoServer's NetCDF plugin.
-    Uses 1-D lat/lon dimension coordinates and a proper absolute time axis.
-    Can be called from fetch_and_save() or from utils_geoserver at startup
-    to rebuild a missing _gs.nc from an existing routing .nc.
-    """
-    lead_hours = hourly_rain.coords["lead_time"].values           # float hours
-    time_vals  = ref_time_val + (lead_hours * 3.6e12).astype("timedelta64[ns]")
-
-    hr_cf = xr.DataArray(
-        hourly_rain.values,
-        dims=["time", "lat", "lon"],
-        coords={
-            "time": time_vals,
-            "lat":  TARGET_LATS.astype(np.float32),
-            "lon":  TARGET_LONS.astype(np.float32),
-        },
-        name="hourly_rain",
-        attrs=hourly_rain.attrs,
-    )
-    hr_cf["time"].attrs = {"standard_name": "time", "axis": "T"}
-    hr_cf["lat"].attrs  = {"units": "degrees_north", "axis": "Y", "standard_name": "latitude"}
-    hr_cf["lon"].attrs  = {"units": "degrees_east",  "axis": "X", "standard_name": "longitude"}
-    gs_encoding = {
-        "time":        {"units": "hours since 1970-01-01 00:00:00", "dtype": "float64", "calendar": "standard"},
-        "hourly_rain": {"dtype": "float32"},
-    }
-    # NETCDF3_CLASSIC is required - GeoServer's built-in NetCDF plugin does not
-    # support NetCDF4 without a separate plugin that is not installed by default.
-    xr.Dataset({"hourly_rain": hr_cf}, attrs={"Conventions": "CF-1.6"}).to_netcdf(
-        out_path, encoding=gs_encoding, format="NETCDF3_CLASSIC"
-    )
-    print(f"[fetch] GeoServer copy saved -> {out_path.name}")
-    return out_path
 
 
 # ---------------------------------------------------------------------------
@@ -379,19 +343,7 @@ def fetch_and_save(output_dir: Path = OUTPUT_DIR) -> Path:
 
     # 5. Hourly rain from ensemble mean
     mean_precip = da_all.mean("eps").squeeze("ref_time")      # (lead_time, y, x)
-    hourly_rain = mean_precip.diff("lead_time")                # (lead_time, y, x)
-
-    # 7. Pre-render all PNG frames
-    try:
-        import sys
-        if str(BACKEND_DIR) not in sys.path:
-            sys.path.append(str(BACKEND_DIR))
-        from utils_render import render_all_frames
-        render_all_frames(hourly_rain, da_all.coords["ref_time"].values[0])
-    except Exception as e:
-        print(f"[fetch] PNG render failed: {e}")
-
-    # 7. Clean up for routing: zero noise, round to 2 dp
+    hourly_rain = mean_precip.diff("lead_time")                # (lead_time=33, y, x)
     hourly_rain.values = np.where(
         hourly_rain.values < 0.01, 0.0, np.round(hourly_rain.values, 2)
     )
@@ -400,22 +352,20 @@ def fetch_and_save(output_dir: Path = OUTPUT_DIR) -> Path:
         "units": "mm/m2",
     }
 
-    # 8. Save with Unix-timestamp filename
+    # 6. Save with Unix-timestamp filename
     ts = int(datetime.now(timezone.utc).timestamp())
     output_file = output_dir / f"{ts}.nc"
     ds = xr.Dataset({"TOT_PREC": da_all, "hourly_rain": hourly_rain})
     ds.to_netcdf(output_file)
     ds.close()
     print(f"[fetch] Saved -> {output_file}")
-    
-    # 9. Publish to GeoServer
+
+    # 6b. Render PNG overlays for frontend Leaflet map
     try:
-        from utils_geoserver import publish_nc
-        gs_file = output_dir / f"{ts}_gs.nc"
-        write_geoserver_nc(hourly_rain, da_all.coords["ref_time"].values[0], gs_file)
-        publish_nc(gs_file)
+        from utils_render import render_from_nc
+        render_from_nc(output_file)
     except Exception as e:
-        print(f"[fetch] GeoServer publish failed: {e}")
+        print(f"[fetch] Render PNGs skipped or failed: {e}")
 
     return output_file
 
@@ -443,18 +393,27 @@ def check_fetch_on_startup():
 
     ts = datetime.now(timezone.utc).strftime("%H:%M UTC")
     if needs_fetch:
-        print(f"[{ts}] Data outdated ??? fetching???")
+        print(f"[{ts}] Data outdated — fetching…")
         fetch_and_save()
     else:
         print(f"[{ts}] Data is up-to-date")
-        # Ensure GS is up to date (idempotent)
+        # Even if .nc is fresh, PNGs may be stale (e.g. after a restart).
+        # Re-render if rain_layers is missing or older than the newest .nc.
         try:
-            from utils_geoserver import publish_nc
-            nc = sorted(OUTPUT_DIR.glob("*.nc"), key=lambda p: p.stat().st_mtime)
-            if nc:
-                publish_nc(nc[-1])
+            from utils_render import render_from_nc, RAIN_LAYERS_DIR
+            nc_files = list(OUTPUT_DIR.glob("*.nc"))
+            if nc_files:
+                newest_nc = max(nc_files, key=lambda f: f.stat().st_mtime)
+                png_files = list(RAIN_LAYERS_DIR.glob("rain_*.png")) if RAIN_LAYERS_DIR.exists() else []
+                needs_render = (
+                    not png_files
+                    or max(f.stat().st_mtime for f in png_files) < newest_nc.stat().st_mtime
+                )
+                if needs_render:
+                    print(f"[{ts}] PNGs missing or stale — re-rendering from {newest_nc.name}")
+                    render_from_nc(newest_nc)
         except Exception as e:
-            print(f"[startup] geoserver publish skipped: {e}")
+            print(f"[{ts}] Re-render check failed: {e}")
 
 
 def scheduler_loop():

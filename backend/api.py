@@ -12,14 +12,13 @@
 from fastapi import FastAPI, HTTPException, Query
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse, Response
-from fastapi import Request
-from dotenv import load_dotenv
 from contextlib import asynccontextmanager
 
 from typing import Literal
 
 # Sonstige Libaries
 import subprocess
+import requests as http_requests
 import numpy as np
 import osmnx as ox
 import xarray as xr
@@ -35,7 +34,7 @@ try:
     from backend.utils_nc_file import get_nc_file
     from backend.utils_forecast import get_forecast, compute_rain_adjusted_cost
     from utils_routingmodels import static_djikstra, time_dependent_dijkstra
-    from backend.utils_geoserver import check_geoserver_on_startup
+    from backend.utils_render import list_rain_times, get_rain_layer_path
 
 except ModuleNotFoundError:
     backend_dir = str(SysPath(__file__).resolve().parent)
@@ -45,7 +44,7 @@ except ModuleNotFoundError:
     from utils_nc_file import get_nc_file
     from utils_forecast import get_forecast, compute_rain_adjusted_cost
     from utils_routingmodels import static_djikstra, time_dependent_dijkstra
-    from utils_geoserver import check_geoserver_on_startup
+    from utils_render import list_rain_times, get_rain_layer_path, get_rain_layer_p90_path, RAIN_LAYERS_DIR
 
 
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - 
@@ -60,8 +59,6 @@ BACKEND_DIR = Path(__file__).resolve().parent
 NC_DIR = BACKEND_DIR / "data" / "NC"
 FETCH_SCRIPT = BACKEND_DIR / "utils_fetch.py"
 
-import requests as http_requests
-
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     # Fetch-Daemon als Hintergrundprozess starten
@@ -72,10 +69,6 @@ async def lifespan(app: FastAPI):
         env={**__import__("os").environ, "PYTHONIOENCODING": "utf-8"},
     )
     print(f"[startup] Fetch-Daemon gestartet (PID {daemon.pid})")
-    
-    # GeoServer überprüfen/starten
-    check_geoserver_on_startup()
-    
     yield
     # Beim Herunterfahren der API den Daemon beenden
     print("[shutdown] Beende Fetch-Daemon...")
@@ -95,7 +88,6 @@ app = FastAPI(
 
 # ---------------------------------------------------------------------------
 # CORS konfigurieren
-load_dotenv()
 origins = [
     "http://localhost",
     "http://127.0.0.1",
@@ -129,38 +121,34 @@ def serve_frontend():
 
 @app.get("/rain-times", include_in_schema=False)
 def rain_times():
-    """Return ISO timestamp strings from the latest GeoServer NetCDF."""
-    # Find files matching the gs patterns
-    gs_files = sorted(NC_DIR.glob("*_gs.nc"), key=lambda p: p.stat().st_mtime)
-    if not gs_files:
-        return []
-    ds = xr.open_dataset(gs_files[-1])
-    times = [str(t)[:19] + ".000Z" for t in ds["time"].values]
-    ds.close()
-    return times
+    """Return ISO timestamp strings for all available rain PNGs."""
+    return list_rain_times()
 
 
-@app.get("/wms", include_in_schema=False)
-def wms_proxy(request: Request):
-    """Proxy WMS tile requests to GeoServer to avoid browser CORS restrictions."""
-    params = dict(request.query_params)
-    
-    # Temporarily strip TIME parameter so GeoServer renders the default/MAX time
-    # This prevents the transparent layers caused by the NetCDF TIME dimension parsing bug
-    if "TIME" in params:
-        del params["TIME"]
-    if "time" in params:
-        del params["time"]
+@app.get("/rain-frame", include_in_schema=False)
+def get_rain_frame(time: str = Query(...), layer: str = Query("mean")):
+    """Return a pre-rendered PNG frame. layer=mean (default) or layer=p90."""
+    try:
+        if layer == "p90":
+            png_path = get_rain_layer_p90_path(time)
+        else:
+            png_path = get_rain_layer_path(time)
+        return FileResponse(png_path, media_type="image/png")
+    except Exception:
+        return Response(status_code=404)
 
-    r = http_requests.get(
-        "http://localhost:8080/geoserver/vprouting/wms",
-        params=params,
-        timeout=15,
+
+@app.get("/nc-info", include_in_schema=False)
+def nc_info():
+    """Return the Unix timestamp (filename) of the newest .nc file."""
+    import re
+    files = sorted(
+        [p for p in NC_DIR.glob("*.nc") if re.fullmatch(r"\d+", p.stem)],
+        key=lambda p: int(p.stem),
     )
-    return Response(
-        content=r.content,
-        media_type=r.headers.get("content-type", "image/png"),
-    )
+    if not files:
+        return {"downloaded_unix": None}
+    return {"downloaded_unix": int(files[-1].stem)}
 
 
 

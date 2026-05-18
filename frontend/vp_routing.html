@@ -19,7 +19,7 @@
   <head>
     <meta charset="utf-8" />
     <meta content="width=device-width, initial-scale=1.0" name="viewport" />
-    <title>WetterAppProjekt</title>
+    <title>WetterRoutingApp</title>
     <!-- Leaflet -->
     <link
       crossorigin=""
@@ -32,60 +32,17 @@
       src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
     ></script>
     <!-- Local styles (sibling file) -->
-    <link href="style.css" rel="stylesheet" />
+    <link href="style.css?v=2" rel="stylesheet" />
   </head>
   <body>
-    <!-- Custom Layer Control -->
-    <div
-      id="custom-layer-control"
-      style="
-        position: absolute;
-        bottom: 20px;
-        left: 20px;
-        z-index: 1000;
-        background: rgba(255, 255, 255, 0.75);
-        padding: 15px 25px;
-        border-radius: 12px;
-        box-shadow: 0 8px 16px rgba(0, 0, 0, 0.2);
-        font-family: sans-serif;
-        backdrop-filter: blur(4px);
-        display: flex;
-        align-items: center;
-        gap: 12px;
-      "
-    >
-      <label
-        for="layer_select"
-        data-i18n="map_style"
-        style="margin: 0; font-size: 14px; font-weight: 600; color: #1f2937"
-        >Karte</label
-      >
-      <select
-        id="layer_select"
-        style="
-          height: 36px;
-          padding: 0 10px;
-          border: 1px solid rgba(0, 0, 0, 0.12);
-          border-radius: 8px;
-          background: rgba(255, 255, 255, 0.9);
-          font-size: 14px;
-          color: #1f2937;
-          outline: none;
-        "
-      >
-        <option value="streets" data-i18n="map_standard" selected>
-          Standard
-        </option>
-        <option value="hybrid" data-i18n="map_hybrid">Hybrid</option>
-      </select>
-    </div>
+
 
     <!-- Top Right Title -->
     <div id="top-right-title">
       <h1>
         <span style="color: #0d3a6e">W</span>etter<span style="color: #0d3a6e"
-          >A</span
-        >pp<span style="color: #0d3a6e">P</span>rojekt
+          >R</span
+        >outing<span style="color: #0d3a6e">A</span>pp
       </h1>
       <img src="logo.jpg" alt="Logo" class="header-logo" />
     </div>
@@ -102,7 +59,7 @@
             margin-bottom: 8px;
           "
         >
-          <label data-i18n="start" for="route_start">Startpunkt</label>
+          <label data-i18n="start" for="route_start">Startpunkt<span class="ctrl-info" data-tip="Startadresse eingeben oder auf der Karte anklicken"><svg aria-hidden="true" fill="none" height="13" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" viewbox="0 0 24 24" width="13"><circle cx="12" cy="12" r="10"></circle><line x1="12" x2="12" y1="16" y2="12"></line><line x1="12" x2="12.01" y1="8" y2="8"></line></svg></span></label>
           <div
             id="start-marker-ui"
             onclick="zoomToMarker('start')"
@@ -149,7 +106,7 @@
             margin-bottom: 8px;
           "
         >
-          <label data-i18n="end" for="route_end">Ziel</label>
+          <label data-i18n="end" for="route_end">Ziel<span class="ctrl-info" data-tip="Zieladresse eingeben oder auf der Karte anklicken"><svg aria-hidden="true" fill="none" height="13" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" viewbox="0 0 24 24" width="13"><circle cx="12" cy="12" r="10"></circle><line x1="12" x2="12" y1="16" y2="12"></line><line x1="12" x2="12.01" y1="8" y2="8"></line></svg></span></label>
           <div
             id="end-marker-ui"
             onclick="zoomToMarker('end')"
@@ -180,8 +137,17 @@
         />
       </div>
       <div class="control-group">
-        <label data-i18n="time" for="time_start">Abfahrtszeit</label>
-        <input id="time_start" type="time" />
+        <div style="display:flex;justify-content:space-between;align-items:baseline">
+          <label data-i18n="time" for="time_start">Abfahrtszeit<span class="ctrl-info" data-tip="Abfahrtszeit und -tag wählen"><svg aria-hidden="true" fill="none" height="13" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" viewbox="0 0 24 24" width="13"><circle cx="12" cy="12" r="10"></circle><line x1="12" x2="12" y1="16" y2="12"></line><line x1="12" x2="12.01" y1="8" y2="8"></line></svg></span></label>
+          <div id="departure-date" style="font-size:0.72rem;color:#666;"></div>
+        </div>
+        <div style="display:flex;gap:6px;align-items:center;margin-top:4px">
+          <input id="time_start" type="time" style="flex:1;min-width:0" />
+          <div class="day-toggle" id="day-toggle">
+            <button class="day-btn active" data-offset="0">Heute</button>
+            <button class="day-btn" data-offset="1">Morgen</button>
+          </div>
+        </div>
       </div>
       <div class="advanced-settings-wrapper">
         <div class="adv-toggle" id="btn_toggle_advanced">
@@ -221,7 +187,7 @@
           <div class="control-group">
             <label for="ride_spd"
               ><span data-i18n="speed">Geschwindigkeit</span>:
-              <span id="speed_display">20</span> km/h</label
+              <span id="speed_display">20</span> km/h<span class="ctrl-info" data-tip="Deine durchschnittliche Fahrradgeschwindigkeit"><svg aria-hidden="true" fill="none" height="13" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" viewbox="0 0 24 24" width="13"><circle cx="12" cy="12" r="10"></circle><line x1="12" x2="12" y1="16" y2="12"></line><line x1="12" x2="12.01" y1="8" y2="8"></line></svg></span></label
             >
             <input
               id="ride_spd"
@@ -238,7 +204,7 @@
             </div>
           </div>
           <div class="control-group">
-            <label data-i18n="rain" for="rain_resistance">Regenresistenz</label>
+            <label data-i18n="rain" for="rain_resistance">Regenresistenz<span class="ctrl-info" data-tip="Wie stark Regen die Routenwahl beeinflusst"><svg aria-hidden="true" fill="none" height="13" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" viewbox="0 0 24 24" width="13"><circle cx="12" cy="12" r="10"></circle><line x1="12" x2="12" y1="16" y2="12"></line><line x1="12" x2="12.01" y1="8" y2="8"></line></svg></span></label>
             <input
               id="rain_resistance"
               max="3"
@@ -253,7 +219,7 @@
             </div>
           </div>
           <div class="control-group">
-            <label data-i18n="route" for="route_type">Route</label>
+            <label data-i18n="route" for="route_type">Route<span class="ctrl-info" data-tip="Routenstrategie: regenmeidend, standard oder direkt"><svg aria-hidden="true" fill="none" height="13" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" viewbox="0 0 24 24" width="13"><circle cx="12" cy="12" r="10"></circle><line x1="12" x2="12" y1="16" y2="12"></line><line x1="12" x2="12.01" y1="8" y2="8"></line></svg></span></label>
             <input id="route_type" max="3" min="1" type="range" value="2" />
             <div class="slider-labels">
               <span data-i18n="route_scen">Kein Regen</span>
@@ -388,59 +354,75 @@
             <span>+33h</span>
           </div>
         </div>
-        <div id="timeline-info-container">
-          <button
-            class="info-toggle-btn"
-            id="btn-toggle-info"
-            title="Toggle Model Info"
-          >
-            <svg
-              aria-hidden="true"
-              fill="none"
-              height="16"
-              stroke="currentColor"
-              stroke-linecap="round"
-              stroke-linejoin="round"
-              stroke-width="2"
-              viewbox="0 0 24 24"
-              width="16"
-            >
-              <circle cx="12" cy="12" r="10"></circle>
-              <line x1="12" x2="12" y1="16" y2="12"></line>
-              <line x1="12" x2="12.01" y1="8" y2="8"></line>
-            </svg>
-            Info
-          </button>
-          <div class="hidden" id="model-info-popup">
-            <h2 id="model-title">
-              <svg
-                aria-hidden="true"
-                fill="none"
-                height="18"
-                stroke="currentColor"
-                stroke-linecap="round"
-                stroke-linejoin="round"
-                stroke-width="2"
-                viewbox="0 0 24 24"
-                width="18"
-              >
-                <path
-                  d="M12 2C6 10 4 14 4 16a8 8 0 0 0 16 0c0-2-2-6-8-14z"
-                ></path>
-              </svg>
-              ICON-CH1 EPS
-            </h2>
-            <div id="model-run-custom">
-              Model run: <span id="run-label-text"></span>
-            </div>
-            <div id="frame-readout-inline">
-              <span id="lead-time-label">+01h</span> ·
-              <span id="valid-time-label">--</span>
-            </div>
-          </div>
-        </div>
       </div>
       <!-- /controls -->
+
+      <!-- Floating Regen Legende panel -->
+      <div id="floating-legend-ctrl">
+        <button
+          class="info-toggle-btn"
+          id="btn-toggle-legend"
+          title="Regen Legende"
+        >
+          <svg
+            aria-hidden="true"
+            fill="none"
+            height="16"
+            stroke="currentColor"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            stroke-width="2"
+            viewbox="0 0 24 24"
+            width="16"
+          >
+            <circle cx="12" cy="12" r="10"></circle>
+            <line x1="12" x2="12" y1="16" y2="12"></line>
+            <line x1="12" x2="12.01" y1="8" y2="8"></line>
+          </svg>
+          Regen Legende
+        </button>
+        <div class="hidden" id="rain-legend-popup">
+          <h2 id="rain-legend-title">Regen Legende</h2>
+          <div class="legend-rows">
+            <div class="legend-row">
+              <span class="legend-swatch" style="background: #a8dcff"></span
+              ><span>Leichter Regen 0.2&#8211;0.6 mm/h</span>
+            </div>
+            <div class="legend-row">
+              <span class="legend-swatch" style="background: #4db3ff"></span
+              ><span>Regen 0.6&#8211;2 mm/h</span>
+            </div>
+            <div class="legend-row">
+              <span class="legend-swatch" style="background: #1a5fd4"></span
+              ><span>Starker Regen 2&#8211;8 mm/h</span>
+            </div>
+            <div class="legend-row">
+              <span class="legend-swatch" style="background: #002090"></span
+              ><span>Sehr starker Regen 8&#8211;30 mm/h</span>
+            </div>
+            <div class="legend-row">
+              <span class="legend-swatch" style="background: #ff8800"></span
+              ><span>Heftiger Regen 30&#8211;100 mm/h</span>
+            </div>
+            <div class="legend-row">
+              <span class="legend-swatch" style="background: #cc1100"></span
+              ><span>Extremregen &gt;100 mm/h</span>
+            </div>
+          </div>
+          <p class="legend-note">
+            Transparenz zeigt Unsicherheit (Ensemble-Streuung)
+          </p>
+        </div>
+      </div>
+
+      <!-- Floating Map Layer panel -->
+      <div id="floating-layer-ctrl">
+        <label data-i18n="map_style" for="layer_select">Karte</label>
+        <select id="layer_select">
+          <option value="streets" data-i18n="map_standard" selected>Standard</option>
+          <option value="hybrid" data-i18n="map_hybrid">Hybrid</option>
+        </select>
+      </div>
     </div>
     <!-- /app -->
     <script>
@@ -541,15 +523,12 @@
       const btnPlay = document.getElementById("btn-play");
       const iconPlay = document.getElementById("icon-play");
       const iconPause = document.getElementById("icon-pause");
-      const leadLbl = document.getElementById("lead-time-label");
-      const validLbl = document.getElementById("valid-time-label");
       const frameCount = document.getElementById("stat-frame");
       const intensityBadge = document.getElementById("intensity-badge");
       const intensityTxt = document.getElementById("intensity-text");
       const loading = document.getElementById("loading");
 
       // ── Init panel metadata ──────────────────────────────────────────────────────
-      document.getElementById("run-label-text").textContent = RUN_LABEL;
       document.getElementById("stat-peak").textContent =
         GLOBAL_MAX.toFixed(2) + " mm";
       document.getElementById("cb-max").textContent = GLOBAL_MAX.toFixed(1);
@@ -561,11 +540,27 @@
       // ── Leaflet setup ────────────────────────────────────────────────────────────
       document.addEventListener("DOMContentLoaded", () => {
         window.map = L.map("map", {
-          center: [46.8, 8.2],
-          zoom: 7,
+          center: [46.8, 8.3],
+          zoom: 8,
           zoomControl: false,
           attributionControl: true,
         });
+
+        // Scale bar — metric units, bottom-right near the legend button
+        L.control.scale({ imperial: false, position: "bottomright", maxWidth: 200 }).addTo(map);
+
+        // Match scale control width to the attribution box and right-align the bar
+        function syncScaleToAttrib() {
+          const attrEl = document.querySelector(".leaflet-control-attribution");
+          const scaleEl = document.querySelector(".leaflet-control-scale");
+          if (attrEl && scaleEl) {
+            scaleEl.style.width = attrEl.offsetWidth + "px";
+            scaleEl.style.display = "flex";
+            scaleEl.style.justifyContent = "flex-end";
+          }
+        }
+        map.whenReady(() => { setTimeout(syncScaleToAttrib, 200); });
+        map.on("layeradd", syncScaleToAttrib);
 
         // Base map without labels (rain will sit above this)
         L.tileLayer(
@@ -578,23 +573,29 @@
           },
         ).addTo(map);
 
-        // Rain overlay — rendered by GeoServer WMS (proxied through FastAPI to avoid CORS)
-        // Sits above the basemap but below the city/road label layer
-        function makeWmsUrl(time) {
-          return (
-            "/wms?SERVICE=WMS&VERSION=1.1.1&REQUEST=GetMap" +
-            "&FORMAT=image%2Fpng&TRANSPARENT=true" +
-            "&LAYERS=vprouting%3Ahourly_rain&STYLES=rain_blue" +
-            "&SRS=EPSG%3A4326&WIDTH=858&HEIGHT=590" +
-            "&BBOX=-0.817%2C41.183%2C18.183%2C51.183" +
-            "&TIME=" + encodeURIComponent(time)
-          );
+        // Rain overlays — pre-rendered PNGs served from the backend
+        // Layer 1 (mean): solid core — "what's likely"
+        // Layer 2 (p90):  semi-transparent halo — "what's possible"
+        // Both sit above the basemap but below the label layer.
+        function makeRainUrl(time) {
+          return "/rain-frame?time=" + encodeURIComponent(time);
+        }
+        function makeP90Url(time) {
+          return "/rain-frame?time=" + encodeURIComponent(time) + "&layer=p90";
         }
 
+        // Bottom: ensemble mean — certain rain core
         const overlay = L.imageOverlay("", BOUNDS, {
-          opacity: 0.85,
+          opacity: 1.0,
           interactive: false,
           zIndex: 300,
+        }).addTo(map);
+
+        // Top: p90 possibility halo (semi-transparent, same extent)
+        const overlayP90 = L.imageOverlay("", BOUNDS, {
+          opacity: 1.0,
+          interactive: false,
+          zIndex: 310,
         }).addTo(map);
 
         // Labels-only layer in a custom pane above the rain overlay
@@ -611,55 +612,69 @@
         ).addTo(map);
 
         // Load available timesteps from /rain-times then initialise animation
-        fetch("/rain-times")
-          .then((r) => r.json())
-          .then((data) => {
+        Promise.all([
+          fetch("/rain-times").then((r) => r.json()),
+          fetch("/nc-info")
+            .then((r) => r.json())
+            .catch(() => ({ downloaded_unix: null })),
+        ])
+          .then(([data, ncInfo]) => {
             if (!data || data.length === 0) {
               console.warn("[rain-times] API returned no timesteps");
               return;
             }
             TIMES = data;
-            const wkdays = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
-            const mons = [
-              "Jan",
-              "Feb",
-              "Mar",
-              "Apr",
-              "May",
-              "Jun",
-              "Jul",
-              "Aug",
-              "Sep",
-              "Oct",
-              "Nov",
-              "Dec",
-            ];
+            const utcFmt = new Intl.DateTimeFormat("en-GB", {
+              timeZone: "UTC",
+              weekday: "short",
+              day: "2-digit",
+              month: "short",
+              hour: "2-digit",
+              minute: "2-digit",
+              hour12: false,
+            });
+            const localFmt = new Intl.DateTimeFormat("de-CH", {
+              timeZone: "Europe/Zurich",
+              weekday: "short",
+              day: "2-digit",
+              month: "2-digit",
+              year: "numeric",
+              hour: "2-digit",
+              minute: "2-digit",
+              hour12: false,
+            });
+            const baselLabelFmt = new Intl.DateTimeFormat("en-GB", {
+              timeZone: "Europe/Zurich",
+              weekday: "short",
+              day: "2-digit",
+              month: "short",
+              hour: "2-digit",
+              minute: "2-digit",
+              hour12: false,
+            });
             LABELS = data.map((iso, i) => {
               const d = new Date(iso);
               const lead = String(i + 1).padStart(2, "0");
-              const day = wkdays[d.getUTCDay()];
-              const date = String(d.getUTCDate()).padStart(2, "0");
-              const mon = mons[d.getUTCMonth()];
-              const hh = String(d.getUTCHours()).padStart(2, "0");
-              const mm = String(d.getUTCMinutes()).padStart(2, "0");
-              return `+${lead}h \u00b7 ${day} ${date} ${mon} ${hh}:${mm} UTC`;
+              const parts = baselLabelFmt.formatToParts(d);
+              const r = {};
+              parts.forEach((p) => (r[p.type] = p.value));
+              return `+${lead}h · ${r.weekday} ${r.day} ${r.month} ${r.hour}:${r.minute} CE(S)T`;
             });
             slider.max = TIMES.length - 1;
+
+            // Model run time = first frame minus 1 hour (UTC display)
+            if (TIMES.length > 0) {
+              const runDt = new Date(new Date(TIMES[0]).getTime() - 3600000);
+              const p = utcFmt.formatToParts(runDt);
+              const r = {};
+              p.forEach((x) => (r[x.type] = x.value));
+            }
+
             showFrame(0);
+            if (typeof window.forceUpdateTicks !== "undefined")
+              window.forceUpdateTicks();
           })
           .catch((err) => console.error("[rain-times] fetch failed:", err));
-
-        // Click on map: show nearest point rainfall tooltip (basic lat/lon echo)
-        map.on("click", (e) => {
-          const { lat, lng } = e.latlng;
-          L.popup()
-            .setLatLng(e.latlng)
-            .setContent(
-              `<strong>${LABELS[currentFrame]}</strong><br/>` +
-                `Lat ${lat.toFixed(3)}° · Lon ${lng.toFixed(3)}°`,
-            )
-            .openOn(map);
-        });
 
         // Hide loading overlay once map tiles have loaded
         map.once("load", hideLoading);
@@ -674,12 +689,11 @@
         function showFrame(idx) {
           if (!TIMES.length) return; // guard until /rain-times loaded
           currentFrame = idx;
-          overlay.setUrl(makeWmsUrl(TIMES[idx]));
+          overlay.setUrl(makeRainUrl(TIMES[idx]));
+          overlayP90.setUrl(makeP90Url(TIMES[idx]));
 
           const label = LABELS[idx] || TIMES[idx] || "";
           const parts = label.split(" \u00b7 ");
-          leadLbl.textContent = parts[0] || label;
-          validLbl.textContent = parts[1] || "";
 
           slider.value = idx;
           const pct =
@@ -930,6 +944,10 @@
               isStart = activeInputBox === "start";
             }
 
+            // Keep highlight in sync with the box being filled by this click
+            if (typeof setActiveHighlight !== "undefined")
+              setActiveHighlight(isStart ? "start" : "end");
+
             const targetInput = isStart ? routeStartInput : routeEndInput;
 
             targetInput.value = window.t("resolving");
@@ -1044,6 +1062,58 @@
           timeStartInput.value = `${hours}:${minutes}`;
         }
 
+        // ── Heute / Morgen day toggle ─────────────────────────────────────────────
+        let departureDayOffset = 0;   // 0 = today, 1 = tomorrow
+        const departureDateEl = document.getElementById("departure-date");
+
+        function updateDepartureDateLabel() {
+          if (!departureDateEl) return;
+          const d = new Date();
+          d.setDate(d.getDate() + departureDayOffset);
+          const label = departureDayOffset === 0 ? "Heute" : "Morgen";
+          departureDateEl.textContent =
+            label + ", " +
+            String(d.getDate()).padStart(2, "0") + "." +
+            String(d.getMonth() + 1).padStart(2, "0") + "." +
+            d.getFullYear();
+        }
+
+        document.querySelectorAll(".day-btn").forEach((btn) => {
+          btn.addEventListener("click", () => {
+            document.querySelectorAll(".day-btn").forEach((b) => b.classList.remove("active"));
+            btn.classList.add("active");
+            departureDayOffset = Number(btn.dataset.offset);
+            updateDepartureDateLabel();
+          });
+        });
+        updateDepartureDateLabel();
+
+        // ── Active input highlight ────────────────────────────────────────────────
+        // Highlight persists on the last-used field — cleared only when another
+        // field takes over. route_start is highlighted on load.
+        const highlightInputs = {
+          start: document.getElementById("route_start"),
+          end:   document.getElementById("route_end"),
+          time:  timeStartInput,
+        };
+
+        function setActiveHighlight(key) {
+          Object.values(highlightInputs).forEach((el) => el && el.classList.remove("input-active"));
+          if (key && highlightInputs[key]) highlightInputs[key].classList.add("input-active");
+        }
+
+        // Mirror activeInputBox changes into the highlight
+        highlightInputs.start && highlightInputs.start.addEventListener("focus", () => setActiveHighlight("start"));
+        highlightInputs.end   && highlightInputs.end.addEventListener("focus",   () => setActiveHighlight("end"));
+        highlightInputs.time  && highlightInputs.time.addEventListener("focus",  () => setActiveHighlight("time"));
+        highlightInputs.time  && highlightInputs.time.addEventListener("blur",   () => {
+          // Return highlight to whichever start/end was active
+          setActiveHighlight(activeInputBox === "end" ? "end" : "start");
+        });
+
+        // Initial highlight
+        setActiveHighlight("start");
+
         document
           .getElementById("rain_resistance")
           .addEventListener("change", () => {
@@ -1103,6 +1173,7 @@
                 .split(":")
                 .map((v) => parseInt(v, 10) || 0);
               now.setHours(hours, minutes, 0, 0);
+              now.setDate(now.getDate() + (typeof departureDayOffset !== "undefined" ? departureDayOffset : 0));
               return Math.floor(now.getTime() / 1000);
             };
 
@@ -1233,14 +1304,14 @@
             }
           });
 
-        // ── INFO POPUP TOGGLE ────────────────────────────────────────────────────
-        const toggleBtn = document.getElementById("btn-toggle-info");
-        const popup = document.getElementById("model-info-popup");
-        if (toggleBtn && popup) {
-          toggleBtn.addEventListener("click", (e) => {
+        // ── REGEN LEGENDE TOGGLE ─────────────────────────────────────────────────
+        const legendBtn = document.getElementById("btn-toggle-legend");
+        const legendPopup = document.getElementById("rain-legend-popup");
+        if (legendBtn && legendPopup) {
+          legendBtn.addEventListener("click", (e) => {
             e.stopPropagation();
-            popup.classList.toggle("hidden");
-            toggleBtn.classList.toggle("active");
+            legendPopup.classList.toggle("hidden");
+            legendBtn.classList.toggle("active");
           });
         }
       });
@@ -1426,7 +1497,7 @@
               const parts = LABELS[i].split(" · ");
               let timeText = "";
               if (parts.length > 1) {
-                const timeStr = parts[1].replace(" UTC", "");
+                const timeStr = parts[1].replace(" CE(S)T", "");
                 const timeParts = timeStr.split(" ");
                 if (timeParts.length >= 4) timeText = timeParts[3];
               }
@@ -1445,6 +1516,7 @@
           }
         };
         updateTicks();
+        window.forceUpdateTicks = updateTicks;
       });
     </script>
     <script>
@@ -1542,6 +1614,30 @@
             });
         }
       });
+    </script>
+    <script>
+      // ── Ctrl-info tooltips ──────────────────────────────────────────────────────────
+      // Body-level tooltip to escape overflow clipping of the routing panel
+      (function () {
+        const tip = document.createElement("div");
+        tip.id = "ctrl-tooltip-popup";
+        document.body.appendChild(tip);
+
+        document.querySelectorAll(".ctrl-info").forEach((el) => {
+          el.addEventListener("mouseenter", () => {
+            const panel = document.getElementById("routing-panel");
+            const panelRect = panel ? panel.getBoundingClientRect() : null;
+            const iconRect = el.getBoundingClientRect();
+            tip.textContent = el.getAttribute("data-tip");
+            tip.style.left = ((panelRect ? panelRect.right : iconRect.right) + 12) + "px";
+            tip.style.top = (iconRect.top + iconRect.height / 2) + "px";
+            tip.classList.add("visible");
+          });
+          el.addEventListener("mouseleave", () => {
+            tip.classList.remove("visible");
+          });
+        });
+      })();
     </script>
   </body>
 </html>

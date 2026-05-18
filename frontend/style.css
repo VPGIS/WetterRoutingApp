@@ -117,6 +117,35 @@ body {
   flex-direction: column;
 }
 
+/* ── Control-group info tooltip ─────────────────────────────────────── */
+.ctrl-info {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  cursor: help;
+  color: #9ca3af;
+  margin-left: 5px;
+  vertical-align: middle;
+}
+.ctrl-info:hover { color: #374151; }
+
+#ctrl-tooltip-popup {
+  position: fixed;
+  background: rgba(31, 41, 55, 0.93);
+  color: #f9fafb;
+  font-size: 0.72rem;
+  font-weight: 400;
+  padding: 5px 10px;
+  border-radius: 7px;
+  white-space: nowrap;
+  pointer-events: none;
+  z-index: 9999;
+  opacity: 0;
+  transition: opacity 0.15s;
+  transform: translateY(-50%);
+}
+#ctrl-tooltip-popup.visible { opacity: 1; }
+
 .control-group label {
   font-size: 0.85rem;
   font-weight: bold;
@@ -134,6 +163,48 @@ body {
   background: #fff;
   box-sizing: border-box;
   width: 100%;
+  transition: outline 0.1s, border-color 0.1s;
+}
+
+.control-group input.input-active {
+  outline: 2px solid #1a5fd4;
+  outline-offset: 1px;
+  border-color: #1a5fd4;
+}
+
+/* ── Heute / Morgen day toggle ─────────────────────────────────────────── */
+.day-toggle {
+  display: flex;
+  border: 1px solid #ccc;
+  border-radius: 6px;
+  overflow: hidden;
+  flex-shrink: 0;
+}
+
+.day-btn {
+  padding: 4px 8px;
+  font-size: 0.78rem;
+  font-weight: 600;
+  background: #f5f5f5;
+  color: #555;
+  border: none;
+  cursor: pointer;
+  line-height: 1.4;
+  transition: background 0.15s, color 0.15s;
+}
+
+.day-btn + .day-btn {
+  border-left: 1px solid #ccc;
+}
+
+.day-btn.active {
+  background: #1a5fd4;
+  color: #fff;
+}
+
+.day-btn:hover:not(.active) {
+  background: #e0eaff;
+  color: #1a5fd4;
 }
 
 .slider-labels {
@@ -349,9 +420,8 @@ body {
 #controls {
   position: absolute;
   bottom: 20px;
-  right: 20px;
-  left: auto;
-  width: calc(100vw - 370px);
+  left: 320px;
+  right: 370px;
   background: rgba(255, 255, 255, 0.75);
   border-top: none;
   display: flex;
@@ -814,3 +884,140 @@ body {
 .leaflet-control-zoom {
   display: none;
 }
+
+.hidden {
+  display: none !important;
+}
+
+/* ── Floating legend, info, and layer panels ─────────────────── */
+#floating-legend-ctrl,
+#floating-layer-ctrl {
+  position: absolute;
+  right: 20px;
+  z-index: 1000;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+}
+
+#floating-legend-ctrl {
+  bottom: 96px;
+  right: 370px;
+}
+
+#floating-layer-ctrl {
+  bottom: 156px;
+  flex-direction: row;
+  align-items: center;
+  gap: 10px;
+  background: rgba(255, 255, 255, 0.75);
+  padding: 10px 16px;
+  border-radius: 12px;
+  box-shadow: 0 8px 16px rgba(0, 0, 0, 0.2);
+  backdrop-filter: blur(4px);
+}
+
+#floating-layer-ctrl label {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: #1f2937;
+  margin: 0;
+  white-space: nowrap;
+}
+
+#floating-layer-ctrl select {
+  height: 32px;
+  padding: 0 8px;
+  border: 1px solid rgba(0, 0, 0, 0.12);
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.9);
+  font-size: 0.85rem;
+  color: #1f2937;
+  outline: none;
+}
+
+#floating-legend-ctrl #rain-legend-popup {
+  bottom: calc(100% + 8px);
+  top: auto;
+}
+.info-toggle-btn {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  background: white;
+  border: 1px solid #ccc;
+  border-radius: 20px;
+  padding: 4px 12px;
+  font-size: 0.8rem;
+  cursor: pointer;
+  color: #555;
+  transition: all 0.2s ease;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+.info-toggle-btn:hover {
+  background: #f8f9fa;
+  border-color: #bbb;
+}
+.info-toggle-btn.active {
+  background: #eef2f5;
+  color: #0d3a6e;
+  border-color: #0d3a6e;
+}
+@keyframes fadeUpIn {
+  from {
+    opacity: 0;
+    transform: translateY(10px) scale(0.98);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+/* ── Regen Legende popup ─────────────────────────────────────────────────── */
+#rain-legend-popup {
+  position: absolute;
+  bottom: calc(100% + 12px);
+  right: 0;
+  width: 290px;
+  background: white;
+  border: 1px solid #ccc;
+  border-radius: 8px;
+  padding: 16px;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.15);
+  transform-origin: bottom right;
+  animation: fadeUpIn 0.2s ease-out forwards;
+  z-index: 1001;
+}
+#rain-legend-title {
+  font-size: 0.95rem;
+  margin: 0 0 10px 0;
+  color: #0d3a6e;
+  font-weight: 600;
+}
+.legend-rows {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.legend-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 0.82rem;
+  color: #333;
+}
+.legend-swatch {
+  width: 22px;
+  height: 14px;
+  border-radius: 3px;
+  flex-shrink: 0;
+  border: 1px solid rgba(0, 0, 0, 0.15);
+}
+.legend-note {
+  margin: 10px 0 0 0;
+  font-size: 0.78rem;
+  color: #777;
+  font-style: italic;
+}
+
