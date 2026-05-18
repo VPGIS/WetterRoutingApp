@@ -34,7 +34,8 @@ try:
     from backend.utils_nc_file import get_nc_file
     from backend.utils_forecast import get_forecast, compute_rain_adjusted_cost
     from utils_routingmodels import static_djikstra, time_dependent_dijkstra
-    from backend.utils_render import list_rain_times, get_rain_layer_path
+    from backend.utils_render import list_rain_times, get_rain_layer_path, get_rain_layer_p90_path, RAIN_LAYERS_DIR, \
+        list_demo_rain_times, get_demo_rain_layer_path, get_demo_rain_layer_p90_path, render_demo_nc, DEMO_RAIN_LAYERS_DIR
 
 except ModuleNotFoundError:
     backend_dir = str(SysPath(__file__).resolve().parent)
@@ -44,7 +45,8 @@ except ModuleNotFoundError:
     from utils_nc_file import get_nc_file
     from utils_forecast import get_forecast, compute_rain_adjusted_cost
     from utils_routingmodels import static_djikstra, time_dependent_dijkstra
-    from utils_render import list_rain_times, get_rain_layer_path, get_rain_layer_p90_path, RAIN_LAYERS_DIR
+    from utils_render import list_rain_times, get_rain_layer_path, get_rain_layer_p90_path, RAIN_LAYERS_DIR, \
+        list_demo_rain_times, get_demo_rain_layer_path, get_demo_rain_layer_p90_path, render_demo_nc, DEMO_RAIN_LAYERS_DIR
 
 
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - 
@@ -58,9 +60,20 @@ except ModuleNotFoundError:
 BACKEND_DIR = Path(__file__).resolve().parent
 NC_DIR = BACKEND_DIR / "data" / "NC"
 FETCH_SCRIPT = BACKEND_DIR / "utils_fetch.py"
+DEMO_NC_PATH = NC_DIR / "demo_1779064720.nc"
+DEMO_NC_UNIX = 1779064720
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
+    # Demo rain layers vorrendern (einmalig beim Start)
+    try:
+        if DEMO_NC_PATH.exists() and not DEMO_RAIN_LAYERS_DIR.exists():
+            print("[startup] Rendere Demo-Regenebenen...")
+            render_demo_nc(DEMO_NC_PATH)
+            print("[startup] Demo-Regenebenen fertig.")
+    except Exception as e:
+        print(f"[startup] Demo-Render fehlgeschlagen: {e}")
+
     # Fetch-Daemon als Hintergrundprozess starten
     print("[startup] Starte Fetch-Daemon...")
     daemon = subprocess.Popen(
@@ -149,6 +162,37 @@ def nc_info():
     if not files:
         return {"downloaded_unix": None}
     return {"downloaded_unix": int(files[-1].stem)}
+
+
+# ---------------------------------------------------------------------------
+# Demo endpoints — serve pre-rendered frames from the demo NC file
+# ---------------------------------------------------------------------------
+
+@app.get("/demo-rain-times", include_in_schema=False)
+def demo_rain_times():
+    """Return ISO timestamp strings for all available demo rain PNGs."""
+    return list_demo_rain_times()
+
+
+@app.get("/demo-rain-frame", include_in_schema=False)
+def get_demo_rain_frame(time: str = Query(...), layer: str = Query("mean")):
+    """Return a pre-rendered demo PNG frame. layer=mean (default) or layer=p90."""
+    try:
+        if layer == "p90":
+            png_path = get_demo_rain_layer_p90_path(time)
+        else:
+            png_path = get_demo_rain_layer_path(time)
+        return FileResponse(png_path, media_type="image/png")
+    except Exception:
+        return Response(status_code=404)
+
+
+@app.get("/demo-nc-info", include_in_schema=False)
+def demo_nc_info():
+    """Return info about the demo NC file."""
+    if DEMO_NC_PATH.exists():
+        return {"downloaded_unix": DEMO_NC_UNIX, "demo": True}
+    return {"downloaded_unix": None}
 
 
 
@@ -279,6 +323,11 @@ def get_route(
             "- high: Starke Gewichtung von Regen\n"
             "- highest: Kanten mit Regen werden vollständig vermieden"
         ),
+    ),
+
+    demo: bool = Query(
+        False,
+        description="Demo-Modus: Verwendet die Demo-NC-Datei statt der aktuellen Wetterdaten.",
     )
 
     ):
@@ -305,15 +354,20 @@ def get_route(
     # ——————————————————————————————————————————————————————————————————————————
     # Richtiges NC-File laden
     # ——————————————————————————————————————————————————————————————————————————
-    try:
-        nc_filepath = get_nc_file(int(start_time))
-    except FileNotFoundError as exc:
-        raise HTTPException(status_code=404, detail=str(exc))
+    if demo:
+        nc_filepath = str(DEMO_NC_PATH)
+        if not DEMO_NC_PATH.exists():
+            raise HTTPException(status_code=404, detail="Demo-NC-Datei nicht gefunden.")
+    else:
+        try:
+            nc_filepath = get_nc_file(int(start_time))
+        except FileNotFoundError as exc:
+            raise HTTPException(status_code=404, detail=str(exc))
 
-    if nc_filepath is None:
-        raise HTTPException(
-            status_code=404,
-            detail="Keine gültige Wetterdatei gefunden – Fetch-Daemon läuft noch oder Daten sind veraltet."
+        if nc_filepath is None:
+            raise HTTPException(
+                status_code=404,
+                detail="Keine gültige Wetterdatei gefunden – Fetch-Daemon läuft noch oder Daten sind veraltet."
         )
 
     try:

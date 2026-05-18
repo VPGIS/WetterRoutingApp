@@ -31,6 +31,7 @@ from scipy.ndimage import gaussian_filter
 
 BACKEND_DIR = Path(__file__).resolve().parent
 RAIN_LAYERS_DIR = BACKEND_DIR / "data" / "rain_layers"
+DEMO_RAIN_LAYERS_DIR = BACKEND_DIR / "data" / "rain_layers_demo"
 
 # --- Grid (must match utils_fetch.py constants) ---
 _LONS = np.linspace(-0.817, 18.183, 429)
@@ -119,6 +120,7 @@ def render_all_frames(
     hourly_rain_mean: xr.DataArray,
     hourly_rain_p90: xr.DataArray,
     ref_time_np,
+    output_dir: Path = None,
 ) -> Path:
     """
     Render two sets of PNGs per lead-time frame:
@@ -139,9 +141,10 @@ def render_all_frames(
     hourly_rain_p90  : xr.DataArray  shape (lead_time, y, x) – 90th-pct diff
     ref_time_np : numpy.datetime64  model reference time
     """
-    if RAIN_LAYERS_DIR.exists():
-        shutil.rmtree(RAIN_LAYERS_DIR)
-    RAIN_LAYERS_DIR.mkdir(parents=True)
+    target_dir = output_dir if output_dir is not None else RAIN_LAYERS_DIR
+    if target_dir.exists():
+        shutil.rmtree(target_dir)
+    target_dir.mkdir(parents=True)
 
     lead_times = hourly_rain_mean.coords["lead_time"].values
     ref_ts = int(ref_time_np) / 1e9
@@ -176,7 +179,7 @@ def render_all_frames(
         rgba_mean[..., 3] = alpha_mean
         buf = io.BytesIO()
         plt.imsave(buf, np.flipud(rgba_mean), format="png")
-        (RAIN_LAYERS_DIR / f"rain_mean_{ts_str}.png").write_bytes(buf.getvalue())
+        (target_dir / f"rain_mean_{ts_str}.png").write_bytes(buf.getvalue())
 
         # ── Layer 2: p90 — possibility halo ──────────────────────────────────
         rgba_p90 = _CMAP(_NORM(p90_val)).copy()
@@ -192,12 +195,12 @@ def render_all_frames(
         rgba_p90[..., 3] = alpha_p90
         buf = io.BytesIO()
         plt.imsave(buf, np.flipud(rgba_p90), format="png")
-        (RAIN_LAYERS_DIR / f"rain_p90_{ts_str}.png").write_bytes(buf.getvalue())
+        (target_dir / f"rain_p90_{ts_str}.png").write_bytes(buf.getvalue())
 
         print(f"  [render] {ts_str}  ({i + 1}/{n})")
 
-    print(f"[render] {n} frames ({n} mean + {n} p90) saved -> {RAIN_LAYERS_DIR}")
-    return RAIN_LAYERS_DIR
+    print(f"[render] {n} frames ({n} mean + {n} p90) saved -> {target_dir}")
+    return target_dir
 
 
 def render_from_nc(nc_path: Path) -> Path:
@@ -213,6 +216,21 @@ def render_from_nc(nc_path: Path) -> Path:
         mean_diff = precip.mean("eps").diff("lead_time")                 # colour class
         p90_diff  = precip.quantile(0.9, dim="eps").diff("lead_time")    # opacity
         return render_all_frames(mean_diff, p90_diff, ds.coords["ref_time"].values[0])
+    finally:
+        ds.close()
+
+
+def render_demo_nc(nc_path: Path) -> Path:
+    """Render the demo NC file into DEMO_RAIN_LAYERS_DIR."""
+    ds = xr.open_dataset(nc_path)
+    try:
+        if np.issubdtype(ds["lead_time"].dtype, np.timedelta64):
+            ds["lead_time"] = (ds["lead_time"] / np.timedelta64(1, 'h')).astype(float)
+        precip = ds["TOT_PREC"].squeeze("ref_time")
+        mean_diff = precip.mean("eps").diff("lead_time")
+        p90_diff  = precip.quantile(0.9, dim="eps").diff("lead_time")
+        return render_all_frames(mean_diff, p90_diff, ds.coords["ref_time"].values[0],
+                                 output_dir=DEMO_RAIN_LAYERS_DIR)
     finally:
         ds.close()
 
@@ -242,4 +260,28 @@ def list_rain_times() -> list[str]:
     return [
         _mean_filename_to_iso(f.name)
         for f in sorted(RAIN_LAYERS_DIR.glob("rain_mean_*.png"))
+    ]
+
+
+def get_demo_rain_layer_path(time_str: str) -> Path:
+    """Return the Path to the pre-rendered demo mean PNG for the given ISO timestamp."""
+    path = DEMO_RAIN_LAYERS_DIR / _iso_to_mean_filename(time_str)
+    if not path.exists():
+        raise FileNotFoundError(f"Pre-rendered demo mean frame not found: {path.name}")
+    return path
+
+
+def get_demo_rain_layer_p90_path(time_str: str) -> Path:
+    """Return the Path to the pre-rendered demo p90 PNG for the given ISO timestamp."""
+    path = DEMO_RAIN_LAYERS_DIR / _iso_to_p90_filename(time_str)
+    if not path.exists():
+        raise FileNotFoundError(f"Pre-rendered demo p90 frame not found: {path.name}")
+    return path
+
+
+def list_demo_rain_times() -> list[str]:
+    """Return sorted ISO timestamp strings for all available demo rain PNGs."""
+    return [
+        _mean_filename_to_iso(f.name)
+        for f in sorted(DEMO_RAIN_LAYERS_DIR.glob("rain_mean_*.png"))
     ]

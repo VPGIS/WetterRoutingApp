@@ -42,7 +42,7 @@
           >R</span
         >outing<span style="color: #0d3a6e">A</span>pp
       </h1>
-      <img src="logo.jpg" alt="Logo" class="header-logo" />
+      <img src="logo.jpg" alt="Logo" class="header-logo" id="header-logo" />
     </div>
 
     <!-- About panel -->
@@ -742,10 +742,10 @@
         // Layer 2 (p90):  semi-transparent halo — "what's possible"
         // Both sit above the basemap but below the label layer.
         function makeRainUrl(time) {
-          return "/rain-frame?time=" + encodeURIComponent(time);
+          return (demoMode ? "/demo-rain-frame" : "/rain-frame") + "?time=" + encodeURIComponent(time);
         }
         function makeP90Url(time) {
-          return "/rain-frame?time=" + encodeURIComponent(time) + "&layer=p90";
+          return (demoMode ? "/demo-rain-frame" : "/rain-frame") + "?time=" + encodeURIComponent(time) + "&layer=p90";
         }
 
         // Bottom: ensemble mean — certain rain core
@@ -780,12 +780,15 @@
         ).addTo(map);
 
         // Load available timesteps from /rain-times then initialise animation
-        Promise.all([
-          fetch("/rain-times").then((r) => r.json()),
-          fetch("/nc-info")
-            .then((r) => r.json())
-            .catch(() => ({ downloaded_unix: null })),
-        ])
+        function loadRainData() {
+          const timesUrl = demoMode ? "/demo-rain-times" : "/rain-times";
+          const infoUrl  = demoMode ? "/demo-nc-info"  : "/nc-info";
+          Promise.all([
+            fetch(timesUrl).then((r) => r.json()),
+            fetch(infoUrl)
+              .then((r) => r.json())
+              .catch(() => ({ downloaded_unix: null })),
+          ])
           .then(([data, ncInfo]) => {
             if (!data || data.length === 0) {
               console.warn("[rain-times] API returned no timesteps");
@@ -843,8 +846,47 @@
               window.forceUpdateTicks();
           })
           .catch((err) => console.error("[rain-times] fetch failed:", err));
+        }
+        loadRainData();
 
-        // Hide loading overlay once map tiles have loaded
+        // ── Demo mode ──────────────────────────────────────────────────────────────
+        function showDemoToast(entering) {
+          const toast = document.getElementById("demo-toast");
+          if (!toast) return;
+          toast.textContent = entering ? "🔧 Demo-Modus aktiv" : "Demo-Modus beendet";
+          toast.classList.remove("hidden");
+          clearTimeout(toast._hideTimer);
+          toast._hideTimer = setTimeout(() => toast.classList.add("hidden"), 3000);
+        }
+
+        function toggleDemoMode() {
+          demoMode = !demoMode;
+          const badge = document.getElementById("demo-badge");
+          if (badge) badge.style.display = demoMode ? "block" : "none";
+          showDemoToast(demoMode);
+          TIMES = []; LABELS = [];
+          loadRainData();
+          if (window.updateDepartureDateLabel) window.updateDepartureDateLabel();
+        }
+
+        // 5-click Easter egg on logo
+        let _demoClickCount = 0;
+        let _demoClickTimer = null;
+        const logoEl = document.getElementById("header-logo");
+        if (logoEl) {
+          logoEl.style.cursor = "pointer";
+          logoEl.addEventListener("click", () => {
+            _demoClickCount++;
+            clearTimeout(_demoClickTimer);
+            _demoClickTimer = setTimeout(() => { _demoClickCount = 0; }, 2000);
+            if (_demoClickCount >= 5) {
+              _demoClickCount = 0;
+              toggleDemoMode();
+            }
+          });
+        }
+
+
         map.once("load", hideLoading);
         setTimeout(hideLoading, 1200); // fallback
 
@@ -975,6 +1017,10 @@
       let vpEndMarker = null;
       let vpRouteLayer = null;
       const VP_API_BASE = "http://127.0.0.1:8000";
+
+      // ── DEMO MODE ──────────────────────────────────────────────────────────────
+      let demoMode = false;
+      const DEMO_NC_UNIX = 1779064720; // Unix timestamp of the demo NC file
 
       document.addEventListener("DOMContentLoaded", () => {
         const routeStartInput = document.getElementById("route_start");
@@ -1244,7 +1290,7 @@
 
         window.updateDepartureDateLabel = function updateDepartureDateLabel() {
           if (!departureDateEl) return;
-          const d = new Date();
+          const d = demoMode ? new Date(DEMO_NC_UNIX * 1000) : new Date();
           d.setDate(d.getDate() + departureDayOffset);
           const label = departureDayOffset === 0 ? window.t("today") : window.t("tomorrow");
           departureDateEl.textContent =
@@ -1358,22 +1404,29 @@
             const text = document.getElementById("calc_text");
 
             const parseTimeToUnix = (timeString) => {
-              const now = new Date();
+              const baseDate = demoMode ? new Date(DEMO_NC_UNIX * 1000) : new Date();
               if (!timeString) {
-                return Math.floor(now.getTime() / 1000);
+                return demoMode ? DEMO_NC_UNIX : Math.floor(baseDate.getTime() / 1000);
               }
-
               const [hours, minutes] = timeString
                 .split(":")
                 .map((v) => parseInt(v, 10) || 0);
-              now.setHours(hours, minutes, 0, 0);
-              now.setDate(
-                now.getDate() +
-                  (typeof departureDayOffset !== "undefined"
-                    ? departureDayOffset
-                    : 0),
-              );
-              return Math.floor(now.getTime() / 1000);
+              if (demoMode) {
+                baseDate.setUTCHours(hours, minutes, 0, 0);
+                baseDate.setUTCDate(
+                  baseDate.getUTCDate() +
+                    (typeof departureDayOffset !== "undefined" ? departureDayOffset : 0),
+                );
+              } else {
+                baseDate.setHours(hours, minutes, 0, 0);
+                baseDate.setDate(
+                  baseDate.getDate() +
+                    (typeof departureDayOffset !== "undefined"
+                      ? departureDayOffset
+                      : 0),
+                );
+              }
+              return Math.floor(baseDate.getTime() / 1000);
             };
 
             const routingModelBySlider = {
@@ -1444,6 +1497,7 @@
                     document.getElementById("route_type").value
                   ] || "einfach",
                 sensibility: rainSensitivity,
+                ...(demoMode ? { demo: "true" } : {}),
               });
 
               const response = await fetch(
@@ -1936,5 +1990,9 @@
         });
       })();
     </script>
+
+    <!-- Demo mode elements -->
+    <div id="demo-toast" class="demo-toast hidden"></div>
+    <div id="demo-badge" style="display:none">DEMO</div>
   </body>
 </html>

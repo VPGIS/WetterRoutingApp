@@ -1195,4 +1195,42 @@ label:has(.ctrl-info) {
   color: var(--text-faint);
 }
 
+/* ── Demo mode ───────────────────────────────────────────────── */
+.demo-toast {
+  position: fixed;
+  bottom: 30px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: #0d3a6e;
+  color: #fff;
+  padding: 10px 22px;
+  border-radius: 20px;
+  z-index: 9999;
+  font-size: 0.85rem;
+  font-weight: 600;
+  pointer-events: none;
+  opacity: 1;
+  transition: opacity 0.4s ease;
+  white-space: nowrap;
+}
+.demo-toast.hidden {
+  opacity: 0;
+}
+
+#demo-badge {
+  position: fixed;
+  top: 10px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: #e53e3e;
+  color: #fff;
+  font-size: 0.65rem;
+  font-weight: 700;
+  padding: 3px 8px;
+  border-radius: 4px;
+  letter-spacing: 0.07em;
+  z-index: 9998;
+  pointer-events: none;
+}
+
 
