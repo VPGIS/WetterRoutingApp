@@ -189,7 +189,14 @@ def _load_icon_grid_coords() -> tuple[np.ndarray, np.ndarray]:
     Cached after first download.
     """
     if CLAT_CACHE.exists() and CLON_CACHE.exists():
-        return np.load(CLAT_CACHE), np.load(CLON_CACHE)
+        clat, clon = np.load(CLAT_CACHE), np.load(CLON_CACHE)
+        print(f"[grid] Cache loaded: {len(clat):,} pts  "
+              f"lat=[{clat.min():.3f}..{clat.max():.3f}]  "
+              f"lon=[{clon.min():.3f}..{clon.max():.3f}]")
+        if clat.max() < 2.0:
+            print("[grid] *** WARNING: CLAT values look like RADIANS — "
+                  "delete .fetch_cache/ and restart to rebuild!")
+        return clat, clon
 
     print("[grid] Downloading ICON CH1 horizontal grid constants (one-time ~200 MB)???")
     hc_url = _get_collection_asset_url("horizontal_constants")
@@ -240,7 +247,16 @@ def _load_regrid_indices(clat: np.ndarray, clon: np.ndarray) -> np.ndarray:
     ICON native grid point is nearest. Cached after first build.
     """
     if INDICES_CACHE.exists():
-        return np.load(INDICES_CACHE)
+        indices = np.load(INDICES_CACHE)
+        unique_idx = len(np.unique(indices))
+        print(f"[regrid] Cache loaded: {len(indices):,} entries  "
+              f"range=[{indices.min()}..{indices.max()}]  "
+              f"unique={unique_idx:,}")
+        if unique_idx < 1000:
+            print(f"[regrid] *** WARNING: only {unique_idx} unique index values — "
+                  "regrid maps almost all pixels to the same ICON point!")
+            print("[regrid] *** DELETE .fetch_cache/ and restart to rebuild.")
+        return indices
 
     print("[regrid] Building KD-tree (one-time, may take ~1 min on Pi)???")
     tree = cKDTree(np.column_stack([clat, clon]))
@@ -316,6 +332,18 @@ def fetch_and_save(output_dir: Path = OUTPUT_DIR) -> Path:
         lead_data[h] = {mem: regrid(vals, indices) for mem, vals in raw.items()}
         print(f"  ??? +{h:02d}h  ({len(raw)} members)")
 
+    # ── debug: verify regrid output has spatial variation ──────────────────
+    _h_sample  = LEAD_HOURS[len(LEAD_HOURS) // 2]
+    _m_sample  = sorted(lead_data[_h_sample].keys())[0]
+    _rg_sample = lead_data[_h_sample][_m_sample]
+    print(f"[debug] regrid sample h={_h_sample} mem={_m_sample}: "
+          f"min={_rg_sample.min():.4f} max={_rg_sample.max():.4f} "
+          f"std={_rg_sample.std():.6f} "
+          f"unique_rounded={len(np.unique(_rg_sample.round(3))):,}")
+    if _rg_sample.std() < 1e-6:
+        print("[debug] *** REGRID OUTPUT IS SPATIALLY UNIFORM — "
+              "run python debug_nc.py to inspect cache files!")
+
     # 4. Assemble DataArray  shape: (eps, ref_time=1, lead_time, y, x)
     member_ids = sorted(all_members)
     n_eps  = len(member_ids)
@@ -325,6 +353,17 @@ def fetch_and_save(output_dir: Path = OUTPUT_DIR) -> Path:
     for li, h in enumerate(LEAD_HOURS):
         for ei, mem in enumerate(member_ids):
             data[ei, 0, li] = lead_data[h][mem]
+
+    # ── debug: check assembled data has spatial + ensemble variation ────────
+    _li_mid  = n_lead // 2
+    _f0      = data[0, 0, _li_mid]
+    _f_last  = data[-1, 0, _li_mid]
+    _eps_diff = float(np.abs(_f0 - _f_last).max())
+    print(f"[debug] data shape={data.shape} dtype={data.dtype}")
+    print(f"[debug] eps[0] lt_idx={_li_mid}: "
+          f"min={_f0.min():.4f} max={_f0.max():.4f} std={_f0.std():.6f}")
+    print(f"[debug] max |eps[0] - eps[-1]| at lt_idx={_li_mid}: {_eps_diff:.6f}"
+          + ("  *** ALL EPS IDENTICAL ***" if _eps_diff < 1e-6 else ""))
 
     # lead_time stored as float hours so da.interp(lead_time=float_hours) works directly
     da_all = xr.DataArray(
@@ -376,6 +415,15 @@ def fetch_and_save(output_dir: Path = OUTPUT_DIR) -> Path:
         "long_name": "Hourly precipitation (90th percentile)",
         "units": "mm/m2",
     }
+
+    # ── debug: spatial check before writing NC ────────────────────────────
+    for _dname, _da in (("hourly_rain", hourly_rain), ("hourly_rain_p90", hourly_rain_p90)):
+        _dvals = np.nan_to_num(_da.values, nan=0.0)
+        _pk    = int(_dvals.reshape(_dvals.shape[0], -1).max(axis=1).argmax())
+        _pf    = _dvals[_pk]
+        print(f"[debug] {_dname} dims={_da.dims} shape={_da.shape}  "
+              f"peak lt_idx={_pk}: min={_pf.min():.4f} max={_pf.max():.4f} "
+              f"std={_pf.std():.6f} nonzero={int((_pf > 0.01).sum())}/{_pf.size}")
 
     # 6. Save with Unix-timestamp filename
     ts = int(datetime.now(timezone.utc).timestamp())
