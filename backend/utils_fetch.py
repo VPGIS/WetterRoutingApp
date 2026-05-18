@@ -192,9 +192,11 @@ def _load_icon_grid_coords() -> tuple[np.ndarray, np.ndarray]:
         """True if arrays look like real ICON CH1 Europe coordinates."""
         return (
             len(clat) > 100_000
-            and 35.0 <= float(clat.mean()) <= 60.0
-            and -20.0 <= float(clon.mean()) <= 30.0
-            and len(np.unique(clat.round(2))) > 10_000
+            and float(clat.min()) >= 35.0
+            and float(clat.max()) <= 60.0
+            and float(clon.min()) >= -15.0
+            and float(clon.max()) <= 25.0
+            and len(np.unique(clat.round(2))) > 100
         )
 
     def _to_degrees(arr: np.ndarray) -> np.ndarray:
@@ -204,23 +206,27 @@ def _load_icon_grid_coords() -> tuple[np.ndarray, np.ndarray]:
         return arr
 
     def _looks_like_lat(arr: np.ndarray) -> bool:
+        # ICON CH1 lat domain: ~42–51 N. Require min >= 35 to reject fields
+        # that start near 0 (corrupted/wrong fields), and use a low uniqueness
+        # threshold because the regional domain has < ~900 unique values at
+        # 0.01 deg precision (range only ~9 deg).
         d = _to_degrees(arr)
         return (
             len(d) > 100_000
-            and 30.0 <= float(d.mean()) <= 65.0
-            and -90.0 <= float(d.min())
-            and float(d.max()) <= 90.0
-            and len(np.unique(d.round(2))) > 10_000
+            and float(d.min()) >= 35.0
+            and float(d.max()) <= 60.0
+            and len(np.unique(d.round(2))) > 100
         )
 
     def _looks_like_lon(arr: np.ndarray) -> bool:
+        # ICON CH1 lon domain: ~-1 to 18 E. Require max <= 25 to reject
+        # fields with wildly wrong values (max=254,392 on corrupted ARM64 cache).
         d = _to_degrees(arr)
         return (
             len(d) > 100_000
-            and -20.0 <= float(d.mean()) <= 30.0
-            and -180.0 <= float(d.min())
-            and float(d.max()) <= 360.0
-            and len(np.unique(d.round(2))) > 10_000
+            and float(d.min()) >= -15.0
+            and float(d.max()) <= 25.0
+            and len(np.unique(d.round(2))) > 100
         )
 
     if CLAT_CACHE.exists() and CLON_CACHE.exists():
