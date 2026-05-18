@@ -33,7 +33,7 @@ try:
     from backend.utils_graph import _parse_point, get_square_bbox_from_points, get_graph_cached
     from backend.utils_nc_file import get_nc_file
     from backend.utils_forecast import get_forecast, compute_rain_adjusted_cost
-    from utils_routingmodels import static_djikstra, time_dependent_dijkstra
+    from utils_routingmodels import static_weather_dijkstra, td_weather_dijkstra
     from backend.utils_render import list_rain_times, get_rain_layer_path, get_rain_layer_p90_path, RAIN_LAYERS_DIR, \
         list_demo_rain_times, get_demo_rain_layer_path, get_demo_rain_layer_p90_path, render_demo_nc, DEMO_RAIN_LAYERS_DIR
 
@@ -44,7 +44,7 @@ except ModuleNotFoundError:
     from utils_graph import _parse_point, get_square_bbox_from_points, get_graph_cached
     from utils_nc_file import get_nc_file
     from utils_forecast import get_forecast, compute_rain_adjusted_cost
-    from utils_routingmodels import static_djikstra, time_dependent_dijkstra
+    from utils_routingmodels import static_weather_dijkstra, td_weather_dijkstra
     from utils_render import list_rain_times, get_rain_layer_path, get_rain_layer_p90_path, RAIN_LAYERS_DIR, \
         list_demo_rain_times, get_demo_rain_layer_path, get_demo_rain_layer_p90_path, render_demo_nc, DEMO_RAIN_LAYERS_DIR
 
@@ -429,8 +429,7 @@ def get_route(
     # Routing anhand gewähltem Routingmodel durchführen
     # ——————————————————————————————————————————————————————————————————————————
     if routingmodel == 'einfach':
-
-        route = static_djikstra(G=G,
+        route = static_weather_dijkstra(G=G,
                                 start_node=start_node,
                                 end_node=end_node,
                                 start_time=start_time,
@@ -440,7 +439,7 @@ def get_route(
                                 sensibility=sensibility)
 
     elif routingmodel == 'advanced':
-        route = time_dependent_dijkstra(G=G,
+        route = td_weather_dijkstra(G=G,
                                         start_node=start_node,
                                         end_node=end_node,
                                         start_timestamp=start_time,
