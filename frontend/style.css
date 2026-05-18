@@ -127,7 +127,9 @@ body {
   margin-left: 5px;
   vertical-align: middle;
 }
-.ctrl-info:hover { color: #374151; }
+.ctrl-info:hover {
+  color: #374151;
+}
 
 #ctrl-tooltip-popup {
   position: fixed;
@@ -144,7 +146,9 @@ body {
   transition: opacity 0.15s;
   transform: translateY(-50%);
 }
-#ctrl-tooltip-popup.visible { opacity: 1; }
+#ctrl-tooltip-popup.visible {
+  opacity: 1;
+}
 
 .control-group label {
   font-size: 0.85rem;
@@ -163,7 +167,9 @@ body {
   background: #fff;
   box-sizing: border-box;
   width: 100%;
-  transition: outline 0.1s, border-color 0.1s;
+  transition:
+    outline 0.1s,
+    border-color 0.1s;
 }
 
 .control-group input.input-active {
@@ -190,7 +196,9 @@ body {
   border: none;
   cursor: pointer;
   line-height: 1.4;
-  transition: background 0.15s, color 0.15s;
+  transition:
+    background 0.15s,
+    color 0.15s;
 }
 
 .day-btn + .day-btn {
@@ -1020,4 +1028,3 @@ body {
   color: #777;
   font-style: italic;
 }
-
