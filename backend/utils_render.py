@@ -250,8 +250,13 @@ def render_from_nc(nc_path: Path) -> Path:
         ref_time = ds.coords["ref_time"].values[0]
         if "hourly_rain_p90" in ds:
             # Pre-computed at fetch time — direct read, architecture-independent.
-            mean_diff = ds["hourly_rain"]
-            p90_diff  = ds["hourly_rain_p90"]
+            # Drop lead_time=0: xarray alignment inserts NaN there (diff has no t=-1).
+            mean_diff = ds["hourly_rain"].sel(
+                lead_time=ds["hourly_rain"].coords["lead_time"] > 0, drop=True
+            )
+            p90_diff  = ds["hourly_rain_p90"].sel(
+                lead_time=ds["hourly_rain_p90"].coords["lead_time"] > 0, drop=True
+            )
         else:
             # Legacy NC without pre-computed p90 — recompute from TOT_PREC.
             precip = ds["TOT_PREC"].squeeze("ref_time")
@@ -269,8 +274,13 @@ def render_demo_nc(nc_path: Path) -> Path:
             ds["lead_time"] = (ds["lead_time"] / np.timedelta64(1, 'h')).astype(float)
         ref_time = ds.coords["ref_time"].values[0]
         if "hourly_rain_p90" in ds:
-            mean_diff = ds["hourly_rain"]
-            p90_diff  = ds["hourly_rain_p90"]
+            # Drop lead_time=0 (NaN from xarray alignment).
+            mean_diff = ds["hourly_rain"].sel(
+                lead_time=ds["hourly_rain"].coords["lead_time"] > 0, drop=True
+            )
+            p90_diff  = ds["hourly_rain_p90"].sel(
+                lead_time=ds["hourly_rain_p90"].coords["lead_time"] > 0, drop=True
+            )
         else:
             precip = ds["TOT_PREC"].squeeze("ref_time")
             mean_diff, p90_diff = _mean_and_p90_diff(precip)

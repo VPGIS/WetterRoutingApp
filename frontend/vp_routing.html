@@ -672,6 +672,7 @@
             <span>+17h</span>
             <span>+25h</span>
             <span>+33h</span>
+            <span id="tz-label">CE(S)T</span>
           </div>
         </div>
       </div>
@@ -995,17 +996,24 @@
               });
               slider.max = TIMES.length - 1;
 
-              // Model run time = first frame minus 1 hour (UTC display)
-              if (TIMES.length > 0) {
-                const runDt = new Date(new Date(TIMES[0]).getTime() - 3600000);
-                const p = utcFmt.formatToParts(runDt);
-                const r = {};
-                p.forEach((x) => (r[x.type] = x.value));
-              }
+              // Capture ref-time (first frame − 1 h = model reference time)
+              if (TIMES.length > 0)
+                demoRefTime = new Date(new Date(TIMES[0]).getTime() - 3600000);
 
-              showFrame(0);
+              // In live mode, jump to the frame matching the current floored hour
+              let startIdx = 0;
+              if (!demoMode && TIMES.length > 0) {
+                const nowHour = Math.floor(Date.now() / 3600000) * 3600000;
+                for (let i = 0; i < TIMES.length; i++) {
+                  if (new Date(TIMES[i]).getTime() <= nowHour) startIdx = i;
+                  else break;
+                }
+              }
+              showFrame(startIdx);
               if (typeof window.forceUpdateTicks !== "undefined")
                 window.forceUpdateTicks();
+              if (typeof window.updateDemoBadge !== "undefined")
+                window.updateDemoBadge();
             })
             .catch((err) => console.error("[rain-times] fetch failed:", err));
         }
@@ -1191,6 +1199,8 @@
       // ── DEMO MODE ──────────────────────────────────────────────────────────────
       let demoMode = false;
       const DEMO_NC_UNIX = 1779064720; // Unix timestamp of the demo NC file
+      let demoRefTime = null; // ref-time Date of the active demo NC (set from TIMES[0])
+      window.getDemoRefTime = () => demoRefTime;
 
       document.addEventListener("DOMContentLoaded", () => {
         const routeStartInput = document.getElementById("route_start");
@@ -1900,6 +1910,34 @@
 
       let currentLang = "de";
 
+      // Updates the DEMO badge text with the ref-time of the active demo NC,
+      // formatted in the current UI language and Basel/Zurich timezone.
+      window.updateDemoBadge = function () {
+        const badge = document.getElementById("demo-badge");
+        if (!badge || badge.style.display === "none") return;
+        const refTime = window.getDemoRefTime ? window.getDemoRefTime() : null;
+        if (!refTime) {
+          badge.textContent = "DEMO";
+          return;
+        }
+        const localeMap = {
+          de: "de-CH",
+          en: "en-GB",
+          fr: "fr-CH",
+          it: "it-CH",
+        };
+        const fmt = new Intl.DateTimeFormat(localeMap[currentLang] || "de-CH", {
+          timeZone: "Europe/Zurich",
+          weekday: "short",
+          day: "2-digit",
+          month: "short",
+          hour: "2-digit",
+          minute: "2-digit",
+          hour12: false,
+        });
+        badge.textContent = "DEMO \u00b7 " + fmt.format(refTime);
+      };
+
       window.t = function (key) {
         return i18n[currentLang][key] || key;
       };
@@ -1950,6 +1988,7 @@
           updateAboutLang(currentLang);
           if (window.updateDepartureDateLabel)
             window.updateDepartureDateLabel();
+          if (window.updateDemoBadge) window.updateDemoBadge();
           // Update calculate button specifically if it's not currently calculating
           const calcText = document.getElementById("calc_text");
           if (calcText.innerText !== window.t("calculating")) {
@@ -2017,6 +2056,22 @@
                 span.classList.add("hour-dot-only");
               }
               ticksContainer.appendChild(span);
+            }
+
+            // Update timezone label (CEST / CET) based on actual data date
+            const tzLabel = document.getElementById("tz-label");
+            if (tzLabel && typeof TIMES !== "undefined" && TIMES.length > 0) {
+              try {
+                const refDate = new Date(TIMES[0]);
+                const tzParts = new Intl.DateTimeFormat("en-GB", {
+                  timeZone: "Europe/Zurich",
+                  timeZoneName: "short",
+                }).formatToParts(refDate);
+                const tzName = tzParts.find((p) => p.type === "timeZoneName");
+                tzLabel.textContent = tzName ? tzName.value : "CE(S)T";
+              } catch (_) {
+                tzLabel.textContent = "CE(S)T";
+              }
             }
           } else {
             setTimeout(updateTicks, 200);
