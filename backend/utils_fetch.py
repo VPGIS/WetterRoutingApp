@@ -247,8 +247,12 @@ def _load_icon_grid_coords() -> tuple[np.ndarray, np.ndarray]:
     hc_url = _get_collection_asset_url("horizontal_constants")
     tmp = download_grib(hc_url)
 
-    # Scan ALL messages; identify CLAT/CLON by content, not by position.
-    # This is robust across eccodes versions and architectures (ARM64 vs x86).
+    # Scan ALL messages; identify CLAT/CLON by paramId first (most reliable),
+    # then fall back to value-range detection.
+    # Known MeteoSwiss ICON CH1 paramIds: 250003 = CLAT, 250004 = CLON.
+    _CLAT_PARAM_IDS = {250003}
+    _CLON_PARAM_IDS = {250004}
+
     clat_candidate: np.ndarray | None = None
     clon_candidate: np.ndarray | None = None
     try:
@@ -259,26 +263,42 @@ def _load_icon_grid_coords() -> tuple[np.ndarray, np.ndarray]:
                 if gid is None:
                     break
                 try:
-                    vals = eccodes.codes_get_array(gid, "values").copy()
+                    # np.asarray() ensures plain ndarray even if eccodes returns masked
+                    vals = np.asarray(eccodes.codes_get_array(gid, "values")).copy()
                     try:
                         param = eccodes.codes_get(gid, "paramId")
                     except Exception:
                         param = "?"
-                    if clat_candidate is None and _looks_like_lat(vals):
-                        clat_candidate = _to_degrees(vals)
+                    d = _to_degrees(vals)
+                    n_unique = len(np.unique(d.round(2)))
+
+                    # --- Primary: identify by known paramId ---
+                    by_id = False
+                    if clat_candidate is None and param in _CLAT_PARAM_IDS:
+                        clat_candidate = d
+                        by_id = True
                         print(f"[grid] msg {msg_idx} (paramId={param}): "
-                              f"identified as CLAT  "
-                              f"mean={clat_candidate.mean():.3f} "
-                              f"unique={len(np.unique(clat_candidate.round(2))):,}")
-                    elif clon_candidate is None and _looks_like_lon(vals):
-                        clon_candidate = _to_degrees(vals)
+                              f"CLAT by paramId  mean={d.mean():.3f} unique={n_unique:,}")
+                    elif clon_candidate is None and param in _CLON_PARAM_IDS:
+                        clon_candidate = d
+                        by_id = True
                         print(f"[grid] msg {msg_idx} (paramId={param}): "
-                              f"identified as CLON  "
-                              f"mean={clon_candidate.mean():.3f} "
-                              f"unique={len(np.unique(clon_candidate.round(2))):,}")
-                    else:
-                        print(f"[grid] msg {msg_idx} (paramId={param}): skipped "
-                              f"size={len(vals)} min={vals.min():.4f} max={vals.max():.4f}")
+                              f"CLON by paramId  mean={d.mean():.3f} unique={n_unique:,}")
+
+                    if not by_id:
+                        # --- Fallback: identify by value range ---
+                        if clat_candidate is None and _looks_like_lat(d):
+                            clat_candidate = d
+                            print(f"[grid] msg {msg_idx} (paramId={param}): "
+                                  f"CLAT by range  mean={d.mean():.3f} unique={n_unique:,}")
+                        elif clon_candidate is None and _looks_like_lon(d):
+                            clon_candidate = d
+                            print(f"[grid] msg {msg_idx} (paramId={param}): "
+                                  f"CLON by range  mean={d.mean():.3f} unique={n_unique:,}")
+                        else:
+                            print(f"[grid] msg {msg_idx} (paramId={param}): skipped "
+                                  f"size={len(vals)} min={d.min():.4f} max={d.max():.4f} "
+                                  f"unique={n_unique}")
                 except eccodes.CodesInternalError:
                     print(f"[grid] msg {msg_idx}: CodesInternalError (skipped)")
                 finally:
@@ -500,8 +520,10 @@ def fetch_and_save(output_dir: Path = OUTPUT_DIR) -> Path:
               f"peak lt_idx={_pk}: min={_pf.min():.4f} max={_pf.max():.4f} "
               f"std={_pf.std():.6f} nonzero={int((_pf > 0.01).sum())}/{_pf.size}")
 
-    # 6. Save with Unix-timestamp filename
-    ts = int(datetime.now(timezone.utc).timestamp())
+    # 6. Save with ref_time as Unix-timestamp filename (not download time).
+    # The routing endpoint derives lead_hours = (departure_unix - filename_stem) / 3600,
+    # so the stem must be the forecast reference time, not the wall-clock download time.
+    ts = int(ref_dt.timestamp())
     output_file = output_dir / f"{ts}.nc"
     ds = xr.Dataset({"TOT_PREC": da_all, "hourly_rain": hourly_rain, "hourly_rain_p90": hourly_rain_p90})
     ds.to_netcdf(output_file)
