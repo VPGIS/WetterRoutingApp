@@ -30,6 +30,8 @@ VPRouting/
 │   ├── utils_graph.py          # Graph-Handling
 │   ├── utils_nc_file.py        # NetCDF-Dateiauswahl
 │   ├── utils_routingmodels.py  # Routingmodelle
+│   ├── utils_render.py         # Rendern des Regens für Frontend
+│   ├── _apriori/               # Backend: Debugging, Trial & Error, legacy code
 │   └── data/
 │       ├── graphs/             # gespeicherte Graphen mit Indexierung
 │       │   ├── *.graphml
@@ -39,12 +41,17 @@ VPRouting/
 │           └── NC_for_Cellid.nc
 │
 ├── frontend/                   # Frontend-Ordner
+│   ├── _apriori/               # Frontend: Debugging, Trial & Error, legacy code
 │   └── vp_routing.html
 │
 ├── scripts/
 │   └── startup/                # Start- und Vorbereitungsskripte
 │       ├── reduce_nc_to_grid_geometry.py
 │       └── startup.py
+│
+├── _apriori/                   # Allgemeines: Debugging, Trial & Error, legacy code
+│
+├── .fetch_cache/               # Cache-Ordner für CLAT/CLON Index
 │
 ├── docs/                       # Dokumentation
 │   ├── about.md
