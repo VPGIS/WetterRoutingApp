@@ -520,3 +520,7 @@ def serve_css():
 def serve_logo():
     return FileResponse(FRONTEND_DIR / "logo.jpg", media_type="image/jpeg")
 
+@app.get("/i18n.json", include_in_schema=False)
+def serve_i18n():
+    return FileResponse(FRONTEND_DIR / "i18n.json", media_type="application/json")
+
