@@ -1,4 +1,5 @@
 import heapq
+import time
 
 import osmnx as ox
 
@@ -13,20 +14,45 @@ ADVANCED_FORECAST_BUCKET_SECONDS = 300  # 5 Minuten
 
 
 def static_weather_dijkstra(G, start_node, end_node, start_time, speed, ds, nc_file_timestamp, sensibility):
+    started_at = time.perf_counter()
+    print(f"[route] static model: loading forecast grid for timestamp={start_time}")
     forecast_grid = get_forecast_grid(
         ds,
         file_timestamp=nc_file_timestamp,
         target_timestamp=start_time,
         interpolate=False,
     )
+    print(f"[route] static model: forecast grid ready shape={forecast_grid.shape}")
 
+    edge_count = 0
+    rainy_edges = 0
+    blocked_edges = 0
+    min_forecast = None
+    max_forecast = None
     for u, v, k, data in G.edges(keys=True, data=True):
         forecast = get_forecast_from_grid(data, forecast_grid)
+        edge_count += 1
+        if forecast > 0:
+            rainy_edges += 1
+        min_forecast = forecast if min_forecast is None else min(min_forecast, forecast)
+        max_forecast = forecast if max_forecast is None else max(max_forecast, forecast)
         data["forecast"] = forecast
         data["cost"] = compute_rain_adjusted_cost(data["length"], forecast, sensibility)
+        if data["cost"] == float("inf"):
+            blocked_edges += 1
         data["travel_time"] = int(data["length"] / speed)
 
+    forecast_range = (
+        f"{min_forecast:.4f}..{max_forecast:.4f}"
+        if min_forecast is not None and max_forecast is not None
+        else "n/a"
+    )
+    print(
+        f"[route] static model: weighted_edges={edge_count}, rainy_edges={rainy_edges}, "
+        f"blocked_edges={blocked_edges}, forecast_range={forecast_range}"
+    )
     route = ox.routing.shortest_path(G, start_node, end_node, weight="cost")
+    print(f"[route] static model: shortest_path done route_nodes={len(route) if route else 0} ({time.perf_counter() - started_at:.2f}s)")
 
     return route
 
@@ -49,6 +75,10 @@ def td_weather_dijkstra(G, start_node, end_node, start_timestamp, speed, ds, nc_
     parent_edge = {}
     pq = [(0, start_node, start_timestamp)]
     forecast_grid_cache = {}
+    popped_states = 0
+    relaxed_edges = 0
+    started_at = time.perf_counter()
+    print(f"[route] advanced model: dijkstra started at timestamp={start_timestamp}")
 
     # Default-Werte, damit route_to_gdf auch nicht besuchte Parallelkanten lesen kann.
     for u, v, k, edge_data in G.edges(keys=True, data=True):
@@ -70,6 +100,7 @@ def td_weather_dijkstra(G, start_node, end_node, start_timestamp, speed, ds, nc_
 
     while pq:
         cost, current_node, current_timestamp = heapq.heappop(pq)
+        popped_states += 1
 
         if (current_node, current_timestamp) in dist and cost > dist[(current_node, current_timestamp)]:
             continue
@@ -94,6 +125,11 @@ def td_weather_dijkstra(G, start_node, end_node, start_timestamp, speed, ds, nc_
                 path.append(current_state[0])
 
             path.reverse()
+            print(
+                f"[route] advanced model: target reached route_nodes={len(path)}, "
+                f"popped_states={popped_states}, relaxed_edges={relaxed_edges}, "
+                f"forecast_grids={len(forecast_grid_cache)} ({time.perf_counter() - started_at:.2f}s)"
+            )
             return path
 
         for u, v, k, edge_data in G.edges(current_node, keys=True, data=True):
@@ -108,6 +144,7 @@ def td_weather_dijkstra(G, start_node, end_node, start_timestamp, speed, ds, nc_
 
             # Besseren Zustand merken und für die spätere Rekonstruktion verknüpfen.
             if (v, arrival_timestamp) not in dist or new_cost < dist[(v, arrival_timestamp)]:
+                relaxed_edges += 1
                 next_state = (v, arrival_timestamp)
                 current_state = (current_node, current_timestamp)
 
@@ -121,5 +158,9 @@ def td_weather_dijkstra(G, start_node, end_node, start_timestamp, speed, ds, nc_
 
                 heapq.heappush(pq, (new_cost, v, arrival_timestamp))
 
-    print(f"Warnung: Kein Pfad von {start_node} zu {end_node} gefunden")
+    print(
+        f"[route] advanced model: no path from {start_node} to {end_node}; "
+        f"popped_states={popped_states}, relaxed_edges={relaxed_edges}, "
+        f"forecast_grids={len(forecast_grid_cache)} ({time.perf_counter() - started_at:.2f}s)"
+    )
     return []

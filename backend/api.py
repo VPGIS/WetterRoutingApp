@@ -27,6 +27,7 @@ import sys
 from pathlib import Path as SysPath
 import re
 import json
+import time
 
 # Utils
 try:
@@ -332,8 +333,20 @@ def get_route(
 
     ):
 
+    route_started_at = time.perf_counter()
+    last_step_at = route_started_at
+
+    def log_step(message: str):
+        nonlocal last_step_at
+        now = time.perf_counter()
+        print(
+            f"[route] {message} "
+            f"(+{now - last_step_at:.2f}s, total {now - route_started_at:.2f}s)"
+        )
+        last_step_at = now
+
     print("[route] request received")
-    print(f"[route] start_point={start_point!r}, end_point={end_point!r}, start_time={start_time}, speed={speed}, routingmodel={routingmodel}, sensibility={sensibility}")
+    print(f"[route] start_point={start_point!r}, end_point={end_point!r}, start_time={start_time}, speed={speed}, routingmodel={routingmodel}, sensibility={sensibility}, demo={demo}")
 
     # ——————————————————————————————————————————————————————————————————————————
     # Speed von km/h in m/s
@@ -341,13 +354,17 @@ def get_route(
     speed = speed / 3.6
 
     if speed <= 0:
+        print(f"[route] invalid speed after conversion: {speed}")
         raise HTTPException(status_code=400, detail="speed must be > 0")
+
+    log_step(f"speed converted to {speed:.2f} m/s")
 
     # ——————————————————————————————————————————————————————————————————————————
     # Sicherstellen, dass Start-/ Endpunkt im format lat, lon vorliegen
     # ——————————————————————————————————————————————————————————————————————————
     start_point = _parse_point(start_point)
     end_point = _parse_point(end_point)
+    log_step(f"points parsed: start={start_point}, end={end_point}")
     
     
 
@@ -357,31 +374,40 @@ def get_route(
     if demo:
         nc_filepath = str(DEMO_NC_PATH)
         if not DEMO_NC_PATH.exists():
+            print(f"[route] demo nc missing: {DEMO_NC_PATH}")
             raise HTTPException(status_code=404, detail="Demo-NC-Datei nicht gefunden.")
+        log_step(f"demo nc selected: {nc_filepath}")
     else:
         try:
             nc_filepath = get_nc_file(int(start_time))
         except FileNotFoundError as exc:
+            print(f"[route] nc lookup failed: {exc}")
             raise HTTPException(status_code=404, detail=str(exc))
 
         if nc_filepath is None:
+            print("[route] no valid nc file found")
             raise HTTPException(
                 status_code=404,
                 detail="Keine gültige Wetterdatei gefunden – Fetch-Daemon läuft noch oder Daten sind veraltet."
         )
+        log_step(f"nc selected: {nc_filepath}")
 
     try:
         ds = xr.open_dataset(nc_filepath)
     except FileNotFoundError as exc:
+        print(f"[route] nc open failed: {exc}")
         raise HTTPException(status_code=404, detail=str(exc))
 
     print(f"[route] nc_filepath={nc_filepath}")
+    log_step(f"nc opened with variables={list(ds.data_vars)}")
 
     # ——————————————————————————————————————————————————————————————————————————
     # Aus Start-/ Endpunkt den richtigen Graphen aus dem Cache finden oder herunterladen
     # ——————————————————————————————————————————————————————————————————————————
     bbox = get_square_bbox_from_points(start_point, end_point)
+    log_step(f"bbox calculated: north={bbox[0]:.5f}, south={bbox[1]:.5f}, east={bbox[2]:.5f}, west={bbox[3]:.5f}")
     G = get_graph_cached(bbox)
+    log_step(f"graph ready: nodes={G.number_of_nodes()}, edges={G.number_of_edges()}")
 
     # ——————————————————————————————————————————————————————————————————————————
     # Aus Start-/ Endpunkt die richtige Node auswählen
@@ -391,6 +417,7 @@ def get_route(
 
     lat_e, lon_e = end_point
     end_node = ox.distance.nearest_nodes(G, lon_e, lat_e)
+    log_step(f"nearest nodes found: start_node={start_node}, end_node={end_node}")
     
 
     # Zeitstempel als integer vorbereiten
@@ -401,6 +428,7 @@ def get_route(
     nc_file_timestamp_match = re.search(r"(\d+)", nc_stem)
     if not nc_file_timestamp_match:
         ds.close()
+        print(f"[route] could not parse timestamp from nc file name: {nc_stem}")
         raise HTTPException(status_code=500, detail=f"Could not parse timestamp from nc file name: {nc_stem}")
 
     nc_file_timestamp = int(nc_file_timestamp_match.group(1))
@@ -413,22 +441,26 @@ def get_route(
 
     if lead_idx < 0:
         ds.close()
+        print(f"[route] invalid lead time: start_time={start_time}, nc_file_timestamp={nc_file_timestamp}, lead_hours={lead_hours}")
         raise HTTPException(status_code=400, detail="start_time is before the forecast file timestamp")
 
     max_lead_idx = int(ds["TOT_PREC"].sizes.get("lead_time", 0)) - 1
     if max_lead_idx < 0:
         ds.close()
+        print("[route] forecast dataset has no lead_time dimension")
         raise HTTPException(status_code=500, detail="forecast dataset has no lead_time dimension")
 
     if lead_idx > max_lead_idx:
         lead_idx = max_lead_idx
     print(f"[route] clamped lead_idx={lead_idx}, max_lead_idx={max_lead_idx}")
+    log_step("forecast timing prepared")
     '''------------------------TEMP-------------------------'''
 
     # ——————————————————————————————————————————————————————————————————————————
     # Routing anhand gewähltem Routingmodel durchführen
     # ——————————————————————————————————————————————————————————————————————————
     if routingmodel == 'einfach':
+        log_step("starting static weather dijkstra")
         route = static_weather_dijkstra(G=G,
                                 start_node=start_node,
                                 end_node=end_node,
@@ -439,6 +471,7 @@ def get_route(
                                 sensibility=sensibility)
 
     elif routingmodel == 'advanced':
+        log_step("starting time-dependent weather dijkstra")
         route = td_weather_dijkstra(G=G,
                                         start_node=start_node,
                                         end_node=end_node,
@@ -448,11 +481,18 @@ def get_route(
                                         nc_file_timestamp=nc_file_timestamp,
                                         sensibility=sensibility)
 
+    if not route:
+        ds.close()
+        print("[route] routing returned no path")
+        raise HTTPException(status_code=500, detail="Keine Route gefunden.")
+
+    log_step(f"routing done: route_nodes={len(route)}")
 
     # ——————————————————————————————————————————————————————————————————————————
     # NC-File schliessen
     # ——————————————————————————————————————————————————————————————————————————
     ds.close()
+    log_step("nc closed")
 
     # ——————————————————————————————————————————————————————————————————————————
     # Ausgabe der Route als geojson
@@ -461,6 +501,10 @@ def get_route(
     route_gdf = ox.routing.route_to_gdf(G, route, weight='cost')
     keep_cols = ["osmid", "length", "cost","travel_time", "geometry"]
     route_gdf = route_gdf[keep_cols]
+    total_length = float(route_gdf["length"].sum()) if "length" in route_gdf else 0.0
+    total_time = int(route_gdf["travel_time"].sum()) if "travel_time" in route_gdf else 0
+    log_step(f"geojson prepared: segments={len(route_gdf)}, length={total_length:.0f}m, travel_time={total_time}s")
+    print(f"[route] request finished in {time.perf_counter() - route_started_at:.2f}s")
     return json.loads(route_gdf.to_json())
 
     # für debugging -> return G, route
