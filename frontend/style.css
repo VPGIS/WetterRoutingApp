@@ -151,12 +151,12 @@ label:has(.ctrl-info) {
   font-weight: 400;
   padding: 5px 10px;
   border-radius: 7px;
-  white-space: nowrap;
+  white-space: pre-line;
+  max-width: 260px;
   pointer-events: none;
   z-index: 9999;
   opacity: 0;
   transition: opacity 0.15s;
-  transform: translateY(-50%);
 }
 #ctrl-tooltip-popup.visible {
   opacity: 1;
@@ -1058,6 +1058,15 @@ label:has(.ctrl-info) {
   border-radius: 3px;
   flex-shrink: 0;
   border: 1px solid rgba(0, 0, 0, 0.15);
+}
+.legend-label {
+  flex: 1;
+}
+.legend-val {
+  text-align: right;
+  white-space: nowrap;
+  font-variant-numeric: tabular-nums;
+  opacity: 0.75;
 }
 .legend-note {
   margin: 10px 0 0 0;
