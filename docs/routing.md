@@ -224,19 +224,19 @@ Der berechnete Wert wird als `cost` an der Kante gespeichert und für die Pfadsu
 
 ---
 
-### Regenempfindlichkeit `sensibility`
+### Regenempfindlichkeit `rainresistence`
 
-`sensibility` steuert, wie stark Regen die Kosten einer Kante erhöht. Der Parameter wird über die API übergeben und an `compute_rain_adjusted_cost` weitergereicht.
+`rainresistence` steuert, wie stark Regen die Kosten einer Kante erhöht. Der Parameter wird über die API übergeben und an `compute_rain_adjusted_cost` weitergereicht.
 
-| `sensibility` | `multiplier` | `exponent` | Wirkung                                        |
-| ------------- | -----------: | ---------: | ---------------------------------------------- |
-| `lowest`      |            - |          - | Regen hat keinen Einfluss auf die Kosten.      |
-| `low`         |         25.0 |        1.0 | Regen erhöht die Kosten leicht.                |
-| `medium`      |        100.0 |        1.2 | Regen wird deutlich vermieden.                 |
-| `high`        |        400.0 |        1.4 | Regenabschnitte werden stark bestraft.         |
-| `highest`     |            - |          - | Kanten mit Regen werden vollständig vermieden. |
+| `rainresistence` | `multiplier` | `exponent` | Wirkung                                        |
+| ---------------- | -----------: | ---------: | ---------------------------------------------- |
+| `highest`        |            - |          - | Regen hat keinen Einfluss auf die Kosten.      |
+| `high`           |         25.0 |        1.0 | Regen erhöht die Kosten leicht.                |
+| `medium`         |        100.0 |        1.2 | Regen wird deutlich vermieden.                 |
+| `low`            |        400.0 |        1.4 | Regenabschnitte werden stark bestraft.         |
+| `lowest`         |            - |          - | Kanten mit Regen werden vollständig vermieden. |
 
-Bei `lowest` bleibt `cost = length`, auch wenn Regen vorhergesagt ist. Bei `highest` wird für Kanten mit Regen `cost = infinity` gesetzt.
+Bei `highest` bleibt `cost = length`, auch wenn Regen vorhergesagt ist. Bei `lowest` wird für Kanten mit Regen `cost = infinity` gesetzt.
 
 ---
 

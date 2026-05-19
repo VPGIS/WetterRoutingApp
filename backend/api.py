@@ -314,15 +314,15 @@ def get_route(
         ),
     ),
 
-    sensibility: Literal["lowest", "low", "medium", "high", "highest"] = Query(
+    rainresistence: Literal["lowest", "low", "medium", "high", "highest"] = Query(
         "medium",
         description=(
-            "Regenempfindlichkeit des Nutzers.\n\n"
-            "- lowest: Regen hat keinen Einfluss auf die Kosten\n"
-            "- low: Geringe Gewichtung von Regen\n"
+            "Regenresistenz des Nutzers.\n\n"
+            "- lowest: Kanten mit Regen werden vollständig vermieden \n"
+            "- low: Starke Gewichtung von Regen\n"
             "- medium: Mittlere Gewichtung von Regen\n"
-            "- high: Starke Gewichtung von Regen\n"
-            "- highest: Kanten mit Regen werden vollständig vermieden"
+            "- high: Geringe Gewichtung von Regen\n"
+            "- highest: Regen hat keinen Einfluss auf die Routingkosten" 
         ),
     ),
 
@@ -346,7 +346,7 @@ def get_route(
         last_step_at = now
 
     print("[route] request received")
-    print(f"[route] start_point={start_point!r}, end_point={end_point!r}, start_time={start_time}, speed={speed}, routingmodel={routingmodel}, sensibility={sensibility}, demo={demo}")
+    print(f"[route] start_point={start_point!r}, end_point={end_point!r}, start_time={start_time}, speed={speed}, routingmodel={routingmodel}, rainresistence={rainresistence}, demo={demo}")
 
     # ——————————————————————————————————————————————————————————————————————————
     # Speed von km/h in m/s
@@ -468,7 +468,7 @@ def get_route(
                                 speed=speed,
                                 ds=ds,
                                 nc_file_timestamp=nc_file_timestamp,
-                                sensibility=sensibility)
+                                rainresistence=rainresistence)
 
     elif routingmodel == 'advanced':
         log_step("starting time-dependent weather dijkstra")
@@ -479,7 +479,7 @@ def get_route(
                                         speed=speed,
                                         ds=ds,
                                         nc_file_timestamp=nc_file_timestamp,
-                                        sensibility=sensibility)
+                                        rainresistence=rainresistence)
 
     if not route:
         ds.close()

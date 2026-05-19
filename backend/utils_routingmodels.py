@@ -13,7 +13,7 @@ from utils_forecast import (
 ADVANCED_FORECAST_BUCKET_SECONDS = 300  # 5 Minuten
 
 
-def static_weather_dijkstra(G, start_node, end_node, start_time, speed, ds, nc_file_timestamp, sensibility):
+def static_weather_dijkstra(G, start_node, end_node, start_time, speed, ds, nc_file_timestamp, rainresistence):
     started_at = time.perf_counter()
     print(f"[route] static model: loading forecast grid for timestamp={start_time}")
     forecast_grid = get_forecast_grid(
@@ -37,7 +37,7 @@ def static_weather_dijkstra(G, start_node, end_node, start_time, speed, ds, nc_f
         min_forecast = forecast if min_forecast is None else min(min_forecast, forecast)
         max_forecast = forecast if max_forecast is None else max(max_forecast, forecast)
         data["forecast"] = forecast
-        data["cost"] = compute_rain_adjusted_cost(data["length"], forecast, sensibility)
+        data["cost"] = compute_rain_adjusted_cost(data["length"], forecast, rainresistence)
         if data["cost"] == float("inf"):
             blocked_edges += 1
         data["travel_time"] = int(data["length"] / speed)
@@ -61,7 +61,7 @@ def _bucket_timestamp(timestamp, bucket_seconds=ADVANCED_FORECAST_BUCKET_SECONDS
     return int(round(timestamp / bucket_seconds) * bucket_seconds)
 
 
-def td_weather_dijkstra(G, start_node, end_node, start_timestamp, speed, ds, nc_file_timestamp, sensibility):
+def td_weather_dijkstra(G, start_node, end_node, start_timestamp, speed, ds, nc_file_timestamp, rainresistence):
     """
     Findet den kürzesten Pfad mit zeitabhängigen Wetterdaten.
 
@@ -139,7 +139,7 @@ def td_weather_dijkstra(G, start_node, end_node, start_timestamp, speed, ds, nc_
 
             forecast_grid = get_cached_forecast_grid(arrival_timestamp)
             forecast = get_forecast_from_grid(edge_data, forecast_grid)
-            rain_adjusted_cost = compute_rain_adjusted_cost(edge_length, forecast, sensibility)
+            rain_adjusted_cost = compute_rain_adjusted_cost(edge_length, forecast, rainresistence)
             new_cost = cost + rain_adjusted_cost
 
             # Besseren Zustand merken und für die spätere Rekonstruktion verknüpfen.
