@@ -849,43 +849,13 @@ Transparenz zeigt Vorhersagesicherheit."
     </div>
     <!-- /app -->
     <script>
-      // ── Data injected by render.py ──────────────────────────────────────────────
-      let LABELS = [
-        "+01h · Sun 05 Apr 07:00 UTC",
-        "+02h · Sun 05 Apr 08:00 UTC",
-        "+03h · Sun 05 Apr 09:00 UTC",
-        "+04h · Sun 05 Apr 10:00 UTC",
-        "+05h · Sun 05 Apr 11:00 UTC",
-        "+06h · Sun 05 Apr 12:00 UTC",
-        "+07h · Sun 05 Apr 13:00 UTC",
-        "+08h · Sun 05 Apr 14:00 UTC",
-        "+09h · Sun 05 Apr 15:00 UTC",
-        "+10h · Sun 05 Apr 16:00 UTC",
-        "+11h · Sun 05 Apr 17:00 UTC",
-        "+12h · Sun 05 Apr 18:00 UTC",
-        "+13h · Sun 05 Apr 19:00 UTC",
-        "+14h · Sun 05 Apr 20:00 UTC",
-        "+15h · Sun 05 Apr 21:00 UTC",
-        "+16h · Sun 05 Apr 22:00 UTC",
-        "+17h · Sun 05 Apr 23:00 UTC",
-        "+18h · Mon 06 Apr 00:00 UTC",
-        "+19h · Mon 06 Apr 01:00 UTC",
-        "+20h · Mon 06 Apr 02:00 UTC",
-        "+21h · Mon 06 Apr 03:00 UTC",
-        "+22h · Mon 06 Apr 04:00 UTC",
-        "+23h · Mon 06 Apr 05:00 UTC",
-        "+24h · Mon 06 Apr 06:00 UTC",
-        "+25h · Mon 06 Apr 07:00 UTC",
-        "+26h · Mon 06 Apr 08:00 UTC",
-        "+27h · Mon 06 Apr 09:00 UTC",
-        "+28h · Mon 06 Apr 10:00 UTC",
-        "+29h · Mon 06 Apr 11:00 UTC",
-        "+30h · Mon 06 Apr 12:00 UTC",
-        "+31h · Mon 06 Apr 13:00 UTC",
-        "+32h · Mon 06 Apr 14:00 UTC",
-        "+33h · Mon 06 Apr 15:00 UTC",
-        "+34h · Mon 06 Apr 16:00 UTC",
-      ];
+      // ── Demo state — declared first so all script blocks below can reference it ──
+      let demoMode = false;
+      const DEMO_NC_UNIX = 1779064720; // fallback Unix timestamp before API loads
+      let demoRefTime = null;
+      window.getDemoRefTime = () => demoRefTime;
+
+      // ── Static config ────────────────────────────────────────────────────────────
       const GLOBAL_MAX = 4.96;
 
       // ── Map bounds (must match fetch_data.py EXTENT) ────────────────────────────
@@ -895,8 +865,9 @@ Transparenz zeigt Vorhersagesicherheit."
         [51.183, 18.183],
       ]; // [[lat_min,lon_min],[lat_max,lon_max]]
 
-      // Live WMS timesteps — filled from /rain-times on page load
+      // Runtime data — filled from API on load
       let TIMES = [];
+      let LABELS = [];
 
       // ── State ───────────────────────────────────────────────────────────────────
       let currentFrame = 0;
@@ -1002,38 +973,14 @@ Transparenz zeigt Vorhersagesicherheit."
         // Load available timesteps from /rain-times then initialise animation
         function loadRainData() {
           const timesUrl = demoMode ? "/demo-rain-times" : "/rain-times";
-          const infoUrl = demoMode ? "/demo-nc-info" : "/nc-info";
-          Promise.all([
-            fetch(timesUrl).then((r) => r.json()),
-            fetch(infoUrl)
-              .then((r) => r.json())
-              .catch(() => ({ downloaded_unix: null })),
-          ])
-            .then(([data, ncInfo]) => {
+          fetch(timesUrl)
+            .then((r) => r.json())
+            .then((data) => {
               if (!data || data.length === 0) {
                 console.warn("[rain-times] API returned no timesteps");
                 return;
               }
               TIMES = data;
-              const utcFmt = new Intl.DateTimeFormat("en-GB", {
-                timeZone: "UTC",
-                weekday: "short",
-                day: "2-digit",
-                month: "short",
-                hour: "2-digit",
-                minute: "2-digit",
-                hour12: false,
-              });
-              const localFmt = new Intl.DateTimeFormat("de-CH", {
-                timeZone: "Europe/Zurich",
-                weekday: "short",
-                day: "2-digit",
-                month: "2-digit",
-                year: "numeric",
-                hour: "2-digit",
-                minute: "2-digit",
-                hour12: false,
-              });
               const baselLabelFmt = new Intl.DateTimeFormat("en-GB", {
                 timeZone: "Europe/Zurich",
                 weekday: "short",
@@ -1104,19 +1051,19 @@ Transparenz zeigt Vorhersagesicherheit."
         }
 
         // 5-click Easter egg on logo
-        let _demoClickCount = 0;
-        let _demoClickTimer = null;
+        let clickCount = 0;
+        let clickTimer = null;
         const logoEl = document.getElementById("header-logo");
         if (logoEl) {
           logoEl.style.cursor = "pointer";
           logoEl.addEventListener("click", () => {
-            _demoClickCount++;
-            clearTimeout(_demoClickTimer);
-            _demoClickTimer = setTimeout(() => {
-              _demoClickCount = 0;
+            clickCount++;
+            clearTimeout(clickTimer);
+            clickTimer = setTimeout(() => {
+              clickCount = 0;
             }, 2000);
-            if (_demoClickCount >= 5) {
-              _demoClickCount = 0;
+            if (clickCount >= 5) {
+              clickCount = 0;
               toggleDemoMode();
             }
           });
@@ -1136,9 +1083,6 @@ Transparenz zeigt Vorhersagesicherheit."
           currentFrame = idx;
           overlay.setUrl(makeRainUrl(TIMES[idx]));
           overlayP90.setUrl(makeP90Url(TIMES[idx]));
-
-          const label = LABELS[idx] || TIMES[idx] || "";
-          const parts = label.split(" \u00b7 ");
 
           slider.value = idx;
           const pct =
@@ -1252,12 +1196,6 @@ Transparenz zeigt Vorhersagesicherheit."
       let vpEndMarker = null;
       let vpRouteLayer = null;
       const VP_API_BASE = "http://127.0.0.1:8000";
-
-      // ── DEMO MODE ──────────────────────────────────────────────────────────────
-      let demoMode = false;
-      const DEMO_NC_UNIX = 1779064720; // Unix timestamp of the demo NC file
-      let demoRefTime = null; // ref-time Date of the active demo NC (set from TIMES[0])
-      window.getDemoRefTime = () => demoRefTime;
 
       document.addEventListener("DOMContentLoaded", () => {
         const routeStartInput = document.getElementById("route_start");
@@ -1503,13 +1441,6 @@ Transparenz zeigt Vorhersagesicherheit."
 
         // ── OTHER UI BINDINGS ──────────────────────────────────────────────────────
 
-        document.getElementById("ride_spd").addEventListener("change", () => {
-          // Handled when the calculate button is clicked.
-        });
-        document.getElementById("time_start").addEventListener("change", () => {
-          // Handled when the calculate button is clicked.
-        });
-
         const timeStartInput = document.getElementById("time_start");
         if (timeStartInput && !timeStartInput.value) {
           const now = new Date();
@@ -1599,12 +1530,6 @@ Transparenz zeigt Vorhersagesicherheit."
 
         // Initial highlight
         setActiveHighlight("start");
-
-        document
-          .getElementById("rain_resistance")
-          .addEventListener("change", () => {
-            // Handled when the calculate button is clicked.
-          });
 
         document
           .getElementById("btn_import")
@@ -1715,25 +1640,6 @@ Transparenz zeigt Vorhersagesicherheit."
             const startPoint = `${startEl.dataset.lat}, ${startEl.dataset.lon}`;
             const endPoint = `${endEl.dataset.lat}, ${endEl.dataset.lon}`;
 
-            const payload = {
-              start: {
-                address: document.getElementById("route_start").value,
-                lat: document.getElementById("route_start").dataset.lat,
-                lon: document.getElementById("route_start").dataset.lon,
-              },
-              end: {
-                address: document.getElementById("route_end").value,
-                lat: document.getElementById("route_end").dataset.lat,
-                lon: document.getElementById("route_end").dataset.lon,
-              },
-              type: selectedRoutingModel,
-              time: document.getElementById("time_start").value,
-              rain_resistance: document.getElementById("rain_resistance").value,
-              speed_ms:
-                parseFloat(document.getElementById("ride_spd").value) / 3.6,
-            };
-
-            console.log("Calculating route with:", payload);
             btn.disabled = true;
             spinner.style.display = "block";
             text.innerText = window.t("calculating");
@@ -1942,10 +1848,6 @@ Transparenz zeigt Vorhersagesicherheit."
         speedInput.addEventListener("input", (e) => {
           speedDisplay.textContent = e.target.value;
         });
-
-        // Human readable timeline ticks
-
-        // Human readable timeline ticks: Dot every hour, text every 2 hours
       });
     </script>
     <script>
@@ -2028,8 +1930,6 @@ Transparenz zeigt Vorhersagesicherheit."
           btnAdv.addEventListener("click", () => {
             advContainer.classList.toggle("hidden");
             btnAdv.classList.toggle("active");
-
-            // Wait slightly for any transitions or layout recalculations to finish, then realign the timeline
           });
         }
       });
