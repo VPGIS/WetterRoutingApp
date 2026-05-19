@@ -92,7 +92,10 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   });
 
-  _i18nReady.then(() => applyTranslations());
+  _i18nReady.then(() => {
+    applyTranslations();
+    if (window.updateDepartureDateLabel) window.updateDepartureDateLabel();
+  });
 
   // Speed Slider visual update
   const speedInput = document.getElementById("ride_spd");

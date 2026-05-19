@@ -254,18 +254,26 @@ document.addEventListener("DOMContentLoaded", () => {
 
   window.updateDepartureDateLabel = function updateDepartureDateLabel() {
     if (!departureDateEl) return;
-    const d = demoMode ? new Date(DEMO_NC_UNIX * 1000) : new Date();
-    d.setDate(d.getDate() + departureDayOffset);
+    let baseMs;
+    if (demoMode) {
+      const ref = window.getDemoRefTime && window.getDemoRefTime();
+      baseMs = ref ? ref.getTime() : DEMO_NC_UNIX * 1000;
+    } else {
+      baseMs = Date.now();
+    }
+    const d = new Date(baseMs + departureDayOffset * 86400000);
+    const zurichFmt = new Intl.DateTimeFormat("de-CH", {
+      timeZone: "Europe/Zurich",
+      day: "2-digit",
+      month: "2-digit",
+      year: "numeric",
+    });
+    const parts = {};
+    zurichFmt.formatToParts(d).forEach((p) => (parts[p.type] = p.value));
     const label =
       departureDayOffset === 0 ? window.t("today") : window.t("tomorrow");
     departureDateEl.textContent =
-      label +
-      ", " +
-      String(d.getDate()).padStart(2, "0") +
-      "." +
-      String(d.getMonth() + 1).padStart(2, "0") +
-      "." +
-      d.getFullYear();
+      label + ", " + parts.day + "." + parts.month + "." + parts.year;
   };
 
   document.querySelectorAll("#day-toggle .day-btn").forEach((btn) => {
@@ -279,6 +287,33 @@ document.addEventListener("DOMContentLoaded", () => {
     });
   });
   updateDepartureDateLabel();
+
+  // Exposed so demo.js can snap the time input to the NC ref time in Europe/Zurich
+  window.syncDemoTime = function syncDemoTime() {
+    if (!timeStartInput) return;
+    const ref =
+      (window.getDemoRefTime && window.getDemoRefTime()) ||
+      new Date(DEMO_NC_UNIX * 1000);
+    const zurichFmt = new Intl.DateTimeFormat("de-CH", {
+      timeZone: "Europe/Zurich",
+      hour: "2-digit",
+      minute: "2-digit",
+      hour12: false,
+    });
+    const parts = {};
+    zurichFmt.formatToParts(ref).forEach((p) => (parts[p.type] = p.value));
+    timeStartInput.value = parts.hour + ":" + parts.minute;
+  };
+
+  // Exposed so demo.js can restore the time input to current local time on exit
+  window.resetLiveTime = function resetLiveTime() {
+    if (!timeStartInput) return;
+    const now = new Date();
+    timeStartInput.value =
+      String(now.getHours()).padStart(2, "0") +
+      ":" +
+      String(now.getMinutes()).padStart(2, "0");
+  };
 
   document.querySelectorAll("#routing_model_toggle .day-btn").forEach((btn) => {
     btn.addEventListener("click", () => {
@@ -370,17 +405,19 @@ document.addEventListener("DOMContentLoaded", () => {
       const text = document.getElementById("calc_text");
 
       const parseTimeToUnix = (timeString) => {
-        const baseDate = demoMode ? new Date(DEMO_NC_UNIX * 1000) : new Date();
+        const demoRef =
+          (demoMode && window.getDemoRefTime && window.getDemoRefTime()) ||
+          (demoMode && new Date(DEMO_NC_UNIX * 1000));
+        const baseDate = demoRef ? new Date(demoRef) : new Date();
         if (!timeString) {
-          return demoMode
-            ? DEMO_NC_UNIX
-            : Math.floor(baseDate.getTime() / 1000);
+          return Math.floor(baseDate.getTime() / 1000);
         }
         const [hours, minutes] = timeString
           .split(":")
           .map((v) => parseInt(v, 10) || 0);
         if (demoMode) {
-          baseDate.setUTCHours(hours, minutes, 0, 0);
+          // Input is Europe/Zurich time; convert to UTC by subtracting CEST offset (+2h)
+          baseDate.setUTCHours(hours - 2, minutes, 0, 0);
           baseDate.setUTCDate(
             baseDate.getUTCDate() +
               (typeof departureDayOffset !== "undefined"

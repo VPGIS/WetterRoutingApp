@@ -135,12 +135,17 @@ document.addEventListener("DOMContentLoaded", () => {
         if (TIMES.length > 0)
           demoRefTime = new Date(new Date(TIMES[0]).getTime() - 3600000);
 
-        // In live mode, jump to the frame matching the current floored hour
+        // Jump to the frame matching the current (or fake demo) floored hour
         let startIdx = 0;
-        if (!demoMode && TIMES.length > 0) {
-          const nowHour = Math.floor(Date.now() / 3600000) * 3600000;
+        if (TIMES.length > 0) {
+          const refMs = demoMode
+            ? Math.floor(
+                (demoRefTime ? demoRefTime.getTime() : DEMO_NC_UNIX * 1000) /
+                  3600000,
+              ) * 3600000
+            : Math.floor(Date.now() / 3600000) * 3600000;
           for (let i = 0; i < TIMES.length; i++) {
-            if (new Date(TIMES[i]).getTime() <= nowHour) startIdx = i;
+            if (new Date(TIMES[i]).getTime() <= refMs) startIdx = i;
             else break;
           }
         }
@@ -149,6 +154,12 @@ document.addEventListener("DOMContentLoaded", () => {
           window.forceUpdateTicks();
         if (typeof window.updateDemoBadge !== "undefined")
           window.updateDemoBadge();
+        // Re-sync departure date/time now that demoRefTime is the real API value
+        if (demoMode) {
+          if (typeof window.updateDepartureDateLabel !== "undefined")
+            window.updateDepartureDateLabel();
+          if (typeof window.syncDemoTime !== "undefined") window.syncDemoTime();
+        }
       })
       .catch((err) => console.error("[rain-times] fetch failed:", err));
   }

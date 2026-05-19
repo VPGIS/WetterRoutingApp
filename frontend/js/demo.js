@@ -21,6 +21,8 @@ function toggleDemoMode() {
   LABELS = [];
   window.loadRainData();
   if (window.updateDepartureDateLabel) window.updateDepartureDateLabel();
+  if (demoMode && window.syncDemoTime) window.syncDemoTime();
+  else if (!demoMode && window.resetLiveTime) window.resetLiveTime();
 }
 
 document.addEventListener("DOMContentLoaded", () => {
