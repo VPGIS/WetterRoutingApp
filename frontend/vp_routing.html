@@ -1,4 +1,33 @@
 <!doctype html>
+<!--
+  vp_routing.html  —  WetterRoutingApp  ·  Single-Page Application shell
+  ===========================================================================
+  This file is the only HTML page of the app.  It defines the DOM structure;
+  all behaviour lives in the deferred JS files loaded in <head>.
+
+  DOM sections (top to bottom):
+    • <head>        — Leaflet CDN (CSS + JS), local stylesheet, deferred scripts
+    • #top-right-title  — App logo + title (Easter egg entry point for demo mode)
+    • #about-panel  — Collapsible info panel; body text comes from i18n.json
+    • #routing-panel  — Floating left panel: geocode inputs, time picker,
+                         advanced settings, calculate button, GPX controls
+    • #loading      — Full-screen overlay visible until Leaflet has booted
+    • #app          — Root container for everything that overlays the map:
+        - #map                — Leaflet target div
+        - #controls           — Bottom playback bar (play, slider, step)
+        - #floating-legend-ctrl  — Rain legend popup (toggle button + rows)
+        - #floating-layer-ctrl   — Basemap switcher (streets / hybrid)
+    • Demo overlay elements: #demo-badge (fixed top-left), .demo-toast
+                              are injected from JS, not defined here.
+
+  i18n: all user-visible strings use data-i18n / data-i18n-ph / data-i18n-tip
+        attributes.  Default content is German (de); i18n.js swaps strings on
+        load and on lang-select change.
+
+  Script load order (all deferred; executed after DOM + Leaflet are ready):
+    config.js → demo.js → rain.js → routing.js → i18n.js → ui.js
+  ===========================================================================
+-->
 
 <html lang="en">
   <head>
@@ -18,7 +47,9 @@
     ></script>
     <!-- Local styles (sibling file) -->
     <link href="style.css?v=2" rel="stylesheet" />
-    <!-- App scripts — defer ensures DOM ready & Leaflet loaded before execution -->
+    <!-- App scripts — defer ensures DOM ready & Leaflet loaded before execution.
+         Load order matters: config → demo → rain → routing → i18n → ui.
+         Each later script can read globals set by earlier ones. -->
     <script src="js/config.js" defer></script>
     <script src="js/demo.js" defer></script>
     <script src="js/rain.js" defer></script>
@@ -27,7 +58,9 @@
     <script src="js/ui.js" defer></script>
   </head>
   <body>
-    <!-- Top Right Title -->
+    <!-- Top-right branding bar.
+         The logo (#header-logo) also doubles as the Easter egg trigger:
+         5 rapid clicks activate demo mode (see demo.js). -->
     <div id="top-right-title">
       <h1>
         <span style="color: #0d3a6e">W</span>etter<span style="color: #0d3a6e"
@@ -37,7 +70,8 @@
       <img src="logo.jpg" alt="Logo" class="header-logo" id="header-logo" />
     </div>
 
-    <!-- About panel -->
+    <!-- About panel — collapses to a 56px icon button; expands via two-phase
+         CSS transition driven by ui.js.  All text is i18n-driven (data-i18n). -->
     <div id="about-panel">
       <div class="about-header-row">
         <h3 id="about-heading" data-i18n="about_heading"></h3>
@@ -75,7 +109,11 @@
         <p class="about-thanks" data-i18n="about_thanks"></p>
       </div>
     </div>
-    <!-- Left Routing Panel -->
+    <!-- ── Left routing panel ────────────────────────────────────────────
+         Contains: geocode inputs (start/end), departure time picker,
+         advanced settings (speed, rain-resistance, routing model),
+         calculate button, and GPX import/export.
+         All labels use data-i18n so they swap on lang-select change.  -->
     <div id="routing-panel">
       <div class="control-group">
         <div
@@ -462,7 +500,8 @@
         </button>
       </div>
     </div>
-    <!-- Loading overlay shown while Leaflet boots -->
+    <!-- Loading overlay — visible until rain.js hides it after Leaflet boots
+         and the first rain frame has been requested. -->
     <div id="loading">
       <div id="loading-spinner"></div>
       <div id="loading-text" data-i18n="loading_map"></div>

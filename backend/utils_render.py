@@ -1,19 +1,61 @@
 """
-utils_render.py
+utils_render.py  —  NetCDF → PNG tile renderer
+================================================
+Converts a fetched ICON-CH1-EPS NetCDF forecast into two sets of pre-rendered
+PNG tiles that the frontend Leaflet map animates frame by frame.
 
-Pre-renders all hourly-rain frames as PNGs into backend/data/rain_layers/.
-Called by utils_fetch.py right after each successful fetch, BEFORE the
-0.01 mm/h threshold is applied, so raw ensemble-mean diff values are used.
+Called by utils_fetch.py immediately after each successful GRIB2 download and
+also by check_fetch_on_startup() if PNGs are missing or stale on server restart.
 
-Rendering approach (matches frontend/render.py):
-  - Regular 429x295 lat/lon grid (linspace bounds)
-  - Haversine mask: only show rain within 350 km of Switzerland centre
-  - Normalise colour to global max across all lead times
-  - Blue-scale colormap (white -> mid-blue -> dark blue)
-  - Gaussian blur (sigma=1.5) to smooth GRIB2 quantisation artefacts
-  - plt.imsave on RGBA array (no figure/axes overhead)
+Two PNG layers per lead-time frame
+-----------------------------------
+  Layer 1 — rain_mean_*.png   (backend/data/rain_layers/)
+      Ensemble-mean precipitation, rendered with high opacity (0.80–0.95).
+      This is the "confident core" — where the model ensemble agrees rain is
+      likely.  The frontend stacks it below the p90 layer (z-index 300).
 
-PNG naming: rain_YYYYMMDDTHHMMSS.png  (UTC valid time)
+  Layer 2 — rain_p90_*.png   (backend/data/rain_layers/)  [same directory]
+      90th-percentile precipitation, rendered with low opacity (0.20–0.50)
+      and only where p90 meaningfully exceeds mean.  This is the translucent
+      "worst-case halo" that shows forecast uncertainty.  Stacked above the
+      mean layer (z-index 310).
+
+Design decisions for Raspberry Pi (ARM64, headless)
+----------------------------------------------------
+  matplotlib.use("Agg")
+      Required for headless operation — the Pi has no display server.
+      The Agg backend renders directly to an in-memory buffer.
+
+  plt.imsave on a pre-built RGBA array
+      Avoids creating a Figure/Axes object for each of the 33×2 frames.
+      Figure creation has significant Python overhead; on the Pi this would
+      make a full render ~4× slower.
+
+  pre-computed hourly_rain / hourly_rain_p90 in the NC file
+      New NC files (written by the current utils_fetch.py) store these
+      variables directly.  render_from_nc() reads them with a simple
+      xr.open_dataset() call.  The heavy _mean_and_p90_diff() fallback
+      (which uses numpy sort instead of xarray.quantile() to avoid the
+      slow apply_along_axis path on ARM64) only runs for legacy NC files
+      that were saved before this optimisation was introduced.
+
+  Colour scale: MeteoSwiss/SRF discrete classes
+      Six classes from 0.2 mm/h (drizzle) to >100 mm/h (extreme).
+      A ListedColormap + BoundaryNorm gives pixel-perfect class boundaries
+      with no interpolation artefacts, matching what users expect from
+      official Swiss weather maps.
+
+  Haversine distance mask
+      Only pixels within 350 km of Switzerland’s centre (46.8°N, 8.2°E)
+      receive any colour.  The 80 km feather zone applies a cosine fade so
+      the boundary doesn’t look hard-clipped on the map.
+
+PNG naming
+----------
+  rain_mean_YYYYMMDDTHHMMSS.png  /  rain_p90_YYYYMMDDTHHMMSS.png
+  Timestamp = UTC valid time of the forecast step.
+  The frontend fetches /rain-frame?time=ISO8601Z, which api.py resolves to
+  the matching PNG filename via _iso_to_mean/p90_filename().
 """
 
 import io
@@ -22,6 +64,7 @@ from datetime import datetime, timezone
 from pathlib import Path
 
 import matplotlib
+# Agg is required for headless rendering on the Raspberry Pi (no display server)
 matplotlib.use("Agg")
 import matplotlib.colors as mcolors
 import matplotlib.pyplot as plt
@@ -33,12 +76,16 @@ BACKEND_DIR = Path(__file__).resolve().parent
 RAIN_LAYERS_DIR = BACKEND_DIR / "data" / "rain_layers"
 DEMO_RAIN_LAYERS_DIR = BACKEND_DIR / "data" / "rain_layers_demo"
 
-# --- Grid (must match utils_fetch.py constants) ---
+# --- Output grid: must exactly match the grid built in utils_fetch.py ---
+# NX=429, NY=295, same linspace bounds as BOUNDS in frontend/js/config.js
 _LONS = np.linspace(-0.817, 18.183, 429)
 _LATS = np.linspace(41.183, 51.183, 295)
 _LON, _LAT = np.meshgrid(_LONS, _LATS)
 
 # --- Distance mask: fade from fully opaque (inside) to transparent (outside) ---
+# Switzerland centre is used as the focal point.  The 350 km radius covers
+# the full ICON-CH1 domain visible in the routing app.  The 80 km feather
+# zone applies a cosine falloff so the edge looks soft, not hard-clipped.
 _CH_LAT, _CH_LON = 46.8, 8.2
 _RADIUS_KM = 350       # hard outer limit
 _FEATHER_KM = 80       # fade zone: full opacity at (RADIUS-FEATHER), zero at RADIUS
@@ -67,8 +114,11 @@ _EDGE_WEIGHT = np.where(
     ),
 )
 
-# Discrete rain intensity classes — boundaries and colours follow SRF/MeteoSwiss legend.
-# Below _MIN_RAIN → fully transparent.  Above: one solid colour per class.
+# Discrete rain intensity classes — boundaries and colours follow the
+# MeteoSwiss / SRF broadcast legend so users see familiar colours.
+# Values below _MIN_RAIN are rendered fully transparent (no colour noise).
+# Using a ListedColormap + BoundaryNorm gives hard class boundaries with
+# no interpolation, matching the discrete legend shown in the frontend.
 _MIN_RAIN = 0.2          # mm/h — cutoff; sub-drizzle noise ignored
 
 # Class boundaries (mm/h): 0.2–0.6, 0.6–2, 2–8, 8–30, 30–100, ≥100
@@ -84,7 +134,8 @@ _COLORS = [
 _CMAP = mcolors.ListedColormap(_COLORS)
 _NORM = mcolors.BoundaryNorm(_BOUNDS, len(_COLORS))
 
-_SMOOTH_SIGMA = 0.4      # very light blur — sharp spatial edges
+_SMOOTH_SIGMA = 0.4      # very light Gaussian blur — smooths GRIB2 quantisation
+                         # artefacts without blurring meaningful spatial boundaries
 
 
 # ---------------------------------------------------------------------------
@@ -210,6 +261,12 @@ def _mean_and_p90_diff(
     Compute ensemble mean and p90 diffs using a numpy sort instead of
     xarray's quantile(), which delegates to nanquantile() and hits the slow
     apply_along_axis path on every numpy version that includes NaN checks.
+    On a Raspberry Pi 4/5 this can make a single quantile call take 10×
+    longer than a plain numpy sort over the same data.
+
+    This function is only called for legacy NC files (those lacking a
+    pre-computed ``hourly_rain_p90`` variable).  New NC files written by
+    utils_fetch.py store both variables so this path is never hit.
 
     precip shape: (eps, lead_time, y, x)
     Returns: (mean_diff, p90_diff) — both without the eps dimension, diffed

@@ -1,4 +1,26 @@
-// ── GLOBALS SO MAP EVENTS WORK ──────────────────────────────────────────────
+// =============================================================================
+// routing.js  —  Geocoding, map interaction, departure time, route calculation
+// =============================================================================
+// Responsibilities:
+//   • Reverse- and forward-geocodes locations via the Nominatim API.
+//   • Manages a two-phase map-click state machine (click 1 = start,
+//     click 2 = end, subsequent = active input box).
+//   • Handles the departure date/time picker: date label, day offset toggle,
+//     CEST→UTC parsing, and snap-to-NC-ref-time in demo mode.
+//   • Calls /WAPapi/v1/route with the selected parameters and renders the
+//     returned GeoJSON route as a coloured polyline on the Leaflet map.
+//   • Provides GPX import (/data_import) and export (/data_export) via the
+//     backend (no client-side GPX parsing).
+//   • Exposes `window.updateDepartureDateLabel`, `window.syncDemoTime`, and
+//     `window.resetLiveTime` so demo.js / rain.js can trigger UI updates.
+//
+// Depends on: config.js (VP_API_BASE, DEMO_NC_UNIX, BOUNDS),
+//             demo.js (demoMode, getDemoRefTime), i18n.js (window.t)
+// =============================================================================
+
+// ── Route layer globals ────────────────────────────────────────────────────────
+// These must be module-level (not inside DOMContentLoaded) so the map click
+// handler can remove/replace them even after the initial setup phase is over.
 let vpStartMarker = null;
 let vpEndMarker = null;
 let vpRouteLayer = null;
@@ -7,6 +29,13 @@ document.addEventListener("DOMContentLoaded", () => {
   const routeStartInput = document.getElementById("route_start");
   const routeEndInput = document.getElementById("route_end");
 
+  // ── Geocoding helpers ───────────────────────────────────────────────────────────
+  // Both functions use the public Nominatim API (OpenStreetMap).  No API key
+  // is required, but the usage policy requires a valid User-Agent and limits
+  // to 1 req/s — acceptable for a single-user local deployment.
+
+  // Converts lat/lon to a display address (street + house number + city).
+  // Falls back to "lat, lon" string if Nominatim returns nothing useful.
   const reverseGeocode = async (lat, lon) => {
     try {
       const res = await fetch(
@@ -33,6 +62,9 @@ document.addEventListener("DOMContentLoaded", () => {
     return `${lat.toFixed(5)}, ${lon.toFixed(5)}`;
   };
 
+  // Converts a text query to {lat, lon}.
+  // Detects raw "lat, lon" strings first to avoid an unnecessary network
+  // round-trip for coordinates pasted from other tools.
   const forwardGeocode = async (query) => {
     const coordsMatch = query.match(
       /^\s*(-?\d+\.?\d*)\s*,\s*(-?\d+\.?\d*)\s*$/,
@@ -58,19 +90,25 @@ document.addEventListener("DOMContentLoaded", () => {
     return null;
   };
 
-  // Robust way to wait for Leaflet
+  // Waits for Leaflet to be available before attaching map event handlers.
+  // Leaflet is loaded via CDN with `defer`, so it may not be ready at
+  // DOMContentLoaded.  Polling is simpler than a custom event here.
   const initMapHooks = () => {
     if (typeof map === "undefined" || typeof L === "undefined") {
       setTimeout(initMapHooks, 200);
       return;
     }
 
-    // 1. CLICKING THE MAP
-    // No need to focus boxes first.
-    // Keep track of the initial two-click map interaction phase
-    // 0: Waiting for first click (Start)
-    // 1: Waiting for second click (End)
-    // 2: Done with initial phase. Relies entirely on `activeInputBox`.
+    // ── Map click – click-phase state machine ─────────────────────────────────
+    // The first two map clicks after load are guided (click 1 = start,
+    // click 2 = end) so new users don't have to select an input box first.
+    // After both points are set, subsequent clicks fill whichever input box
+    // was last focused (activeInputBox).  Focusing an input box at any time
+    // fast-forwards directly to phase 2.
+    //
+    //  clickPhase 0 → waiting for start click
+    //  clickPhase 1 → waiting for end click
+    //  clickPhase 2 → guided phase complete; rely on activeInputBox
     let clickPhase = 0;
     let activeInputBox = "start";
 
@@ -170,7 +208,10 @@ document.addEventListener("DOMContentLoaded", () => {
       updateUIMarkers();
     });
 
-    // 2. TYPING ADDRESSES MANUALLY
+    // ── Address text entry ───────────────────────────────────────────────────
+    // Fires on `change` (blur after edit) or Enter key to avoid spamming
+    // Nominatim on every keystroke.  Clears the stored lat/lon on empty input
+    // so the validation check in calculate can catch missing points.
     const handleTextEntry = async (e) => {
       const inputEl = e.target;
       const query = inputEl.value.trim();
@@ -240,6 +281,8 @@ document.addEventListener("DOMContentLoaded", () => {
 
   // ── OTHER UI BINDINGS ──────────────────────────────────────────────────────
 
+  // Initialise the time input to the current local time if the browser
+  // didn't restore a previous value (e.g. on a fresh page load).
   const timeStartInput = document.getElementById("time_start");
   if (timeStartInput && !timeStartInput.value) {
     const now = new Date();
@@ -248,7 +291,12 @@ document.addEventListener("DOMContentLoaded", () => {
     timeStartInput.value = `${hours}:${minutes}`;
   }
 
-  // ── Heute / Morgen day toggle ─────────────────────────────────────────────
+  // ── Departure date label ─────────────────────────────────────────────────────
+  // Shows "Heute / Today / Aujourd’hui, DD.MM.YYYY" next to the time picker.
+  // In demo mode the base date comes from demoRefTime (the real NC ref time
+  // once the API has responded) so the label matches the DEMO badge exactly.
+  // Europe/Zurich timezone is used via Intl so the date is correct regardless
+  // of where the browser is running.
   let departureDayOffset = 0; // 0 = today, 1 = tomorrow
   const departureDateEl = document.getElementById("departure-date");
 
@@ -363,6 +411,10 @@ document.addEventListener("DOMContentLoaded", () => {
   // Initial highlight
   setActiveHighlight("start");
 
+  // ── GPX import / export ────────────────────────────────────────────────────────
+  // Both operations are delegated entirely to the backend (/data_import and
+  // /data_export).  No GPX parsing happens in the browser — the backend writes
+  // the last computed route to disk so export doesn’t need the GeoJSON layer.
   document
     .getElementById("btn_import")
     .addEventListener("click", () =>
@@ -405,6 +457,10 @@ document.addEventListener("DOMContentLoaded", () => {
       const text = document.getElementById("calc_text");
 
       const parseTimeToUnix = (timeString) => {
+        // In demo mode, base the date on demoRefTime (actual NC ref time from
+        // the API) so the routing request targets the correct day even if the
+        // demo NC spans a different calendar day than today.
+        // Fall back to DEMO_NC_UNIX only if demoRefTime hasn’t loaded yet.
         const demoRef =
           (demoMode && window.getDemoRefTime && window.getDemoRefTime()) ||
           (demoMode && new Date(DEMO_NC_UNIX * 1000));
@@ -416,7 +472,9 @@ document.addEventListener("DOMContentLoaded", () => {
           .split(":")
           .map((v) => parseInt(v, 10) || 0);
         if (demoMode) {
-          // Input is Europe/Zurich time; convert to UTC by subtracting CEST offset (+2h)
+          // The input is displayed in Europe/Zurich (CEST = UTC+2).
+          // setUTCHours handles underflow automatically (e.g. 00:xx → previous
+          // day at 22:xx UTC) so no manual date rollback is needed.
           baseDate.setUTCHours(hours - 2, minutes, 0, 0);
           baseDate.setUTCDate(
             baseDate.getUTCDate() +
@@ -436,6 +494,7 @@ document.addEventListener("DOMContentLoaded", () => {
         return Math.floor(baseDate.getTime() / 1000);
       };
 
+      // Maps the 1–5 rain-sensitivity slider to the string the API expects.
       const sensibilityBySlider = {
         1: "lowest",
         2: "low",
@@ -455,6 +514,8 @@ document.addEventListener("DOMContentLoaded", () => {
         ? activeModelBtn.dataset.model
         : "einfach";
 
+      // Validate that both points have been geocoded before submitting.
+      // dataset.lat/lon are written by the map-click and text-entry handlers.
       const startEl = document.getElementById("route_start");
       const endEl = document.getElementById("route_end");
       if (
@@ -473,6 +534,8 @@ document.addEventListener("DOMContentLoaded", () => {
       spinner.style.display = "block";
       text.innerText = window.t("calculating");
       try {
+        // Append `demo=true` so the backend serves routes from the cached
+        // demo graph instead of trying to fetch live OSM data.
         const query = new URLSearchParams({
           start_point: startPoint,
           end_point: endPoint,
@@ -497,6 +560,8 @@ document.addEventListener("DOMContentLoaded", () => {
           );
         }
 
+        // The API returns either a GeoJSON object or a JSON-stringified GeoJSON
+        // string depending on the routing model.  Normalise both to an object.
         const raw = await response.json();
         const geojson = typeof raw === "string" ? JSON.parse(raw) : raw;
 
@@ -544,7 +609,9 @@ document.addEventListener("DOMContentLoaded", () => {
       }
     });
 
-  // ── REGEN LEGENDE TOGGLE ─────────────────────────────────────────────────
+  // ── Rain legend toggle ────────────────────────────────────────────────────────
+  // stopPropagation prevents the click from reaching a document-level
+  // outside-click handler that would immediately close the popup.
   const legendBtn = document.getElementById("btn-toggle-legend");
   const legendPopup = document.getElementById("rain-legend-popup");
   if (legendBtn && legendPopup) {

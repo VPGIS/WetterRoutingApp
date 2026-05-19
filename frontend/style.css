@@ -1,5 +1,29 @@
 /* ============================================================
-   style.css — ICON-CH1 animated rain map  ·  light theme
+   style.css  —  VPRouting weather-routing SPA stylesheet
+   ============================================================
+   Sections (in order):
+     1.  CSS reset & design tokens (:root custom properties)
+     2.  Layout shell  (#app, #map)
+     3.  Leaflet overrides  (zoom, attribution, scale bar)
+     4.  Routing panel  (#routing-panel, .control-group, inputs)
+     5.  Ctrl-info tooltips  (#ctrl-tooltip-popup, .ctrl-info)
+     6.  Departure day toggle  (.day-toggle, .day-btn)
+     7.  Calculate button + spinner
+     8.  Controls bar  (#controls, slider, play/step buttons)
+     9.  Timeline slider ticks  (#slider-ticks, #tz-label)
+    10.  Floating legend & layer controls
+    11.  Rain legend popup  (#rain-legend-popup)
+    12.  Model-info / frame-readout / intensity badge
+    13.  Advanced settings panel
+    14.  App header  (#top-right-title, logo)
+    15.  About panel  (#about-panel, two-phase CSS transition)
+    16.  Demo mode  (.demo-toast, #demo-badge)
+    17.  Loading overlay
+    18.  Mobile breakpoint
+
+   Design tokens are defined on :root and referenced everywhere via
+   var(--token).  Breakpoints: single @media (max-width: 640px) for
+   the mobile layout reflow.
    ============================================================ */
 
 /* ── Reset & tokens ─────────────────────────────────────────── */
@@ -1076,6 +1100,10 @@ label:has(.ctrl-info) {
 }
 
 /* ── About panel ─────────────────────────────────────────────── */
+/* Width transition is driven by JS (ui.js).  The two phases are:
+   Open:  expand width → wait for transitionend on "width" → add .content-visible
+   Close: remove .content-visible → setTimeout(400) → collapse width
+   This prevents the text from being visible while the panel is still narrow. */
 #about-panel {
   position: absolute;
   top: 86px;
@@ -1150,6 +1178,10 @@ label:has(.ctrl-info) {
   width: 0;
 }
 
+/* About panel body: starts collapsed (max-height: 0).
+   JS adds .content-visible after the width transition finishes, which
+   triggers the max-height + opacity transition so content fades in only
+   once the panel is already wide enough to display it cleanly. */
 #about-body {
   max-height: 0;
   overflow: hidden;

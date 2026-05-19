@@ -1,5 +1,36 @@
+// =============================================================================
+// ui.js  —  Timeline ticks, layer switcher, tooltips, about panel
+// =============================================================================
+// Responsibilities:
+//   • Renders pixel-accurate timeline tick marks below the range slider,
+//     accounting for Chrome's 16 px thumb geometry.  Alternates label / dot
+//     style to avoid crowding.  Derives the timezone label (CEST / CET) from
+//     the live data via Intl, so it flips automatically at the DST boundary.
+//   • Provides the basemap layer switcher (streets / satellite / hybrid).
+//     Removes stale TileLayer instances before adding the new one; guards
+//     ImageOverlay layers so rain overlays are never accidentally removed.
+//   • Renders ctrl-info tooltips into document.body (not the routing panel)
+//     to escape the panel's `overflow: hidden` clipping.
+//   • Animates the About panel with a two-phase CSS transition:
+//     expand width → reveal content (open) / hide content → collapse width (close).
+//
+// Depends on: rain.js (TIMES, LABELS globals — polled until populated)
+// =============================================================================
+
 document.addEventListener("DOMContentLoaded", () => {
-  // ── Timeline ticks precision alignment ────────────────────────────────────
+  // ── Timeline tick alignment ───────────────────────────────────────────────────
+  // In Chrome the range-input thumb is ~16px wide and its centre travels from
+  // 8px to (track_width − 8px).  The tick marks must follow the same geometry
+  // or they visually lag behind the thumb at the edges.
+  // Formula: left = calc(8px + (100% − 16px) × percent)
+  //
+  // Ticks at even indices get a full text label; odd indices get a shorter
+  // dot-only style to prevent crowding at 30-min resolution.
+  //
+  // updateTicks() reschedules itself every 200 ms if LABELS hasn’t been filled
+  // yet (rain.js is still waiting for the /rain-times API response).
+  // forceUpdateTicks is exposed so rain.js can trigger an immediate re-render
+  // once the data arrives instead of waiting for the next timeout cycle.
   const updateTicks = () => {
     if (typeof LABELS !== "undefined" && LABELS.length > 0) {
       const ticksContainer = document.getElementById("slider-ticks");
@@ -13,8 +44,8 @@ document.addEventListener("DOMContentLoaded", () => {
         const percent = i / (totalHours - 1);
 
         // Chrome range thumb width is ~16px.
-        // Thumb center goes from 8px to (100% - 8px).
-        // So left offset of span center = 8px + (100% - 16px) * percent
+        // Thumb centre goes from 8px to (100% - 8px), so:
+        //   left = calc(8px + (100% - 16px) × percent)
         span.style.setProperty(
           "left",
           `calc(8px + calc(100% - 16px) * ${percent})`,
@@ -41,7 +72,9 @@ document.addEventListener("DOMContentLoaded", () => {
         ticksContainer.appendChild(span);
       }
 
-      // Update timezone label (CEST / CET) based on actual data date
+      // Derive the timezone abbreviation (CEST / CET) from the first frame’s
+      // timestamp using Intl so it flips correctly at the DST boundary without
+      // any hardcoded offset logic.
       const tzLabel = document.getElementById("tz-label");
       if (tzLabel && typeof TIMES !== "undefined" && TIMES.length > 0) {
         try {
@@ -122,7 +155,10 @@ document.addEventListener("DOMContentLoaded", () => {
     document.getElementById("layer_select").addEventListener("change", (e) => {
       const val = e.target.value;
 
-      // Remove existing basemaps
+      // Remove ALL TileLayer instances before switching basemap.
+      // Also removes any LayerGroup that wraps only TileLayers (the hybrid
+      // group), but guards ImageOverlay instances so the rain animation
+      // layers (mean / p90) are never accidentally removed.
       window.map.eachLayer((layer) => {
         if (layer instanceof L.TileLayer) {
           window.map.removeLayer(layer);
@@ -143,7 +179,8 @@ document.addEventListener("DOMContentLoaded", () => {
 
       if (activeLayer) activeLayer.addTo(window.map);
 
-      // Ensure basemap sits at the bottom z-index so weather overlays remain visible
+      // setZIndex(0) pins the basemap below rain overlays (z=300/310) and the
+      // Nominatim labels pane (z=450) regardless of insertion order.
       if (activeLayer && typeof activeLayer.setZIndex === "function") {
         activeLayer.setZIndex(0);
       }
@@ -151,8 +188,13 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 });
 
-// ── Ctrl-info tooltips ────────────────────────────────────────────────────────
-// Body-level tooltip to escape overflow clipping of the routing panel
+// ── Ctrl-info tooltips ─────────────────────────────────────────────────────────────
+// The tooltip div is appended to document.body rather than to the routing
+// panel because the panel has `overflow: hidden` for its slide animation.
+// A child element positioned outside the panel’s bounding box would be
+// clipped.  Body-level placement avoids this entirely.
+// Positioning differs between panel tooltips (appear to the right of the
+// panel) and legend tooltips (appear to the right of the legend popup).
 (function () {
   const tip = document.createElement("div");
   tip.id = "ctrl-tooltip-popup";
@@ -187,7 +229,13 @@ document.addEventListener("DOMContentLoaded", () => {
   });
 })();
 
-// ── ABOUT PANEL ───────────────────────────────────────────────────────────────
+// ── About panel ──────────────────────────────────────────────────────────────────
+// Two-phase CSS transition so the width and the body content animate cleanly:
+//   Open:  expand width → wait for "width" transitionend → reveal content
+//   Close: hide content → setTimeout(400) to match content-hide duration →
+//          collapse width
+// The width matches the title box so the panel never wraps text during the
+// expand animation.
 (() => {
   const panel = document.getElementById("about-panel");
   const toggle = document.getElementById("about-toggle");

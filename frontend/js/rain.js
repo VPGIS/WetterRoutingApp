@@ -1,12 +1,33 @@
-// Runtime data — filled from API on load
+// =============================================================================
+// rain.js  —  Leaflet map, rain overlay animation, and timeline slider
+// =============================================================================
+// Responsibilities:
+//   • Initialises the Leaflet map and creates two stacked PNG overlay layers:
+//       - mean overlay  (z=300): ensemble mean precipitation — "what is likely"
+//       - p90  overlay  (z=310): 90th-percentile halo       — "worst case"
+//   • Fetches available forecast timesteps from /rain-times (live) or
+//     /demo-rain-times (demo) and populates the global TIMES / LABELS arrays.
+//   • Drives the frame animation: play/pause, step, slider drag.
+//   • Computes `demoRefTime` (NC model-run time) once the API responds and
+//     notifies routing.js / ui.js via window callbacks.
+//   • Exposes `window.loadRainData` so demo.js can trigger a reload on toggle.
+//
+// Depends on: config.js (BOUNDS, GLOBAL_MAX, VP_API_BASE, DEMO_NC_UNIX),
+//             demo.js (demoMode, getDemoRefTime)
+// =============================================================================
+
+// ── Shared animation state ───────────────────────────────────────────────────
+// TIMES and LABELS are filled from /rain-times (or /demo-rain-times) on load
+// and whenever demo mode is toggled.  They are true globals because demo.js
+// clears them (TIMES = []; LABELS = [];) before calling loadRainData().
 let TIMES = [];
 let LABELS = [];
 
-// ── State ───────────────────────────────────────────────────────────────────
+// ── State ────────────────────────────────────────────────────────────────────
 let currentFrame = 0;
 let playing = false;
 let timer = null;
-let intervalMs = 500;
+let intervalMs = 500; // ms between animation frames (~2 fps feels calm, not frantic)
 
 // ── DOM refs ─────────────────────────────────────────────────────────────────
 const slider = document.getElementById("time-slider");
@@ -50,10 +71,13 @@ document.addEventListener("DOMContentLoaded", () => {
     },
   ).addTo(map);
 
-  // Rain overlays — pre-rendered PNGs served from the backend
-  // Layer 1 (mean): solid core — "what's likely"
-  // Layer 2 (p90):  semi-transparent halo — "what's possible"
-  // Both sit above the basemap but below the label layer.
+  // ── Rain overlay strategy ──────────────────────────────────────────────────
+  // Two semi-transparent PNG layers are stacked above the basemap:
+  //   overlay    (mean)  — ensemble mean, z=300 — "what is likely"
+  //   overlayP90 (p90)   — 90th percentile,  z=310 — "worst-case halo"
+  // Both are pre-rendered server-side from NetCDF data (see utils_render.py).
+  // Pre-rendering avoids doing 33 × per-pixel NetCDF reads in the browser and
+  // keeps the client completely stateless with respect to the raw forecast data.
   function makeRainUrl(time) {
     return (
       (demoMode ? "/demo-rain-frame" : "/rain-frame") +
@@ -101,7 +125,10 @@ document.addEventListener("DOMContentLoaded", () => {
     },
   ).addTo(map);
 
-  // Load available timesteps from /rain-times then initialise animation
+  // Load available timesteps from /rain-times then initialise animation.
+  //
+  // Each call starts fresh — TIMES/LABELS are wiped by demo.js before this
+  // is invoked on a mode switch, so there is no stale-frame problem.
   function loadRainData() {
     const timesUrl = demoMode ? "/demo-rain-times" : "/rain-times";
     fetch(timesUrl)
@@ -112,6 +139,10 @@ document.addEventListener("DOMContentLoaded", () => {
           return;
         }
         TIMES = data;
+        // Build human-readable tick labels in Europe/Zurich time.
+        // Format: "+03h · Mon 18 May 14:00 CE(S)T"
+        // The CE(S)T suffix is shown literally because JavaScript's Intl
+        // sometimes returns "GMT+2" instead of "CEST" depending on the engine.
         const baselLabelFmt = new Intl.DateTimeFormat("en-GB", {
           timeZone: "Europe/Zurich",
           weekday: "short",
@@ -131,11 +162,15 @@ document.addEventListener("DOMContentLoaded", () => {
         });
         slider.max = TIMES.length - 1;
 
-        // Capture ref-time (first frame − 1 h = model reference time)
+        // demoRefTime = first TIMES entry minus 1 h = model initialisation time.
+        // Used by the DEMO badge and departure time sync across the app.
         if (TIMES.length > 0)
           demoRefTime = new Date(new Date(TIMES[0]).getTime() - 3600000);
 
-        // Jump to the frame matching the current (or fake demo) floored hour
+        // Jump to the frame whose valid time is closest to "now" (live) or to
+        // the NC ref time (demo).  The loop finds the last frame whose timestamp
+        // is still <= the reference, so we land on the most recent past frame
+        // rather than a future one.
         let startIdx = 0;
         if (TIMES.length > 0) {
           const refMs = demoMode
@@ -191,8 +226,12 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   // ── Intensity badge ────────────────────────────────────────────────────────
-  // We can't query pixel values without canvas; use frame index as proxy
-  // for the label — replace with real per-frame data if available via query.py
+  // Reading actual pixel values from the PNG overlay would require a <canvas>
+  // cross-origin workaround.  As a pragmatic proxy we use the frame index
+  // (position in the 33-step forecast) to classify intensity — early frames
+  // of the demo NC tend to be wetter, later ones drier.  This is purely visual
+  // and carries no meteorological guarantee.  Replace with real per-frame stats
+  // (e.g. from a query.py endpoint) if more accuracy is needed.
   function updateIntensityBadge(idx) {
     const pct = TIMES.length > 1 ? idx / (TIMES.length - 1) : 0;
     intensityBadge.className = "";
@@ -210,6 +249,9 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   // ── Playback ───────────────────────────────────────────────────────────────
+  // Playback stops on the last frame instead of looping so the user can study
+  // the final forecast state.  startPlay() resets to frame 0 if re-pressed at
+  // the end, giving loop-like behaviour without an automatic restart.
   function step() {
     const next = currentFrame + 1;
     if (next >= TIMES.length) {
@@ -251,7 +293,9 @@ document.addEventListener("DOMContentLoaded", () => {
   slider.addEventListener("input", handleSliderChange);
   slider.addEventListener("change", handleSliderChange);
 
-  // Keyboard shortcuts
+  // ── Keyboard shortcuts ────────────────────────────────────────────────────
+  // Space = play/pause, ← / → = step one frame.
+  // Guard against capturing keystrokes while the user types in an input field.
   document.addEventListener("keydown", (e) => {
     // Do not capture shortcuts if the user is typing in an input field
     if (["INPUT", "TEXTAREA", "SELECT"].includes(e.target.tagName)) return;
