@@ -117,7 +117,7 @@
         <div class="about-content" data-lang="de">
           <p>
             <span class="about-highlight"
-              >Start und Ziel eingeben, Abfahrtszeit wählen — VPRouting findet
+              >Start und Ziel eingeben, Calculate drücken: Unsere App findet
               die Route, bei der ihr möglichst trocken bleibt.</span
             >
           </p>
@@ -261,7 +261,8 @@
           <label data-i18n="start" for="route_start"
             >Startpunkt<span
               class="ctrl-info"
-              data-tip="Startadresse eingeben oder auf der Karte anklicken" data-i18n-tip="tip_start"
+              data-tip="Startadresse eingeben oder auf der Karte anklicken"
+              data-i18n-tip="tip_start"
               ><svg
                 aria-hidden="true"
                 fill="none"
@@ -326,7 +327,8 @@
           <label data-i18n="end" for="route_end"
             >Ziel<span
               class="ctrl-info"
-              data-tip="Zieladresse eingeben oder auf der Karte anklicken" data-i18n-tip="tip_end"
+              data-tip="Zieladresse eingeben oder auf der Karte anklicken"
+              data-i18n-tip="tip_end"
               ><svg
                 aria-hidden="true"
                 fill="none"
@@ -382,7 +384,8 @@
           <label data-i18n="time" for="time_start"
             >Abfahrtszeit<span
               class="ctrl-info"
-              data-tip="Abfahrtszeit und -tag wählen" data-i18n-tip="tip_time"
+              data-tip="Abfahrtszeit und -tag wählen"
+              data-i18n-tip="tip_time"
               ><svg
                 aria-hidden="true"
                 fill="none"
@@ -457,7 +460,8 @@
               ><span data-i18n="speed">Geschwindigkeit</span>:
               <span id="speed_display">20</span> km/h<span
                 class="ctrl-info"
-                data-tip="Deine durchschnittliche Fahrradgeschwindigkeit" data-i18n-tip="tip_speed"
+                data-tip="Deine durchschnittliche Fahrradgeschwindigkeit"
+                data-i18n-tip="tip_speed"
                 ><svg
                   aria-hidden="true"
                   fill="none"
@@ -491,7 +495,8 @@
             <label data-i18n="rain" for="rain_resistance"
               >Regenresistenz<span
                 class="ctrl-info"
-                data-tip="Wie stark Regen die Routenwahl beeinflusst" data-i18n-tip="tip_rain"
+                data-tip="Wie stark Regen die Routenwahl beeinflusst"
+                data-i18n-tip="tip_rain"
                 ><svg
                   aria-hidden="true"
                   fill="none"
@@ -524,7 +529,8 @@
             <label data-i18n="route" for="route_type"
               >Route<span
                 class="ctrl-info"
-                data-tip="Routenstrategie: regenmeidend, standard oder direkt" data-i18n-tip="tip_route"
+                data-tip="Routenstrategie: regenmeidend, standard oder direkt"
+                data-i18n-tip="tip_route"
                 ><svg
                   aria-hidden="true"
                   fill="none"
@@ -703,11 +709,33 @@
           <span data-i18n="rain_legend">Regen Legende</span>
         </button>
         <div class="hidden" id="rain-legend-popup">
-          <h2 data-i18n="rain_legend" id="rain-legend-title">Regen Legende</h2>
+          <h2 data-i18n="rain_legend" id="rain-legend-title">Regen Legende<span
+              class="ctrl-info"
+              id="legend-info-btn"
+              data-tip="Deckschicht: wahrscheinlichste Regenintensität (Ensemble-Mittel).
+Halo: möglicher stärkerer Regen (90. Perzentil).
+Transparenz zeigt Vorhersagesicherheit."
+              ><svg
+                aria-hidden="true"
+                fill="none"
+                height="13"
+                stroke="currentColor"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                viewbox="0 0 24 24"
+                width="13"
+              >
+                <circle cx="12" cy="12" r="10"></circle>
+                <line x1="12" x2="12" y1="16" y2="12"></line>
+                <line x1="12" x2="12.01" y1="8" y2="8"></line></svg></span
+          ></h2>
           <div class="legend-rows">
             <div class="legend-row">
               <span class="legend-swatch" style="background: #a8dcff"></span>
-              <span class="legend-label" data-i18n="rain_light">Leichter Regen</span>
+              <span class="legend-label" data-i18n="rain_light"
+                >Leichter Regen</span
+              >
               <span class="legend-val">0.2&#8211;0.6 mm/h</span>
             </div>
             <div class="legend-row">
@@ -717,35 +745,34 @@
             </div>
             <div class="legend-row">
               <span class="legend-swatch" style="background: #1a5fd4"></span>
-              <span class="legend-label" data-i18n="rain_heavy">Starker Regen</span>
+              <span class="legend-label" data-i18n="rain_heavy"
+                >Starker Regen</span
+              >
               <span class="legend-val">2&#8211;8 mm/h</span>
             </div>
             <div class="legend-row">
               <span class="legend-swatch" style="background: #002090"></span>
-              <span class="legend-label" data-i18n="rain_very_heavy">Sehr starker Regen</span>
+              <span class="legend-label" data-i18n="rain_very_heavy"
+                >Sehr starker Regen</span
+              >
               <span class="legend-val">8&#8211;30 mm/h</span>
             </div>
             <div class="legend-row">
               <span class="legend-swatch" style="background: #ff8800"></span>
-              <span class="legend-label" data-i18n="rain_violent">Heftiger Regen</span>
+              <span class="legend-label" data-i18n="rain_violent"
+                >Heftiger Regen</span
+              >
               <span class="legend-val">30&#8211;100 mm/h</span>
             </div>
             <div class="legend-row">
               <span class="legend-swatch" style="background: #cc1100"></span>
-              <span class="legend-label" data-i18n="rain_extreme">Extremregen</span>
+              <span class="legend-label" data-i18n="rain_extreme"
+                >Extremregen</span
+              >
               <span class="legend-val">&gt;100 mm/h</span>
             </div>
           </div>
-          <div class="legend-info-bar">
-            <button class="legend-info-btn" id="legend-info-btn" aria-expanded="false">
-              <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
-            </button>
-            <div class="legend-info-popup hidden" id="legend-info-popup">
-              <p data-i18n="legend_info_1">Deckschicht: wahrscheinlichste Regenintensität (Ensemble-Mittel).</p>
-              <p data-i18n="legend_info_2">Halo: möglicher stärkerer Regen (90. Perzentil).</p>
-              <p data-i18n="legend_info_3">Transparenz zeigt Vorhersagesicherheit.</p>
-            </div>
-          </div>
+
         </div>
       </div>
 
@@ -1643,14 +1670,19 @@
                     document.getElementById("rain_resistance").value
                   ] || "medium";
 
-            const startValue = document
-              .getElementById("route_start")
-              .value.trim();
-            const endValue = document.getElementById("route_end").value.trim();
-            if (!startValue || !endValue) {
+            const startEl = document.getElementById("route_start");
+            const endEl = document.getElementById("route_end");
+            if (
+              !startEl.dataset.lat ||
+              !startEl.dataset.lon ||
+              !endEl.dataset.lat ||
+              !endEl.dataset.lon
+            ) {
               alert("Bitte Start und Ziel setzen.");
               return;
             }
+            const startPoint = `${startEl.dataset.lat}, ${startEl.dataset.lon}`;
+            const endPoint = `${endEl.dataset.lat}, ${endEl.dataset.lon}`;
 
             const payload = {
               start: {
@@ -1678,8 +1710,8 @@
             text.innerText = window.t("calculating");
             try {
               const query = new URLSearchParams({
-                start_point: startValue,
-                end_point: endValue,
+                start_point: startPoint,
+                end_point: endPoint,
                 start_time: String(
                   parseTimeToUnix(document.getElementById("time_start").value),
                 ),
@@ -1800,7 +1832,8 @@
           rain_very_heavy: "Sehr starker Regen",
           rain_violent: "Heftiger Regen",
           rain_extreme: "Extremregen",
-          legend_info_1: "Deckschicht: wahrscheinlichste Regenintensität (Ensemble-Mittel).",
+          legend_info_1:
+            "Deckschicht: wahrscheinlichste Regenintensität (Ensemble-Mittel).",
           legend_info_2: "Halo: möglicher stärkerer Regen (90. Perzentil).",
           legend_info_3: "Transparenz zeigt Vorhersagesicherheit.",
           tip_start: "Startadresse eingeben oder auf der Karte anklicken",
@@ -1844,7 +1877,8 @@
           rain_very_heavy: "Very heavy rain",
           rain_violent: "Violent rain",
           rain_extreme: "Extreme rain",
-          legend_info_1: "Base layer: most likely rain intensity (ensemble mean).",
+          legend_info_1:
+            "Base layer: most likely rain intensity (ensemble mean).",
           legend_info_2: "Halo: possible heavier rain (90th percentile).",
           legend_info_3: "Opacity reflects forecast confidence.",
           tip_start: "Enter a start address or click on the map",
@@ -1888,9 +1922,12 @@
           rain_very_heavy: "Pioggia molto intensa",
           rain_violent: "Pioggia violenta",
           rain_extreme: "Pioggia estrema",
-          legend_info_1: "Strato base: intensità di pioggia più probabile (media ensemble).",
-          legend_info_2: "Alone: pioggia più intensa possibile (90° percentile).",
-          legend_info_3: "La trasparenza riflette la certezza della previsione.",
+          legend_info_1:
+            "Strato base: intensità di pioggia più probabile (media ensemble).",
+          legend_info_2:
+            "Alone: pioggia più intensa possibile (90° percentile).",
+          legend_info_3:
+            "La trasparenza riflette la certezza della previsione.",
           tip_start: "Inserire un indirizzo di partenza o cliccare sulla mappa",
           tip_end: "Inserire una destinazione o cliccare sulla mappa",
           tip_time: "Scegliere orario e giorno di partenza",
@@ -1932,14 +1969,16 @@
           rain_very_heavy: "Pluie très forte",
           rain_violent: "Pluie violente",
           rain_extreme: "Pluie extrême",
-          legend_info_1: "Couche de base : intensité la plus probable (moyenne ensemble).",
+          legend_info_1:
+            "Couche de base : intensité la plus probable (moyenne ensemble).",
           legend_info_2: "Halo : pluie plus forte possible (90e percentile).",
           legend_info_3: "L'opacité reflète la confiance de la prévision.",
           tip_start: "Entrer une adresse de départ ou cliquer sur la carte",
           tip_end: "Entrer une destination ou cliquer sur la carte",
           tip_time: "Choisir l'heure et le jour de départ",
           tip_speed: "Votre vitesse cycliste moyenne",
-          tip_rain: "Dans quelle mesure la pluie influence le choix d'itinéraire",
+          tip_rain:
+            "Dans quelle mesure la pluie influence le choix d'itinéraire",
           tip_route: "Stratégie : éviter la pluie, standard ou direct",
         },
       };
@@ -2005,6 +2044,15 @@
           document.querySelectorAll("[data-i18n-tip]").forEach((el) => {
             el.dataset.tip = window.t(el.getAttribute("data-i18n-tip"));
           });
+          const legendInfoBtn = document.getElementById("legend-info-btn");
+          if (legendInfoBtn) {
+            legendInfoBtn.dataset.tip =
+              window.t("legend_info_1") +
+              "\n" +
+              window.t("legend_info_2") +
+              "\n" +
+              window.t("legend_info_3");
+          }
         };
 
         const aboutHeadings = {
@@ -2232,9 +2280,20 @@
             const panelRect = panel ? panel.getBoundingClientRect() : null;
             const triggerRect = trigger.getBoundingClientRect();
             tip.textContent = el.getAttribute("data-tip");
-            tip.style.left =
-              (panelRect ? panelRect.right : triggerRect.right) + 12 + "px";
-            tip.style.top = triggerRect.top + triggerRect.height / 2 + "px";
+            const inPanel = panel && panel.contains(trigger);
+            const legendPopup = document.getElementById("rain-legend-popup");
+            const inLegend = legendPopup && legendPopup.contains(el);
+            if (inLegend) {
+              const legendRect = legendPopup.getBoundingClientRect();
+              tip.style.left = legendRect.right + 12 + "px";
+              tip.style.top = legendRect.top + "px";
+              tip.style.transform = "none";
+            } else {
+              tip.style.left =
+                (inPanel ? panelRect.right : triggerRect.right) + 12 + "px";
+              tip.style.top = triggerRect.top + triggerRect.height / 2 + "px";
+              tip.style.transform = "translateY(-50%)";
+            }
             tip.classList.add("visible");
           });
           trigger.addEventListener("mouseleave", () => {

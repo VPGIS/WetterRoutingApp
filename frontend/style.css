@@ -151,12 +151,12 @@ label:has(.ctrl-info) {
   font-weight: 400;
   padding: 5px 10px;
   border-radius: 7px;
-  white-space: nowrap;
+  white-space: pre-line;
+  max-width: 260px;
   pointer-events: none;
   z-index: 9999;
   opacity: 0;
   transition: opacity 0.15s;
-  transform: translateY(-50%);
 }
 #ctrl-tooltip-popup.visible {
   opacity: 1;
