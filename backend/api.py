@@ -524,3 +524,14 @@ def serve_logo():
 def serve_i18n():
     return FileResponse(FRONTEND_DIR / "i18n.json", media_type="application/json")
 
+@app.get("/js/{filename}", include_in_schema=False)
+def serve_js(filename: str):
+    js_path = (FRONTEND_DIR / "js" / filename).resolve()
+    js_dir = (FRONTEND_DIR / "js").resolve()
+    # Prevent path traversal: resolved path must stay inside js/
+    if not str(js_path).startswith(str(js_dir)):
+        raise HTTPException(status_code=400)
+    if not js_path.is_file():
+        raise HTTPException(status_code=404)
+    return FileResponse(js_path, media_type="application/javascript")
+
