@@ -10,7 +10,6 @@ from pathlib import Path
 
 import xarray as xr
 from scipy.spatial import cKDTree
-from shapely.geometry import box, mapping, shape
 
 from datetime import datetime, timezone
 
@@ -231,45 +230,42 @@ def get_graph_cached(bbox, network_type="bike", size_threshold=0.5, precision=5)
     GRAPH_DIR = BACKEND_DIR / "data" / "graphs"
     os.makedirs(GRAPH_DIR, exist_ok=True)
 
-    INDEX_FILE = GRAPH_DIR / "index.geojson"
+    INDEX_FILE = GRAPH_DIR / 'index.json'
 
     # Bounding Box runden (internes Format bleibt erhalten)
     north, south, east, west = [round(x, precision) for x in bbox]
     bbox = (north, south, east, west)
 
-    requested_geom = box(west, south, east, north)
-    requested_area = requested_geom.area
+    requested_area = (north - south) * (east - west)
 
     if os.path.exists(INDEX_FILE):
         with open(INDEX_FILE, "r") as f:
             index = json.load(f)
     else:
-        index = {"type": "FeatureCollection", "features": []}
+        index = []
 
     candidates = []
 
-    for feature in index["features"]:
-        properties = feature["properties"]
-
-        if properties["network_type"] != network_type:
+    for entry in index:
+        if entry["network_type"] != network_type:
             continue
 
-        cached_geom = shape(feature["geometry"])
+        N, S, E, W = entry["north"], entry["south"], entry["east"], entry["west"]
 
-        if not cached_geom.covers(requested_geom):
+        if not (N >= north and S <= south and E >= east and W <= west):
             continue
 
-        existing_area = cached_geom.area
+        existing_area = (N - S) * (E - W)
         size_ratio = (existing_area - requested_area) / requested_area
 
         if size_ratio > size_threshold:
             continue
 
-        candidates.append((feature, existing_area))
+        candidates.append((entry, existing_area))
 
     if candidates:
-        best_feature = min(candidates, key=lambda x: x[1])[0]
-        graph_file = Path(best_feature["properties"]["file"])
+        best_entry = min(candidates, key=lambda x: x[1])[0]
+        graph_file = Path(best_entry["file"])
         if not graph_file.is_absolute():
             graph_file = BACKEND_DIR / graph_file
         print(f"[route] graph cache hit: {graph_file}")
@@ -303,15 +299,25 @@ def get_graph_cached(bbox, network_type="bike", size_threshold=0.5, precision=5)
         ox.save_graphml(G, filepath)
         print(f"[route] graph saved to cache: {filepath}")
 
-        index["features"].append({
-            "type": "Feature",
-            "properties": {
-                "network_type": network_type,
-                "file": str(filepath.relative_to(BACKEND_DIR)),
-                "file_light": str(filepath_light.relative_to(BACKEND_DIR)),
-                "created_at": str(datetime.now(timezone.utc).isoformat()),
-            },
-            "geometry": mapping(requested_geom),
+        index.append({
+            "north": north,
+            "south": south,
+            "east": east,
+            "west": west,
+            "network_type": network_type,
+            "file": str(filepath.relative_to(BACKEND_DIR)),
+            "file_light": str(filepath_light.relative_to(BACKEND_DIR)),
+            "created_at": str(datetime.now(timezone.utc).isoformat()),
+            "geometry": {
+                "type": "Polygon",
+                "coordinates": [[
+                    [west, south],
+                    [east, south],
+                    [east, north],
+                    [west, north],
+                    [west, south]
+                ]]
+            }
         })
 
         with open(INDEX_FILE, "w") as f:
