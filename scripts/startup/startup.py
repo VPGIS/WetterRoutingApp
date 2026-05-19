@@ -10,11 +10,11 @@ sys.path.insert(0, str(BACKEND_DIR))
 from utils_fetch import check_fetch_on_startup
 
 
-# Schritt 1: Stelle sicher, dass aktuelle Wetterdaten vorhanden sind
+print('Schritt 1: Stelle sicher, dass aktuelle Wetterdaten vorhanden sind')
 check_fetch_on_startup()
 
 
-# Schritt 2: Erstelle NC_for_Cellid, falls sie noch nicht existiert
+print('Schritt 2: Erstelle NC_for_Cellid, falls sie noch nicht existiert')
 subprocess.run(
     [sys.executable, 
      str(Path(__file__).resolve().parent / "reduce_nc_to_grid_geometry.py"), 

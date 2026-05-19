@@ -1,32 +1,32 @@
 import numpy as np
 
 
-def compute_rain_adjusted_cost(length, forecast, sensitivity):
+def compute_rain_adjusted_cost(length, forecast, rainresistence):
     # Regenmenge vorbereiten: negative Werte werden als 0 behandelt
     rain_amount = max(float(forecast), 0.0)
 
-    # Wenn kein Regen vorhergesagt ist, bleibt die Strecke unveraendert
+    # Wenn kein Regen vorhergesagt ist, bleibt die Strecke unverändert
     if rain_amount == 0.0:
         return length
 
-    if sensitivity == "highest":  # bei Regen wird die Strecke komplett vermieden
+    if rainresistence == "lowest":  # bei Regen wird die Strecke komplett vermieden
         return np.inf
 
-    if sensitivity == "lowest":  # Regen hat keinen Einfluss auf die Kosten
+    if rainresistence == "highest":  # Regen hat keinen Einfluss auf die Kosten
         return length
 
-    # Je höher die Sensitivitaet, desto stärker werden Regenmengen gewichtet
-    if sensitivity == "low":
+    # Je geringer die Regenresistenz, desto höher werden Regenmengen gewichtet
+    if rainresistence == "high":
         multiplier = 25.0
         exponent = 1.0
-    elif sensitivity == "medium":
+    elif rainresistence == "medium":
         multiplier = 100.0
         exponent = 1.2
-    elif sensitivity == "high":
+    elif rainresistence == "low":
         multiplier = 400.0
         exponent = 1.4
     else:
-        raise ValueError("sensitivity must be 'lowest' 'low', 'medium', 'high' or 'highest'")
+        raise ValueError("rainresistence must be 'lowest' 'low', 'medium', 'high' or 'highest'")
 
     # Dadurch bleiben die Kosten mindestens so hoch wie die ursprüngliche Länge.
     return length * (1.0 + multiplier * (rain_amount ** exponent))
