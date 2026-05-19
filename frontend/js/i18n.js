@@ -80,24 +80,9 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   };
 
-  const aboutHeadings = {
-    de: "\u00DCber dieses Projekt",
-    en: "About this project",
-    fr: "\u00C0 propos du projet",
-    it: "Informazioni sul progetto",
-  };
-  const updateAboutLang = (lang) => {
-    document.querySelectorAll(".about-content").forEach((c) => {
-      c.hidden = c.dataset.lang !== lang;
-    });
-    const h = document.getElementById("about-heading");
-    if (h) h.textContent = aboutHeadings[lang] || aboutHeadings.de;
-  };
-
   langSelect.addEventListener("change", (e) => {
     currentLang = e.target.value;
     applyTranslations();
-    updateAboutLang(currentLang);
     if (window.updateDepartureDateLabel) window.updateDepartureDateLabel();
     if (window.updateDemoBadge) window.updateDemoBadge();
     // Update calculate button specifically if it's not currently calculating
@@ -107,7 +92,6 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   });
 
-  updateAboutLang(currentLang); // init to match default lang (de)
   _i18nReady.then(() => applyTranslations());
 
   // Speed Slider visual update

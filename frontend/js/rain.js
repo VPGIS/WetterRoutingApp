@@ -190,12 +190,12 @@ document.addEventListener("DOMContentLoaded", () => {
     );
     intensityTxt.textContent =
       pct < 0.1
-        ? "No rain"
+        ? window.t("intensity_dry")
         : pct < 0.4
-          ? "Light rain"
+          ? window.t("rain_light")
           : pct < 0.7
-            ? "Moderate"
-            : "Heavy rain";
+            ? window.t("intensity_mod")
+            : window.t("rain_heavy");
   }
 
   // ── Playback ───────────────────────────────────────────────────────────────

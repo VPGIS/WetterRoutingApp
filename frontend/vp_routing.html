@@ -40,7 +40,7 @@
     <!-- About panel -->
     <div id="about-panel">
       <div class="about-header-row">
-        <h3 id="about-heading">Über dieses Projekt</h3>
+        <h3 id="about-heading" data-i18n="about_heading"></h3>
         <button
           id="about-toggle"
           aria-label="About this project"
@@ -64,177 +64,15 @@
         </button>
       </div>
       <div id="about-body">
-        <div class="about-content" data-lang="en" hidden>
-          <p>
-            <span class="about-highlight"
-              >Enter a start and end point, pick a departure time — VPRouting
-              finds a route that keeps you as dry as possible.</span
-            >
-          </p>
-          <p>
-            The project was built as part of the Vertiefungsprofil
-            Geoinformatik/Raumanalyse at FHNW to explore a practical question:
-            can weather data meaningfully change which route you should take?
-          </p>
-          <h4 class="about-section-title">Weather Data</h4>
-          <p>
-            Precipitation forecasts come from MeteoSwiss ICON-CH1-EPS, a 1 km
-            ensemble model for Switzerland. Its high spatial resolution and
-            hourly time steps make it well-suited for assigning rainfall values
-            to individual road edges. The two map layers show the mean forecast
-            and the p90 envelope — likely rain versus worst-case rain.
-          </p>
-          <h4 class="about-section-title">Routing</h4>
-          <p>
-            Routing runs Dijkstra's algorithm on an OSMnx graph built from
-            OpenStreetMap. Edge weights are raised where rain is forecast, so
-            the algorithm naturally prefers drier paths. For time-aware models,
-            weights shift as travel progresses — edges further along the route
-            are evaluated against the forecast valid at the estimated arrival
-            time.
-          </p>
-          <h4 class="about-section-title">Under the Hood</h4>
-          <p>
-            One of the more satisfying solutions was assigning weather grid
-            cells to road edges without a costly spatial intersection. We
-            replaced it with an attribute-based lookup — same result, far
-            faster. The rain animation is pre-rendered server-side from NetCDF
-            data and served as PNGs, keeping the browser light across all 33
-            forecast steps.
-          </p>
-          <p class="about-thanks">
-            Thanks for reading — and may your rides stay dry.
-          </p>
-        </div>
-        <div class="about-content" data-lang="de">
-          <p>
-            <span class="about-highlight"
-              >Start und Ziel eingeben, Calculate drücken: Unsere App findet die
-              Route, bei der ihr möglichst trocken bleibt.</span
-            >
-          </p>
-          <p>
-            Das Projekt entstand im Rahmen des Vertiefungsprofils
-            Geoinformatik/Raumanalyse an der FHNW mit einer konkreten Frage:
-            Können Wetterdaten die Routenwahl sinnvoll beeinflussen?
-          </p>
-          <h4 class="about-section-title">Wetterdaten</h4>
-          <p>
-            Die Niederschlagsvorhersagen stammen von MeteoSwiss ICON-CH1-EPS,
-            einem Ensemble-Modell mit 1 km Gitterauflösung für die Schweiz. Die
-            hohe räumliche Auflösung und stündliche Zeitschritte ermöglichen es,
-            Regenwerte einzelnen Strassenkanten zuzuordnen. Die zwei
-            Kartenebenen zeigen den mittleren Forecast und das p90-Perzentil —
-            wahrscheinlicher und ungünstigster Fall.
-          </p>
-          <h4 class="about-section-title">Routing</h4>
-          <p>
-            Das Routing läuft mit Dijkstras Algorithmus auf einem OSMnx-Graphen
-            aus OpenStreetMap. Kanten mit vorhergesagtem Niederschlag erhalten
-            höhere Kosten, sodass der Algorithmus trockenere Wege bevorzugt.
-            Beim zeitabhängigen Modell werden Kantengewichte laufend
-            aktualisiert — spätere Kanten werden anhand der Vorhersage zum
-            erwarteten Ankunftszeitpunkt bewertet.
-          </p>
-          <h4 class="about-section-title">Interessantes</h4>
-          <p>
-            Eine elegante Lösung war die Zuweisung von Wetterzellen zu
-            Strassenkanten ohne räumliche Verschneidung: Wir ersetzten sie durch
-            eine attributbasierte Suche — gleiche Ergebnisse, deutlich
-            schneller. Die Regenanimation wird serverseitig aus NetCDF-Daten
-            vorgerendert und als PNGs ausgeliefert, damit der Browser bei allen
-            33 Vorhersageschritten leicht bleibt.
-          </p>
-          <p class="about-thanks">
-            Danke fürs Lesen — und viel Erfolg beim trockenen Ankommen.
-          </p>
-        </div>
-        <div class="about-content" data-lang="fr" hidden>
-          <p>
-            <span class="about-highlight"
-              >Entrez un départ et une destination, choisissez l'heure —
-              VPRouting calcule l'itinéraire le plus sec possible.</span
-            >
-          </p>
-          <p>
-            Ce projet a été développé dans le cadre du Vertiefungsprofil
-            Geoinformatik/Raumanalyse à la FHNW pour répondre à une question
-            concrète : les données météo peuvent-elles influencer
-            significativement le choix d'itinéraire ?
-          </p>
-          <h4 class="about-section-title">Données météo</h4>
-          <p>
-            Les prévisions de précipitations proviennent de ICON-CH1-EPS de
-            MétéoSuisse, un modèle d'ensemble à 1 km pour la Suisse. Sa haute
-            résolution spatiale et ses pas de temps horaires permettent
-            d'attribuer des valeurs de pluie à chaque tronçon. Les deux couches
-            montrent la prévision moyenne et l'enveloppe p90 — pluie probable
-            contre pluie maximale.
-          </p>
-          <h4 class="about-section-title">Calcul d'itinéraire</h4>
-          <p>
-            Le calcul d'itinéraire utilise l'algorithme de Dijkstra sur un
-            graphe OSMnx issu d'OpenStreetMap. Les arêtes avec pluie prévue
-            reçoivent un coût plus élevé, guidant l'algorithme vers les chemins
-            les plus secs. Dans les modèles temporels, les poids évoluent au fil
-            du trajet — les arêtes lointaines sont évaluées selon la prévision
-            valable à l'heure d'arrivée estimée.
-          </p>
-          <h4 class="about-section-title">Sous le capot</h4>
-          <p>
-            Une solution élégante fut l'attribution des cellules météo aux
-            arêtes sans intersection spatiale coûteuse : nous l'avons remplacée
-            par une recherche attributaire — même résultat, bien plus rapide.
-            L'animation de pluie est pré-rendue côté serveur depuis des fichiers
-            NetCDF et servie en PNG, gardant le navigateur léger sur les 33 pas
-            de prévision.
-          </p>
-          <p class="about-thanks">Merci d'avoir lu — et bonne route au sec.</p>
-        </div>
-        <div class="about-content" data-lang="it" hidden>
-          <p>
-            <span class="about-highlight"
-              >Inserite partenza e destinazione, scegliete l'orario — VPRouting
-              trova il percorso che vi mantiene più asciutti possibile.</span
-            >
-          </p>
-          <p>
-            Il progetto è stato sviluppato nell'ambito del Vertiefungsprofil
-            Geoinformatik/Raumanalyse alla FHNW per rispondere a una domanda
-            concreta: i dati meteorologici possono influenzare
-            significativamente la scelta del percorso?
-          </p>
-          <h4 class="about-section-title">Dati meteorologici</h4>
-          <p>
-            Le previsioni di precipitazioni provengono da ICON-CH1-EPS di
-            MeteoSvizzera, un modello ensemble a 1 km per la Svizzera. L'alta
-            risoluzione spaziale e i passi temporali orari consentono di
-            assegnare valori di pioggia ai singoli segmenti stradali. I due
-            strati mostrano la previsione media e l'inviluppo p90 — pioggia
-            probabile contro scenario peggiore.
-          </p>
-          <h4 class="about-section-title">Routing</h4>
-          <p>
-            Il routing utilizza l'algoritmo di Dijkstra su un grafo OSMnx
-            costruito da OpenStreetMap. Gli archi con pioggia prevista ricevono
-            un peso maggiore, così l'algoritmo preferisce percorsi più asciutti.
-            Nei modelli temporali, i pesi si aggiornano lungo il tragitto — gli
-            archi più lontani vengono valutati in base alla previsione valida
-            all'ora di arrivo stimata.
-          </p>
-          <h4 class="about-section-title">Dettagli tecnici</h4>
-          <p>
-            Una soluzione elegante fu l'assegnazione delle celle meteorologiche
-            agli archi senza costose intersezioni spaziali: l'abbiamo sostituita
-            con una ricerca per attributi — stesso risultato, molto più veloce.
-            L'animazione della pioggia è pre-renderizzata lato server da file
-            NetCDF e servita come PNG, mantenendo il browser leggero su tutti i
-            33 passi di previsione.
-          </p>
-          <p class="about-thanks">
-            Grazie per aver letto — e buon viaggio all'asciutto.
-          </p>
-        </div>
+        <p><span class="about-highlight" data-i18n="about_intro_hl"></span></p>
+        <p data-i18n="about_intro"></p>
+        <h4 class="about-section-title" data-i18n="about_weather_title"></h4>
+        <p data-i18n="about_weather"></p>
+        <h4 class="about-section-title" data-i18n="about_routing_title"></h4>
+        <p data-i18n="about_routing"></p>
+        <h4 class="about-section-title" data-i18n="about_hood_title"></h4>
+        <p data-i18n="about_hood"></p>
+        <p class="about-thanks" data-i18n="about_thanks"></p>
       </div>
     </div>
     <!-- Left Routing Panel -->
@@ -253,7 +91,7 @@
           <label data-i18n="start" for="route_start"
             >Startpunkt<span
               class="ctrl-info"
-              data-tip="Startadresse eingeben oder auf der Karte anklicken"
+              data-tip=""
               data-i18n-tip="tip_start"
               ><svg
                 aria-hidden="true"
@@ -317,10 +155,7 @@
           "
         >
           <label data-i18n="end" for="route_end"
-            >Ziel<span
-              class="ctrl-info"
-              data-tip="Zieladresse eingeben oder auf der Karte anklicken"
-              data-i18n-tip="tip_end"
+            >Ziel<span class="ctrl-info" data-tip="" data-i18n-tip="tip_end"
               ><svg
                 aria-hidden="true"
                 fill="none"
@@ -376,7 +211,7 @@
           <label data-i18n="time" for="time_start"
             >Abfahrtszeit<span
               class="ctrl-info"
-              data-tip="Abfahrtszeit und -tag wählen"
+              data-tip=""
               data-i18n-tip="tip_time"
               ><svg
                 aria-hidden="true"
@@ -452,7 +287,7 @@
               ><span data-i18n="speed">Geschwindigkeit</span>:
               <span id="speed_display">20</span> km/h<span
                 class="ctrl-info"
-                data-tip="Deine durchschnittliche Fahrradgeschwindigkeit"
+                data-tip=""
                 data-i18n-tip="tip_speed"
                 ><svg
                   aria-hidden="true"
@@ -487,7 +322,7 @@
             <label data-i18n="rain" for="rain_resistance"
               >Regenresistenz<span
                 class="ctrl-info"
-                data-tip="Wie empfindlich du gegenüber Regen bist: von 'Meiden' (Regen komplett ausweichen) bis 'Egal' (Regen wird ignoriert)"
+                data-tip=""
                 data-i18n-tip="tip_rain"
                 ><svg
                   aria-hidden="true"
@@ -572,11 +407,7 @@
             <label data-i18n="routing_model"
               >Routingmodell<span
                 class="ctrl-info"
-                data-tip="Regen — Statisches Modell (Dijkstra)
-Regengewichte werden einmalig zum Abfahrtszeitpunkt berechnet. Der Algorithmus kennt den Regen entlang der gesamten Route von Anfang an. Schnell, stabil und gut für kurze bis mittlere Strecken.
-
-Regen + — Zeitabhängiges Modell (TD-Dijkstra)
-Kantengewichte werden laufend aktualisiert: Abschnitte weiter hinten auf der Route werden anhand der Regenvorhersage zum voraussichtlichen Ankunftszeitpunkt bewertet — nicht zum Abfahrtszeitpunkt. Genauer bei langen Routen oder wenn sich das Wetter unterwegs ändert, aber etwas rechenintensiver."
+                data-tip=""
                 data-i18n-tip="tip_routing_model"
                 ><svg
                   aria-hidden="true"
@@ -597,10 +428,16 @@ Kantengewichte werden laufend aktualisiert: Abschnitte weiter hinten auf der Rou
               style="display: flex; justify-content: center; margin-top: 6px"
             >
               <div class="day-toggle" id="routing_model_toggle">
-                <button class="day-btn active" data-model="einfach">
-                  Regen
-                </button>
-                <button class="day-btn" data-model="advanced">Regen +</button>
+                <button
+                  class="day-btn active"
+                  data-model="einfach"
+                  data-i18n="model_simple"
+                ></button>
+                <button
+                  class="day-btn"
+                  data-model="advanced"
+                  data-i18n="model_advanced"
+                ></button>
               </div>
             </div>
           </div>
@@ -628,7 +465,7 @@ Kantengewichte werden laufend aktualisiert: Abschnitte weiter hinten auf der Rou
     <!-- Loading overlay shown while Leaflet boots -->
     <div id="loading">
       <div id="loading-spinner"></div>
-      <div id="loading-text">Loading map…</div>
+      <div id="loading-text" data-i18n="loading_map"></div>
     </div>
     <div id="app">
       <!-- ── Side panel ───────────────────────────────────────────── -->
@@ -764,9 +601,7 @@ Kantengewichte werden laufend aktualisiert: Abschnitte weiter hinten auf der Rou
             Regen Legende<span
               class="ctrl-info"
               id="legend-info-btn"
-              data-tip="Deckschicht: wahrscheinlichste Regenintensität (Ensemble-Mittel).
-Halo: möglicher stärkerer Regen (90. Perzentil).
-Transparenz zeigt Vorhersagesicherheit."
+              data-tip=""
               ><svg
                 aria-hidden="true"
                 fill="none"

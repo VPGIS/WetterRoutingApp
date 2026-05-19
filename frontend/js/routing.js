@@ -426,7 +426,7 @@ document.addEventListener("DOMContentLoaded", () => {
         !endEl.dataset.lat ||
         !endEl.dataset.lon
       ) {
-        alert("Bitte Start und Ziel setzen.");
+        alert(window.t("err_no_points"));
         return;
       }
       const startPoint = `${startEl.dataset.lat}, ${startEl.dataset.lon}`;
@@ -496,7 +496,9 @@ document.addEventListener("DOMContentLoaded", () => {
       } catch (err) {
         console.error("Route calculation failed:", err);
         alert(
-          `Routing fehlgeschlagen: ${err && err.message ? err.message : err}`,
+          window.t("err_routing_failed") +
+            " " +
+            (err && err.message ? err.message : err),
         );
       } finally {
         btn.disabled = false;
