@@ -117,8 +117,8 @@
         <div class="about-content" data-lang="de">
           <p>
             <span class="about-highlight"
-              >Start und Ziel eingeben, Calculate drücken: Unsere App findet
-              die Route, bei der ihr möglichst trocken bleibt.</span
+              >Start und Ziel eingeben, Calculate drücken: Unsere App findet die
+              Route, bei der ihr möglichst trocken bleibt.</span
             >
           </p>
           <p>
@@ -495,7 +495,7 @@
             <label data-i18n="rain" for="rain_resistance"
               >Regenresistenz<span
                 class="ctrl-info"
-                data-tip="Wie stark Regen die Routenwahl beeinflusst"
+                data-tip="Wie empfindlich du gegenüber Regen bist: von 'Meiden' (Regen komplett ausweichen) bis 'Egal' (Regen wird ignoriert)"
                 data-i18n-tip="tip_rain"
                 ><svg
                   aria-hidden="true"
@@ -514,23 +514,78 @@
             ></label>
             <input
               id="rain_resistance"
-              max="3"
+              max="5"
               min="1"
+              step="1"
               type="range"
-              value="2"
+              value="3"
             />
-            <div class="slider-labels">
-              <span data-i18n="rain_low">Wenig</span>
-              <span data-i18n="rain_med">Mittel</span>
-              <span data-i18n="rain_high">Viel</span>
+            <div
+              style="
+                position: relative;
+                height: 1.4em;
+                margin-top: 6px;
+                font-size: 0.72rem;
+                color: var(--text-muted);
+              "
+            >
+              <span
+                data-i18n="rain_lowest"
+                style="
+                  position: absolute;
+                  left: 8px;
+                  transform: translateX(-50%);
+                "
+                >Meiden</span
+              >
+              <span
+                data-i18n="rain_low"
+                style="
+                  position: absolute;
+                  left: calc((100% - 16px) / 4 + 8px);
+                  transform: translateX(-50%);
+                "
+                >Wenig</span
+              >
+              <span
+                data-i18n="rain_med"
+                style="
+                  position: absolute;
+                  left: 50%;
+                  transform: translateX(-50%);
+                "
+                >Mittel</span
+              >
+              <span
+                data-i18n="rain_high"
+                style="
+                  position: absolute;
+                  left: calc((100% - 16px) * 3 / 4 + 8px);
+                  transform: translateX(-50%);
+                "
+                >Viel</span
+              >
+              <span
+                data-i18n="rain_highest"
+                style="
+                  position: absolute;
+                  left: calc(100% - 8px);
+                  transform: translateX(-50%);
+                "
+                >Egal</span
+              >
             </div>
           </div>
           <div class="control-group">
-            <label data-i18n="route" for="route_type"
-              >Route<span
+            <label data-i18n="routing_model"
+              >Routingmodell<span
                 class="ctrl-info"
-                data-tip="Routenstrategie: regenmeidend, standard oder direkt"
-                data-i18n-tip="tip_route"
+                data-tip="Regen — Statisches Modell (Dijkstra)
+Regengewichte werden einmalig zum Abfahrtszeitpunkt berechnet. Der Algorithmus kennt den Regen entlang der gesamten Route von Anfang an. Schnell, stabil und gut für kurze bis mittlere Strecken.
+
+Regen + — Zeitabhängiges Modell (TD-Dijkstra)
+Kantengewichte werden laufend aktualisiert: Abschnitte weiter hinten auf der Route werden anhand der Regenvorhersage zum voraussichtlichen Ankunftszeitpunkt bewertet — nicht zum Abfahrtszeitpunkt. Genauer bei langen Routen oder wenn sich das Wetter unterwegs ändert, aber etwas rechenintensiver."
+                data-i18n-tip="tip_routing_model"
                 ><svg
                   aria-hidden="true"
                   fill="none"
@@ -546,11 +601,15 @@
                   <line x1="12" x2="12" y1="16" y2="12"></line>
                   <line x1="12" x2="12.01" y1="8" y2="8"></line></svg></span
             ></label>
-            <input id="route_type" max="3" min="1" type="range" value="2" />
-            <div class="slider-labels">
-              <span data-i18n="route_scen">Kein Regen</span>
-              <span data-i18n="route_def">Standard</span>
-              <span data-i18n="route_fast">Schnell</span>
+            <div
+              style="display: flex; justify-content: center; margin-top: 6px"
+            >
+              <div class="day-toggle" id="routing_model_toggle">
+                <button class="day-btn active" data-model="einfach">
+                  Regen
+                </button>
+                <button class="day-btn" data-model="advanced">Regen +</button>
+              </div>
             </div>
           </div>
         </div>
@@ -709,7 +768,8 @@
           <span data-i18n="rain_legend">Regen Legende</span>
         </button>
         <div class="hidden" id="rain-legend-popup">
-          <h2 data-i18n="rain_legend" id="rain-legend-title">Regen Legende<span
+          <h2 data-i18n="rain_legend" id="rain-legend-title">
+            Regen Legende<span
               class="ctrl-info"
               id="legend-info-btn"
               data-tip="Deckschicht: wahrscheinlichste Regenintensität (Ensemble-Mittel).
@@ -728,8 +788,9 @@ Transparenz zeigt Vorhersagesicherheit."
               >
                 <circle cx="12" cy="12" r="10"></circle>
                 <line x1="12" x2="12" y1="16" y2="12"></line>
-                <line x1="12" x2="12.01" y1="8" y2="8"></line></svg></span
-          ></h2>
+                <line x1="12" x2="12.01" y1="8" y2="8"></line></svg
+            ></span>
+          </h2>
           <div class="legend-rows">
             <div class="legend-row">
               <span class="legend-swatch" style="background: #a8dcff"></span>
@@ -772,7 +833,6 @@ Transparenz zeigt Vorhersagesicherheit."
               <span class="legend-val">&gt;100 mm/h</span>
             </div>
           </div>
-
         </div>
       </div>
 
@@ -1483,9 +1543,6 @@ Transparenz zeigt Vorhersagesicherheit."
         document.getElementById("ride_spd").addEventListener("change", () => {
           // Handled when the calculate button is clicked.
         });
-        document.getElementById("route_type").addEventListener("change", () => {
-          // Handled when the calculate button is clicked.
-        });
         document.getElementById("time_start").addEventListener("change", () => {
           // Handled when the calculate button is clicked.
         });
@@ -1518,10 +1575,10 @@ Transparenz zeigt Vorhersagesicherheit."
             d.getFullYear();
         };
 
-        document.querySelectorAll(".day-btn").forEach((btn) => {
+        document.querySelectorAll("#day-toggle .day-btn").forEach((btn) => {
           btn.addEventListener("click", () => {
             document
-              .querySelectorAll(".day-btn")
+              .querySelectorAll("#day-toggle .day-btn")
               .forEach((b) => b.classList.remove("active"));
             btn.classList.add("active");
             departureDayOffset = Number(btn.dataset.offset);
@@ -1529,6 +1586,17 @@ Transparenz zeigt Vorhersagesicherheit."
           });
         });
         updateDepartureDateLabel();
+
+        document
+          .querySelectorAll("#routing_model_toggle .day-btn")
+          .forEach((btn) => {
+            btn.addEventListener("click", () => {
+              document
+                .querySelectorAll("#routing_model_toggle .day-btn")
+                .forEach((b) => b.classList.remove("active"));
+              btn.classList.add("active");
+            });
+          });
 
         // ── Active input highlight ────────────────────────────────────────────────
         // Highlight persists on the last-used field — cleared only when another
@@ -1650,25 +1718,25 @@ Transparenz zeigt Vorhersagesicherheit."
               return Math.floor(baseDate.getTime() / 1000);
             };
 
-            const routingModelBySlider = {
-              1: "einfach",
-              2: "einfach",
-              3: "einfach",
-            };
-
             const sensibilityBySlider = {
-              1: "low",
-              2: "medium",
-              3: "high",
+              1: "lowest",
+              2: "low",
+              3: "medium",
+              4: "high",
+              5: "highest",
             };
 
-            const routeTypeValue = document.getElementById("route_type").value;
             const rainSensitivity =
-              routeTypeValue === "1"
-                ? "none"
-                : sensibilityBySlider[
-                    document.getElementById("rain_resistance").value
-                  ] || "medium";
+              sensibilityBySlider[
+                document.getElementById("rain_resistance").value
+              ] || "medium";
+
+            const activeModelBtn = document.querySelector(
+              "#routing_model_toggle .day-btn.active",
+            );
+            const selectedRoutingModel = activeModelBtn
+              ? activeModelBtn.dataset.model
+              : "einfach";
 
             const startEl = document.getElementById("route_start");
             const endEl = document.getElementById("route_end");
@@ -1695,9 +1763,7 @@ Transparenz zeigt Vorhersagesicherheit."
                 lat: document.getElementById("route_end").dataset.lat,
                 lon: document.getElementById("route_end").dataset.lon,
               },
-              type: { 1: "scenic", 2: "default", 3: "fastest" }[
-                document.getElementById("route_type").value
-              ],
+              type: selectedRoutingModel,
               time: document.getElementById("time_start").value,
               rain_resistance: document.getElementById("rain_resistance").value,
               speed_ms:
@@ -1718,11 +1784,8 @@ Transparenz zeigt Vorhersagesicherheit."
                 speed: String(
                   parseFloat(document.getElementById("ride_spd").value) || 20,
                 ),
-                routingmodel:
-                  routingModelBySlider[
-                    document.getElementById("route_type").value
-                  ] || "einfach",
-                sensibility: rainSensitivity,
+                routingmodel: selectedRoutingModel,
+                rainresistence: rainSensitivity,
                 ...(demoMode ? { demo: "true" } : {}),
               });
 
@@ -1797,191 +1860,10 @@ Transparenz zeigt Vorhersagesicherheit."
       });
     </script>
     <script>
-      const i18n = {
-        de: {
-          start: "Startpunkt",
-          where_from: "Woher?",
-          end: "Ziel",
-          where_to: "Wohin?",
-          time: "Abfahrtszeit",
-          speed: "Geschwindigkeit",
-          rain: "Regenresistenz",
-          rain_low: "Wenig",
-          rain_med: "Mittel",
-          rain_high: "Viel",
-          route: "Route",
-          route_def: "Standard",
-          route_scen: "Kein Regen",
-          route_fast: "Schnell",
-          gpx_in: "GPX Import",
-          gpx_out: "GPX Export",
-          calc: "Route berechnen",
-          adv_settings: "Erweiterte Einstellungen",
-          resolving: "Adresse wird gesucht...",
-          map_style: "Karte",
-          map_standard: "Standard",
-          map_hybrid: "Hybrid",
-          calculating: "Berechne...",
-          model_run: "Modelllauf",
-          rain_legend: "Regen Legende",
-          today: "Heute",
-          tomorrow: "Morgen",
-          rain_light: "Leichter Regen",
-          rain_mod: "Regen",
-          rain_heavy: "Starker Regen",
-          rain_very_heavy: "Sehr starker Regen",
-          rain_violent: "Heftiger Regen",
-          rain_extreme: "Extremregen",
-          legend_info_1:
-            "Deckschicht: wahrscheinlichste Regenintensität (Ensemble-Mittel).",
-          legend_info_2: "Halo: möglicher stärkerer Regen (90. Perzentil).",
-          legend_info_3: "Transparenz zeigt Vorhersagesicherheit.",
-          tip_start: "Startadresse eingeben oder auf der Karte anklicken",
-          tip_end: "Zieladresse eingeben oder auf der Karte anklicken",
-          tip_time: "Abfahrtszeit und -tag wählen",
-          tip_speed: "Deine durchschnittliche Fahrradgeschwindigkeit",
-          tip_rain: "Wie stark Regen die Routenwahl beeinflusst",
-          tip_route: "Routenstrategie: regenmeidend, standard oder direkt",
-        },
-        en: {
-          start: "Start Location",
-          where_from: "Where from?",
-          end: "End Location",
-          where_to: "Where to?",
-          time: "Time Start",
-          speed: "Speed",
-          rain: "Rain Resistance",
-          rain_low: "Low",
-          rain_med: "Medium",
-          rain_high: "High",
-          route: "Route Type",
-          route_def: "Default",
-          route_scen: "No Rain",
-          route_fast: "Fastest",
-          gpx_in: "Import GPX",
-          gpx_out: "Export GPX",
-          calc: "Calculate Route",
-          adv_settings: "Advanced Settings",
-          resolving: "Resolving address...",
-          map_style: "Map",
-          map_standard: "Standard",
-          map_hybrid: "Hybrid",
-          calculating: "Calculating...",
-          model_run: "Model run",
-          rain_legend: "Rain Legend",
-          today: "Today",
-          tomorrow: "Tomorrow",
-          rain_light: "Light rain",
-          rain_mod: "Rain",
-          rain_heavy: "Heavy rain",
-          rain_very_heavy: "Very heavy rain",
-          rain_violent: "Violent rain",
-          rain_extreme: "Extreme rain",
-          legend_info_1:
-            "Base layer: most likely rain intensity (ensemble mean).",
-          legend_info_2: "Halo: possible heavier rain (90th percentile).",
-          legend_info_3: "Opacity reflects forecast confidence.",
-          tip_start: "Enter a start address or click on the map",
-          tip_end: "Enter a destination or click on the map",
-          tip_time: "Choose departure time and day",
-          tip_speed: "Your average cycling speed",
-          tip_rain: "How much rain influences the route choice",
-          tip_route: "Route strategy: rain-avoiding, default or direct",
-        },
-        it: {
-          start: "Punto di partenza",
-          where_from: "Da dove?",
-          end: "Destinazione",
-          where_to: "Verso dove?",
-          time: "Orario di partenza",
-          speed: "Velocità",
-          rain: "Resistenza alla pioggia",
-          rain_low: "Bassa",
-          rain_med: "Media",
-          rain_high: "Alta",
-          route: "Tipo di percorso",
-          route_def: "Predefinito",
-          route_scen: "Nessuna pioggia",
-          route_fast: "Veloce",
-          gpx_in: "Importa GPX",
-          gpx_out: "Esporta GPX",
-          calc: "Calcola percorso",
-          adv_settings: "Impostazioni avanzate",
-          resolving: "Ricerca indirizzo...",
-          map_style: "Mappa",
-          map_standard: "Standard",
-          map_hybrid: "Ibrido",
-          calculating: "Calcolo...",
-          model_run: "Corsa del modello",
-          rain_legend: "Legenda pioggia",
-          today: "Oggi",
-          tomorrow: "Domani",
-          rain_light: "Pioggia leggera",
-          rain_mod: "Pioggia",
-          rain_heavy: "Pioggia intensa",
-          rain_very_heavy: "Pioggia molto intensa",
-          rain_violent: "Pioggia violenta",
-          rain_extreme: "Pioggia estrema",
-          legend_info_1:
-            "Strato base: intensità di pioggia più probabile (media ensemble).",
-          legend_info_2:
-            "Alone: pioggia più intensa possibile (90° percentile).",
-          legend_info_3:
-            "La trasparenza riflette la certezza della previsione.",
-          tip_start: "Inserire un indirizzo di partenza o cliccare sulla mappa",
-          tip_end: "Inserire una destinazione o cliccare sulla mappa",
-          tip_time: "Scegliere orario e giorno di partenza",
-          tip_speed: "La tua velocità media in bicicletta",
-          tip_rain: "Quanto la pioggia influenza la scelta del percorso",
-          tip_route: "Strategia: evita pioggia, standard o diretto",
-        },
-        fr: {
-          start: "Point de départ",
-          where_from: "D'où ?",
-          end: "Destination",
-          where_to: "Vers où ?",
-          time: "Heure de départ",
-          speed: "Vitesse",
-          rain: "Résistance à la pluie",
-          rain_low: "Faible",
-          rain_med: "Moyenne",
-          rain_high: "Forte",
-          route: "Type d'itinéraire",
-          route_def: "Défaut",
-          route_scen: "Pas de pluie",
-          route_fast: "Rapide",
-          gpx_in: "Importer GPX",
-          gpx_out: "Exporter GPX",
-          calc: "Calculer l'itinéraire",
-          adv_settings: "Paramètres avancés",
-          resolving: "Recherche d'adresse...",
-          map_style: "Carte",
-          map_standard: "Standard",
-          map_hybrid: "Hybride",
-          calculating: "Calcul en cours...",
-          model_run: "Exécution du modèle",
-          rain_legend: "Légende de pluie",
-          today: "Aujourd'hui",
-          tomorrow: "Demain",
-          rain_light: "Pluie légère",
-          rain_mod: "Pluie",
-          rain_heavy: "Pluie forte",
-          rain_very_heavy: "Pluie très forte",
-          rain_violent: "Pluie violente",
-          rain_extreme: "Pluie extrême",
-          legend_info_1:
-            "Couche de base : intensité la plus probable (moyenne ensemble).",
-          legend_info_2: "Halo : pluie plus forte possible (90e percentile).",
-          legend_info_3: "L'opacité reflète la confiance de la prévision.",
-          tip_start: "Entrer une adresse de départ ou cliquer sur la carte",
-          tip_end: "Entrer une destination ou cliquer sur la carte",
-          tip_time: "Choisir l'heure et le jour de départ",
-          tip_speed: "Votre vitesse cycliste moyenne",
-          tip_rain:
-            "Dans quelle mesure la pluie influence le choix d'itinéraire",
-          tip_route: "Stratégie : éviter la pluie, standard ou direct",
-        },
-      };
+      let i18n = {};
+      const _i18nReady = fetch("i18n.json")
+        .then(r => { if (!r.ok) throw new Error("i18n.json: " + r.status); return r.json(); })
+        .then(data => { i18n = data; });
 
       let currentLang = "de";
 
@@ -2014,7 +1896,7 @@ Transparenz zeigt Vorhersagesicherheit."
       };
 
       window.t = function (key) {
-        return i18n[currentLang][key] || key;
+        return (i18n[currentLang] && i18n[currentLang][key]) || key;
       };
 
       document.addEventListener("DOMContentLoaded", () => {
@@ -2084,6 +1966,7 @@ Transparenz zeigt Vorhersagesicherheit."
         });
 
         updateAboutLang(currentLang); // init to match default lang (de)
+        _i18nReady.then(() => applyTranslations());
 
         // Speed Slider visual update
         const speedInput = document.getElementById("ride_spd");
