@@ -231,41 +231,56 @@ document.addEventListener("DOMContentLoaded", () => {
 
 // ── About panel ──────────────────────────────────────────────────────────────────
 // Two-phase CSS transition so the width and the body content animate cleanly:
-//   Open:  expand width → wait for "width" transitionend → reveal content
+//   Open:  add .expanded → wait 50 ms → reveal content
 //   Close: hide content → setTimeout(400) to match content-hide duration →
-//          collapse width
-// The width matches the title box so the panel never wraps text during the
-// expand animation.
+//          remove .expanded
+// The panel is always full-width (matches the title box above it in the
+// flex-column header), so no width animation is needed.
 (() => {
   const panel = document.getElementById("about-panel");
   const toggle = document.getElementById("about-toggle");
-  const titleBox = document.getElementById("top-right-title");
 
   toggle.addEventListener("click", () => {
     const isExpanded = panel.classList.contains("expanded");
 
     if (isExpanded) {
-      // Phase 1: hide body content
+      // Remove both classes immediately — heading and body collapse in parallel.
+      // (The old setTimeout for "expanded" was for a width animation that no longer exists.)
       panel.classList.remove("content-visible");
+      panel.classList.remove("expanded");
       toggle.classList.remove("active");
-      // Phase 2: collapse width after content transition finishes
-      setTimeout(() => {
-        panel.style.width = "56px";
-        panel.classList.remove("expanded");
-      }, 400);
     } else {
-      // Phase 1: expand width to match title box
-      panel.style.width = titleBox.offsetWidth + "px";
+      // Open: add expanded (heading slides in), then reveal body 50 ms later.
       panel.classList.add("expanded");
       toggle.classList.add("active");
-      // Phase 2: reveal body after width transition ends
-      const onWidthEnd = (e) => {
-        if (e.propertyName === "width") {
-          panel.classList.add("content-visible");
-          panel.removeEventListener("transitionend", onWidthEnd);
-        }
-      };
-      panel.addEventListener("transitionend", onWidthEnd);
+      setTimeout(() => panel.classList.add("content-visible"), 50);
+    }
+  });
+})();
+
+// ── Mobile routing-panel collapse (≤ 640 px only) ──────────────────────
+// Mirrors the about-panel pattern: collapsed = compact "Routing ˅" button;
+// expanded = full form below with max-height animation.
+// The toggle listener is always attached but guards with matchMedia so it
+// is a no-op on desktop (where #routing-panel-header is display:none anyway).
+(() => {
+  const panel  = document.getElementById("routing-panel");
+  const toggle = document.getElementById("routing-panel-toggle");
+  if (!toggle) return;
+
+  const mq = window.matchMedia("(max-width: 640px)");
+
+  toggle.addEventListener("click", () => {
+    if (!mq.matches) return; // guard: inactive on desktop
+
+    const isExpanded = panel.classList.contains("rp-expanded");
+    if (isExpanded) {
+      // Collapse immediately — mirrors the about-panel close sequence.
+      toggle.classList.remove("active");
+      panel.classList.remove("rp-expanded");
+    } else {
+      panel.classList.add("rp-expanded");
+      toggle.classList.add("active");
     }
   });
 })();

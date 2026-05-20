@@ -32,7 +32,7 @@
 <html lang="en">
   <head>
     <meta charset="utf-8" />
-    <meta content="width=device-width, initial-scale=1.0" name="viewport" />
+    <meta content="width=device-width, initial-scale=1.0, viewport-fit=cover" name="viewport" />
     <title>WetterRoutingApp</title>
     <!-- Leaflet -->
     <link
@@ -56,11 +56,13 @@
     <script src="js/routing.js" defer></script>
     <script src="js/i18n.js" defer></script>
     <script src="js/ui.js" defer></script>
+    <script src="js/easter.js" defer></script>
   </head>
   <body>
     <!-- Top-right branding bar.
          The logo (#header-logo) also doubles as the Easter egg trigger:
          5 rapid clicks activate demo mode (see demo.js). -->
+    <div id="top-right-header">
     <div id="top-right-title">
       <h1>
         <span style="color: #0d3a6e">W</span>etter<span style="color: #0d3a6e"
@@ -69,6 +71,7 @@
       </h1>
       <img src="logo.jpg" alt="Logo" class="header-logo" id="header-logo" />
     </div>
+    <div id="top-right-subtitle" data-i18n="subtitle">Bleib trocken bei deiner Velotour!</div>
 
     <!-- About panel — collapses to a 56px icon button; expands via two-phase
          CSS transition driven by ui.js.  All text is i18n-driven (data-i18n). -->
@@ -109,12 +112,29 @@
         <p class="about-thanks" data-i18n="about_thanks"></p>
       </div>
     </div>
+    </div>
     <!-- ── Left routing panel ────────────────────────────────────────────
          Contains: geocode inputs (start/end), departure time picker,
          advanced settings (speed, rain-resistance, routing model),
          calculate button, and GPX import/export.
          All labels use data-i18n so they swap on lang-select change.  -->
     <div id="routing-panel">
+      <!-- Mobile collapse header — hidden on desktop via CSS.
+           Mirrors the about-panel animation: collapsed = 56 px bar with
+           a bold italic blue "R" button; expanded = full form below. -->
+      <div id="routing-panel-header">
+        <h3 id="routing-panel-label" data-i18n="tagline">Berechne Route anhand Niederschlag</h3>
+        <button id="routing-panel-toggle" aria-label="Toggle routing panel" title="Routing">
+          <span>Routing</span>
+          <svg aria-hidden="true" width="13" height="13" viewbox="0 0 24 24"
+               fill="none" stroke="currentColor" stroke-width="2.5"
+               stroke-linecap="round" stroke-linejoin="round">
+            <polyline points="6 9 12 15 18 9"></polyline>
+          </svg>
+        </button>
+      </div>
+      <div id="routing-panel-body">
+      <p id="routing-tagline" data-i18n="tagline">Berechne Route anhand Niederschlag</p>
       <div class="control-group">
         <div
           style="
@@ -499,6 +519,7 @@
           GPX Export
         </button>
       </div>
+      </div><!-- /routing-panel-body -->
     </div>
     <!-- Loading overlay — visible until rain.js hides it after Leaflet boots
          and the first rain frame has been requested. -->

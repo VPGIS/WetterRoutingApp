@@ -126,6 +126,14 @@ body {
 
 /* ── USER Panels interaction ──────────────────────────────────────────────── */
 
+#routing-tagline {
+  margin: 0 0 10px 0;
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: #1d6fa4;
+  text-align: center;
+}
+
 #routing-panel {
   position: absolute;
   top: 20px;
@@ -717,48 +725,193 @@ label:has(.ctrl-info) {
 }
 
 /* ── Mobile ──────────────────────────────────────────────────── */
+/* ── Desktop defaults for routing-panel mobile elements ─────────────────── */
+/* Header only shown on mobile; body is a transparent wrapper on desktop.   */
+#routing-panel-header { display: none; }
+#routing-panel-body   { display: contents; }
+
+/* ── Mobile overrides (≤ 640 px) ─────────────────────────────────────────── */
 @media (max-width: 640px) {
-  #app {
+  /* Mobile header: full-width bar from edge to edge.                     */
+  /* padding-top = env(safe-area-inset-top) handles notch / Dynamic Island.*/
+  #top-right-header {
+    left: 0;
+    right: 0;   /* override desktop right: 20px */
+    top: 0;     /* override desktop top: 20px   */
+    padding-top: env(safe-area-inset-top, 0px);
     grid-template-columns: 1fr;
-    grid-template-rows: 1fr auto auto;
   }
-  #panel {
-    grid-column: 1;
-    grid-row: 2;
-    flex-direction: row;
-    flex-wrap: wrap;
-    border-right: none;
-    border-top: 1px solid var(--border);
-    max-height: 200px;
+
+  /* Full-width cards: remove rounded corners so they fill edge-to-edge.  */
+  #top-right-title    { border-radius: 0; padding: 0 16px; }
+  #top-right-subtitle { border-radius: 0; }
+
+  /* About panel sits in row 3 (below title row 1 and subtitle row 2).    */
+  /* Collapsed = 56 px icon button, right-anchored.                        */
+  /* │ title height    56 px                                               */
+  /* │ gap              5 px                                               */
+  /* │ subtitle height 28 px                                               */
+  /* └ gap              5 px  → row 3 starts 94 px below the grid top       */
+  /* Routing panel: top = env(safe-area-inset-top, 0px) + 94px            */
+  #about-panel         { grid-row: 3; justify-self: end; width: 56px; }
+  #about-panel.expanded { width: min(320px, calc(100vw - 32px)); }
+
+  /* ── Routing panel: collapsible card ──────────────────────────────── */
+  /* Collapsed: compact box at left — same row as the ℹ button.          */
+  /* top = env(safe-area-inset-top, 0px) + 56 (title) + 5 + 28 (sub) + 5 */
+  #routing-panel {
+    left: 0;
+    top: calc(env(safe-area-inset-top, 0px) + 94px);
+    width: max-content;
+    max-height: none;
+    padding: 0;
+    overflow: hidden;
+  }
+  /* Expanded: wide enough for all form controls */
+  #routing-panel.rp-expanded { width: min(320px, calc(100vw - 32px)); }
+
+  #routing-panel-header {
+    display: flex;
+    align-items: center;
+    height: 56px;
+    flex-shrink: 0;
+  }
+
+  /* Label hidden — the toggle button already reads “Routing” */
+  #routing-panel-label { display: none; }
+
+  /* “Routing ˅” toggle — mirrors the about-panel ℹ button style */
+  #routing-panel-toggle {
+    flex: 1;
+    height: 56px;
+    border: none;
+    background: transparent;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    padding: 0 18px;
+    font-size: 0.82rem;
+    font-weight: 700;
+    color: #1d6fa4;
+    white-space: nowrap;
+    transition: background 0.15s, color 0.15s;
+  }
+  #routing-panel-toggle:hover  { background: rgba(0, 0, 0, 0.04); }
+  #routing-panel-toggle.active { color: #0d3a6e; }
+  /* Chevron flips 180° when the panel is open */
+  #routing-panel-toggle svg       { flex-shrink: 0; transition: transform 0.3s ease; }
+  #routing-panel.rp-expanded #routing-panel-toggle svg { transform: rotate(180deg); }
+
+  /* Desktop tagline is redundant — label in header covers it */
+  #routing-tagline { display: none; }
+
+  /* Panel body: max-height animation (same pattern as about-body).
+     contain: inline-size prevents the form controls from inflating the
+     collapsed panel width (body contributes 0 to panel’s max-content). */
+  #routing-panel-body {
+    contain: inline-size;
+    width: 100%;
+    display: block;
+    max-height: 0;
+    overflow: hidden;
+    opacity: 0;
+    transition: max-height 0.4s ease, opacity 0.3s ease;
+  }
+
+  #routing-panel.rp-expanded #routing-panel-body {
+    /* panel body starts at top 114 px + 56 px header = 170 px; leave    */
+    /* room for the controls bar (~70 px) and bottom margin (~20 px).    */
+    max-height: calc(100svh - 230px);
     overflow-y: auto;
+    opacity: 1;
+    padding: 15px 15px 20px;
   }
+
+  /* ── Bottom playback bar: fixed to viewport bottom ──────────────── */
   #controls {
-    grid-column: 1;
-    grid-row: 3;
+    position: fixed;  /* always at viewport bottom, unaffected by app layout */
+    left: 0;
+    right: 0;
+    bottom: 0;
+    border-radius: 12px 12px 0 0;
+    padding-left: 16px;
+    padding-right: 16px;
+    /* env(safe-area-inset-bottom) requires viewport-fit=cover in <meta>
+       and gives the iPhone home-indicator / Android gesture-bar height */
+    padding-bottom: max(20px, env(safe-area-inset-bottom));
   }
-  #map {
-    grid-column: 1;
-    grid-row: 1;
+
+  /* Strip step buttons and hour-tick labels — too dense on narrow screens */
+  .btn-step     { display: none; }
+  #slider-ticks { display: none; }
+  #slider-wrap  { margin: 0 8px; }
+
+  /* ── Floating legend & layer switcher: above controls bar ──────── */
+  #floating-legend-ctrl,
+  #floating-layer-ctrl {
+    right: 16px;
+    bottom: calc(env(safe-area-inset-bottom, 0px) + 72px);
   }
+  #floating-layer-ctrl {
+    bottom: calc(env(safe-area-inset-bottom, 0px) + 116px);
+  }
+
+  /* Use dvh (dynamic viewport height) so bottom: 0 lands at the real     */
+  /* visible bottom, not behind the home indicator / gesture bar.          */
+  #app { height: 100dvh; }
+  /* Legacy grid — keep safe */
+  #app { grid-template-columns: 1fr; grid-template-rows: 1fr auto auto; }
+  #map { grid-column: 1; grid-row: 1; }
 }
 
 /* ── App header (top-right title + logo) ────────────────────── */
-#top-right-title {
+/* ── Top-right header: wraps title + subtitle as a column ─────────────── */
+/* display: grid + max-content column: each item's max-content is computed  */
+/* intrinsically, so the title card's natural width sets the column with no */
+/* circular dependency. Subtitle and about-panel stretch to match by default */
+/* (grid items are justify-self: stretch). #about-body uses                 */
+/* contain: inline-size so its paragraph text does not bloat the column.    */
+#top-right-header {
   position: absolute;
   top: 20px;
   right: 20px;
+  display: grid;
+  grid-template-columns: max-content;
+  gap: 5px;
+  z-index: 1000;
+}
+
+#top-right-title {
   height: 56px;
   background: rgba(255, 255, 255, 0.95);
   padding: 0 0 0 20px;
   border-radius: 12px;
   box-shadow: 0 8px 16px rgba(0, 0, 0, 0.2);
-  z-index: 1000;
   backdrop-filter: blur(4px);
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 15px;
   overflow: hidden;
+}
+
+/* ── Subtitle strip below the title ────────────────────────────── */
+#top-right-subtitle {
+  height: 28px;
+  background: rgba(255, 255, 255, 0.95);
+  border-radius: 10px;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.15);
+  backdrop-filter: blur(4px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.72rem;
+  font-weight: 600;
+  color: #1d6fa4;
+  white-space: nowrap;
+  padding: 0 14px;
 }
 
 #top-right-title h1 {
@@ -1100,45 +1253,52 @@ label:has(.ctrl-info) {
 }
 
 /* ── About panel ─────────────────────────────────────────────── */
-/* Width transition is driven by JS (ui.js).  The two phases are:
-   Open:  expand width → wait for transitionend on "width" → add .content-visible
-   Close: remove .content-visible → setTimeout(400) → collapse width
-   This prevents the text from being visible while the panel is still narrow. */
+/* Expand/collapse driven by JS (ui.js) via .expanded + .content-visible.
+   Collapsed: 56 px (icon button only), right-aligned in the grid column.
+   Expanded: grows to 100% of the grid column (= title card width). */
 #about-panel {
-  position: absolute;
-  top: 86px;
-  right: 20px;
-  width: 56px;
+  width: 56px;          /* collapsed default — just the ℹ button */
+  justify-self: end;    /* right-align within the grid column       */
+  transition: width 0.3s ease;
   background: rgba(255, 255, 255, 0.95);
   border-radius: 12px;
   box-shadow: 0 8px 16px rgba(0, 0, 0, 0.2);
   backdrop-filter: blur(4px);
-  z-index: 1000;
   overflow: hidden;
-  transition: width 0.32s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* Expanded: fill the full grid column (= title card width). */
+#about-panel.expanded {
+  width: 100%;
 }
 
 .about-header-row {
   display: flex;
   flex-direction: row;
   align-items: center;
+  justify-content: flex-end; /* keeps button right-aligned when heading is collapsed */
   height: 56px;
   flex-shrink: 0;
 }
 
+/* Collapsed: heading slides out, only the icon button remains visible.
+   On expand: heading slides in from the right over 0.3 s. */
 #about-heading {
   flex: 1;
-  padding: 0 0 0 20px;
+  max-width: 0;          /* collapsed: invisible, takes no space */
+  padding: 0;
+  overflow: hidden;
+  opacity: 0;
   font-size: 0.82rem;
   font-weight: 600;
   color: var(--text);
   white-space: nowrap;
-  overflow: hidden;
-  opacity: 0;
-  transition: opacity 0.2s ease 0.22s;
+  transition: max-width 0.3s ease, opacity 0.25s ease;
 }
 
 #about-panel.expanded #about-heading {
+  max-width: 999px;      /* let flex:1 fill remaining row space */
+  padding: 0 0 0 20px;
   opacity: 1;
 }
 
@@ -1167,22 +1327,17 @@ label:has(.ctrl-info) {
   color: var(--accent-hover);
 }
 
-/* remove left border and heading space when panel is collapsed (only button visible) */
+/* remove heading space when panel is collapsed (only icon visible) */
 #about-panel:not(.expanded) #about-toggle {
   border-left: none;
 }
 
-#about-panel:not(.expanded) #about-heading {
-  padding-left: 0;
-  min-width: 0;
-  width: 0;
-}
-
 /* About panel body: starts collapsed (max-height: 0).
-   JS adds .content-visible after the width transition finishes, which
-   triggers the max-height + opacity transition so content fades in only
-   once the panel is already wide enough to display it cleanly. */
+   JS adds .content-visible after a short delay so content fades in
+   after the expanded class is applied. */
 #about-body {
+  contain: inline-size; /* paragraph text must not inflate the grid column */
+  width: 100%;          /* fill the panel once the grid resolves its width  */
   max-height: 0;
   overflow: hidden;
   opacity: 0;
@@ -1289,4 +1444,33 @@ label:has(.ctrl-info) {
   z-index: 9998;
   pointer-events: none;
   white-space: nowrap;
+}
+
+/* ── Mobile header overrides (must come AFTER desktop rules above) ──────── */
+/* Desktop #top-right-header / #top-right-title / #top-right-subtitle and   */
+/* #about-panel rules have higher source-order priority than the @media      */
+/* block that precedes them.  This second @media block restores mobile values*/
+@media (max-width: 640px) {
+  /* Full-width header: left: 0 / right: 0 override the desktop right: 20px */
+  #top-right-header {
+    left: 0;
+    right: 0;
+    top: 0;
+    padding-top: env(safe-area-inset-top, 0px);
+    grid-template-columns: 1fr;   /* items stretch to full viewport width */
+  }
+
+  /* Edge-to-edge title card — no rounded corners, symmetric padding */
+  #top-right-title {
+    border-radius: 0;
+    padding: 0 16px;
+  }
+
+  /* Subtitle matches title width (same 1fr column, also edge-to-edge) */
+  #top-right-subtitle {
+    border-radius: 0;
+  }
+
+  /* Expanded about-panel fills the full-width column */
+  #about-panel.expanded { width: 100%; }
 }
