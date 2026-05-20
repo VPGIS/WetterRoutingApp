@@ -123,13 +123,16 @@ script will re-extract them from the source video automatically.
 
 ## 5 — Web integration
 
-Copy the generated assets:
+The pipeline writes assets **directly** to the serving location — no copying needed:
 
 ```
-out/spritesheet.png  →  frontend/assets/easter/spritesheet.png
-out/scrat_audio.mp3  →  frontend/assets/easter/scrat_audio.mp3
-out/meta.json        →  frontend/assets/easter/meta.json
+frontend/_apriori/schpezial/assets/spritesheet.png
+frontend/_apriori/schpezial/assets/scrat_audio.mp3
+frontend/_apriori/schpezial/assets/meta.json
+frontend/_apriori/schpezial/assets/frames/   ← individual PNGs, keep for re-packing
 ```
+
+`easter.js` fetches them as `_apriori/schpezial/assets/` relative to `vp_routing.html`.
 
 > **Status: complete.** `frontend/js/easter.js` is written and loaded in
 > `vp_routing.html`.
