@@ -1350,8 +1350,11 @@ label:has(.ctrl-info) {
 
 #about-panel.content-visible #about-body {
   max-height: calc(
-    100vh - 162px
-  ); /* 100vh - 86px top - 56px header - 20px bottom */
+    100vh - 190px
+  ); /* 20px grid-top + 56px title + 5px gap + 28px subtitle + 5px gap
+       + 56px panel-header = 170px body-top;
+       + 20px controls bottom-offset = 190px total */
+  /* This keeps the body flush with the bottom edge of #controls. */
   overflow-y: auto;
   scrollbar-width: thin;
   scrollbar-color: rgba(0, 0, 0, 0.15) transparent;

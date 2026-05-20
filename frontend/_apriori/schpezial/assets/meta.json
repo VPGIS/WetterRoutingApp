@@ -1,0 +1,10 @@
+{
+  "frameWidth": 576,
+  "frameHeight": 324,
+  "cols": 10,
+  "rows": 16,
+  "totalFrames": 160,
+  "fps": 30,
+  "spritesheetFile": "spritesheet.png",
+  "audioFile": "scrat_audio.mp3"
+}

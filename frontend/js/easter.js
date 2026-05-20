@@ -29,20 +29,38 @@
     });
   });
 
-  // ── Trigger: lazy-load assets, then animate ───────────────────────────────
+  // ── Trigger: lazy-load assets, start audio + animation together ─────────────
   function trigger() {
     if (running) return;
     running = true;
 
     fetch(ASSET_DIR + 'meta.json')
-      .then(function (r) { return r.json(); })
+      .then(function (r) {
+        if (!r.ok) throw new Error('HTTP ' + r.status);
+        return r.json();
+      })
       .then(function (meta) {
-        // Preload audio; autoplay may be blocked — ignore silently
         var audio = new Audio(ASSET_DIR + meta.audioFile);
-        audio.play().catch(function () {});
+        audio.preload = 'auto';
 
-        var img   = new Image();
-        img.onload = function () { animate(img, meta, audio); };
+        var img = new Image();
+        img.onload = function () {
+          var playPromise = audio.play();
+
+          // 'playing' fires when audio is actually outputting — use it as the
+          // starting gun so frame 0 is drawn at the same instant as sample 0.
+          audio.addEventListener('playing', function onPlaying() {
+            audio.removeEventListener('playing', onPlaying);
+            animate(img, meta, audio);
+          }, { once: true });
+
+          // Autoplay blocked → animate without audio
+          if (playPromise !== undefined) {
+            playPromise.catch(function () {
+              animate(img, meta, null);
+            });
+          }
+        };
         img.onerror = function () {
           console.warn('[easter egg] sprite sheet not found');
           running = false;
@@ -56,46 +74,56 @@
   }
 
   // ── Canvas sprite-sheet animation ─────────────────────────────────────────
-  function animate(spriteImg, meta, audio) {
+  function animate(spriteImg, meta, audioEl) {
     var fw    = meta.frameWidth;
     var fh    = meta.frameHeight;
     var cols  = meta.cols;
     var total = meta.totalFrames;
-    var mspf  = 1000 / meta.fps;   // ms per frame
+    var fps   = meta.fps;
 
-    // Canvas overlay — centred, above the playback bar, no pointer events
-    var canvas       = document.createElement('canvas');
-    canvas.width     = fw;
-    canvas.height    = fh;
+    // Frames are already at 30 % of original resolution — render at 100 %
+    var dw = fw;
+    var dh = fh;
+
+    // Anchor to the top-left corner of the #controls bar, slightly outside it
+    var ctrl = document.getElementById('controls');
+    var rect = ctrl ? ctrl.getBoundingClientRect() : { top: 80, left: 40 };
+    var canvasBottom = window.innerHeight - rect.top + 6;
+    var canvasLeft   = rect.left - 18;
+
+    var canvas   = document.createElement('canvas');
+    canvas.width  = dw;
+    canvas.height = dh;
     canvas.style.cssText =
-      'position:fixed;bottom:80px;left:50%;transform:translateX(-50%);' +
+      'position:fixed;' +
+      'bottom:'  + canvasBottom + 'px;' +
+      'left:'    + canvasLeft   + 'px;' +
       'pointer-events:none;z-index:9999;image-rendering:pixelated;';
     document.body.appendChild(canvas);
 
     var ctx      = canvas.getContext('2d');
-    var frameIdx = 0;
-    var lastTime = null;
+    var rafFrame = 0;   // fallback counter when no audio clock
 
-    function step(ts) {
-      if (lastTime === null) lastTime = ts;
+    function step() {
+      // When audio is available use its clock — guarantees A/V sync even if
+      // RAF fires late (background tab, jank, etc.).
+      var idx = audioEl
+        ? Math.min(Math.floor(audioEl.currentTime * fps), total - 1)
+        : rafFrame++;
 
-      if (ts - lastTime >= mspf) {
-        lastTime = ts;
-        var col = frameIdx % cols;
-        var row = Math.floor(frameIdx / cols);
-        ctx.clearRect(0, 0, fw, fh);
-        ctx.drawImage(
-          spriteImg,
-          col * fw, row * fh, fw, fh,   // source rect in sprite sheet
-          0, 0, fw, fh                   // destination on canvas
-        );
-        frameIdx++;
-      }
+      var col = idx % cols;
+      var row = Math.floor(idx / cols);
+      ctx.clearRect(0, 0, dw, dh);
+      ctx.drawImage(
+        spriteImg,
+        col * fw, row * fh, fw, fh,
+        0, 0, dw, dh
+      );
 
-      if (frameIdx < total) {
+      var done = audioEl ? (audioEl.ended || idx >= total - 1) : rafFrame >= total;
+      if (!done) {
         requestAnimationFrame(step);
       } else {
-        // Fade out, then remove
         canvas.style.transition = 'opacity 0.5s';
         canvas.style.opacity    = '0';
         setTimeout(function () {

@@ -103,21 +103,40 @@ python process_scrat.py
 
 ---
 
-## 4 — Tweaking the green-screen mask
+## 4 — Green-screen removal algorithm
 
-If the matte is imperfect, open `process_scrat.py` and adjust:
+The `remove_green()` function runs four passes per frame:
+
+1. **HSV mask** — flags every pixel in the green range as potentially background.
+
+2. **Border flood-fill (8-connectivity)** — starts from all four image edges and
+   marks only background-connected green pixels. Interior green (e.g. Scrat's eyes)
+   is *not* reached and therefore stays opaque.
+
+3. **Small blob removal** — any remaining interior green patch smaller than
+   `MIN_BLOB_AREA` px² is also removed.  This value is scale-aware:
+   `int(max(20, 250 * OUTPUT_SCALE²))` — at 30 % output that's ≈ 22 px², catching
+   only single-pixel noise while preserving the eyes.  **Do not raise this above
+   ~100 at 30 % scale** — the eyes will be classified as background.
+
+4. **Alpha hole-fill** — inverts the alpha channel, flood-fills from borders to
+   find *exterior* transparent regions; any transparent pixel unreachable from the
+   border is an enclosed interior pocket and is forced back to fully opaque.
+   This is the main defence against leftover green patches inside the silhouette.
+
+**Tuning knobs in `process_scrat.py`:**
 
 ```python
-GREEN_LOWER = np.array([35,  40,  40])   # H, S, V  lower bound
-GREEN_UPPER = np.array([90, 255, 255])   # H, S, V  upper bound
-ERODE_PX    = 1                          # fringe removal (increase if green halo)
+GREEN_LOWER  = np.array([30,  25,  25])   # widen if edges are still greenish
+GREEN_UPPER  = np.array([95, 255, 255])   # narrow H upper bound if eyes are clipped
+ERODE_PX     = 1                          # px dilation of bg mask (fringe removal)
+OUTPUT_SCALE = 0.30                       # final frame scale (0.1 – 1.0)
+MIN_BLOB_AREA = int(max(20, 250 * OUTPUT_SCALE**2))  # keep low!
 ```
 
-OpenCV uses H ∈ [0, 179], S/V ∈ [0, 255].  
-A "typical" studio green sits around H = 60–70.
+OpenCV uses H ∈ [0, 179], S/V ∈ [0, 255]. A studio green sits around H = 60–70.
 
-Re-run `process_scrat.py` after any change — raw frames are gone but the
-script will re-extract them from the source video automatically.
+Re-run `process_scrat.py` after any change — raw frames are re-extracted automatically.
 
 ---
 
@@ -192,3 +211,8 @@ fire again.
 | 2026-05-20 | Wrote `frontend/js/easter.js` — desktop-only guard + lazy asset load + sprite-sheet animation |
 | 2026-05-20 | Added `easter.js` to `vp_routing.html` script load order (last, after `ui.js`) |
 | 2026-05-20 | Requirement: easter egg is **desktop-only** (`(pointer: fine)` media-query guard) |
+| 2026-05-20 | Green-screen fix: replaced simple HSV mask with border flood-fill (8-conn) — preserves Scrat's green eyes |
+| 2026-05-20 | Green-screen fix: added connected-component blob removal for interior noise + alpha hole-fill pass |
+| 2026-05-20 | Widened HSV range to `[30,25,25]–[95,255,255]`, raised `MIN_BLOB_AREA` to 500 — too aggressive (eyes removed) |
+| 2026-05-20 | Reverted `MIN_BLOB_AREA` to scale-aware formula `int(max(20, 250 × OUTPUT_SCALE²))` — ~22 px² at 30 % scale |
+| 2026-05-20 | Fixed `NameError`: moved `OUTPUT_SCALE` definition before `MIN_BLOB_AREA` in constants block |
