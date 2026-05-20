@@ -1,19 +1,58 @@
 """
-utils_fetch.py
+utils_fetch.py  —  MeteoSwiss ICON-CH1-EPS data fetcher
+=======================================================
+Fetches hourly-total-precipitation ensemble forecasts (TOT_PREC) from the
+MeteoSwiss Open Government Data (OGD) STAC catalogue, regrids them from the
+native ICON triangular grid to a regular lat/lon grid, and saves the result
+as a timestamped NetCDF file in backend/data/NC/.
 
-Fetches ICON-CH1-EPS TOT_PREC from MeteoSwiss OGD using ONLY:
-    requests  ??? HTTP / STAC search
-    eccodes   ??? GRIB2 decoding  (C lib, ARM64 wheel on PyPI / conda-forge)
-    eccodes-cosmo-resources-python ??? ICON grid definitions (pure Python)
-    scipy     ??? nearest-neighbour regridding via KD-tree
-    numpy, xarray, netcdf4 ??? array handling + NetCDF output
+After a successful fetch, utils_render.py is called to pre-render all 33 ×
+2 (mean + p90) PNG tiles so the frontend can animate them without any
+server-side computation at request time.
 
-No meteodatalab. No eckitlib. No rasterio. Works on ARM64 (Raspberry Pi).
+Library choices — optimised for Raspberry Pi (ARM64, Ubuntu)
+------------------------------------------------------------
+  requests   — HTTP + STAC search.  No GDAL required.
+  eccodes    — GRIB2 decoding via the C library.  An ARM64 wheel is
+               available on PyPI and conda-forge; meteodatalab (the
+               MeteoSwiss official client) has no ARM64 package.
+  scipy      — KD-tree nearest-neighbour regridding.  Works on ARM64
+               without any native geospatial dependencies.
+  numpy      — Array math; p90 is computed from a plain numpy sort
+               (axis=0 over eps) rather than xarray.quantile() because
+               xarray delegates to nanquantile → apply_along_axis on
+               several numpy versions, which is very slow on the Pi.
+  xarray / netcdf4  — Dataset assembly and NC output only.
 
-First run downloads + caches:
-  - ICON CH1 grid constants (CLAT/CLON) from the STAC collection
-  - Precomputed nearest-neighbour indices from ICON ??? regular lat/lon grid
-Both are stored in backend/.fetch_cache/ and reused on subsequent runs.
+Persistent caches (backend/.fetch_cache/)
+-----------------------------------------
+  icon_ch1_clat.npy / icon_ch1_clon.npy
+      Native ICON CH1 grid coordinates (~600 k points).  Downloaded
+      once from the STAC horizontal_constants GRIB2 (~200 MB), then
+      cached as .npy.  Validation runs on every load; a corrupt cache
+      (which occurred on ARM64 due to radian-scale values being
+      mis-read) is auto-deleted and rebuilt.
+
+  icon_ch1_regrid_indices.npy
+      Flat index array mapping each output pixel (NY×NX) to its
+      nearest ICON native grid point.  Built with scipy.cKDTree;
+      takes ~1 min on the Pi, so it is cached after the first run.
+
+Output
+------
+  backend/data/NC/{ref_time_unix}.nc
+      Contains: TOT_PREC (raw ensemble), hourly_rain (mean diff),
+      hourly_rain_p90 (90th-pct diff).  The stem is the forecast
+      reference time as a Unix timestamp so api.py can derive
+      lead hours directly: lead_h = (departure_unix − stem) / 3600.
+
+Scheduler
+---------
+  Run as a standalone daemon:  python utils_fetch.py
+  Fetches at 00:05, 03:05, … 21:05 UTC (5 min after each model run).
+  On startup, checks if the newest .nc predates the last scheduled
+  slot and fetches immediately if so.
+  On Raspberry Pi, start via the systemd unit in scripts/startup/.
 """
 
 import re
@@ -41,9 +80,14 @@ from scipy.spatial import cKDTree
 STAC_BASE = "https://data.geo.admin.ch/api/stac/v1"
 COLLECTION = "ch.meteoschweiz.ogd-forecasting-icon-ch1"
 
+# Output grid: regular lat/lon covering a rectangle around Switzerland + neighbours.
+# Must match the BOUNDS in frontend/js/config.js and the extent in utils_render.py.
 LON_MIN, LON_MAX = -0.817, 18.183
 LAT_MIN, LAT_MAX = 41.183, 51.183
 NX, NY = 429, 295
+
+# 34 lead hours (0 h = ref time, 1–33 = hourly forecasts).
+# Lead 0 is kept in the assembled DataArray so diff() produces lead_time=33 values.
 LEAD_HOURS = list(range(34))
 
 TARGET_LONS = np.linspace(LON_MIN, LON_MAX, NX)
@@ -55,10 +99,14 @@ BACKEND_DIR = Path(__file__).resolve().parent
 OUTPUT_DIR = BACKEND_DIR / "data" / "NC"
 CACHE_DIR  = BACKEND_DIR / ".fetch_cache"
 
+# .npy cache files — built once, reused across all subsequent fetches.
+# Build cost: CLAT/CLON = ~200 MB download; indices = ~1 min KD-tree on Pi.
 CLAT_CACHE    = CACHE_DIR / "icon_ch1_clat.npy"
 CLON_CACHE    = CACHE_DIR / "icon_ch1_clon.npy"
 INDICES_CACHE = CACHE_DIR / "icon_ch1_regrid_indices.npy"
 
+# MeteoSwiss ICON-CH1 model runs are published at these UTC hours.
+# Fetches fire at HH:05 to give the server time to upload all GRIB2 assets.
 SCHEDULED_HOURS = [0, 3, 6, 9, 12, 15, 18, 21]
 
 
@@ -67,7 +115,12 @@ SCHEDULED_HOURS = [0, 3, 6, 9, 12, 15, 18, 21]
 # ---------------------------------------------------------------------------
 
 def _cutoff_range() -> str:
-    """Open-ended datetime range covering the last 48 h (OGD 'latest' logic)."""
+    """Open-ended datetime range covering the last 48 h (OGD 'latest' logic).
+
+    MeteoSwiss retains ~48 h of forecasts in the STAC catalogue.  Using a
+    rolling window instead of a fixed date makes the query work at any time
+    without hardcoded timestamps.
+    """
     cutoff = datetime.now(timezone.utc) - timedelta(hours=48)
     return cutoff.strftime("%Y-%m-%dT%H:%M:%SZ") + "/.."
 
@@ -139,7 +192,13 @@ def get_latest_urls() -> tuple[dict[int, str], str]:
 # ---------------------------------------------------------------------------
 
 def _safe_unlink(path: Path) -> None:
-    """Delete a temp file, retrying on Windows file-lock from eccodes C lib."""
+    """Delete a temp file, retrying on Windows file-lock from eccodes C lib.
+
+    On Windows the eccodes C library keeps a file handle open briefly after
+    the last codes_release() call.  Six attempts at 300 ms intervals is
+    enough for the handle to be released.  On Linux/ARM64 the first attempt
+    always succeeds.
+    """
     for attempt in range(6):
         try:
             path.unlink(missing_ok=True)
@@ -164,8 +223,18 @@ def download_grib(url: str) -> Path:
 
 
 # ---------------------------------------------------------------------------
-# ICON grid coordinates ??? read from horizontal constants GRIB2 (no shortName)
+# ICON grid coordinates — read from horizontal constants GRIB2
 # ---------------------------------------------------------------------------
+# The ICON CH1 triangular grid has ~600 k unstructured native grid points.
+# Their lat/lon coordinates are stored in a dedicated GRIB2 file provided
+# by MeteoSwiss alongside the forecast assets.
+# We identify CLAT/CLON by paramId first (most reliable), then fall back to
+# value-range detection.  The fallback exists because:
+#   - On some ARM64 eccodes builds the paramId is returned as a different
+#     integer than expected, or the message order differs from x86.
+#   - Cache auto-invalidation is aggressive: if the loaded npy has longitude
+#     values > 25° (which happened on ARM64 due to unit confusion: values
+#     were in radians but not converted), the cache is deleted and rebuilt.
 
 def _get_collection_asset_url(key_fragment: str) -> str:
     """Fetch the STAC collection and return the href for the matching asset."""
@@ -243,7 +312,7 @@ def _load_icon_grid_coords() -> tuple[np.ndarray, np.ndarray]:
         CLON_CACHE.unlink(missing_ok=True)
         INDICES_CACHE.unlink(missing_ok=True)
 
-    print("[grid] Downloading ICON CH1 horizontal grid constants (one-time ~200 MB)???")
+    print("[grid] Downloading ICON CH1 horizontal grid constants (one-time ~200 MB)...")
     hc_url = _get_collection_asset_url("horizontal_constants")
     tmp = download_grib(hc_url)
 
@@ -334,6 +403,15 @@ def _load_icon_grid_coords() -> tuple[np.ndarray, np.ndarray]:
 # ---------------------------------------------------------------------------
 # Regridding  (nearest-neighbour, KD-tree)
 # ---------------------------------------------------------------------------
+# The ICON CH1 native grid is unstructured (triangular); its ~600 k points
+# are not on a regular lat/lon grid.  We use scipy.cKDTree to build a
+# lookup table: for each of the NX×NY output pixels, which native grid
+# point is geometrically nearest?
+#
+# Building the tree takes ~1 min on a Raspberry Pi 4/5.  The result is
+# cached as a flat int32 array (indices.npy).  On subsequent runs the
+# cache is loaded and validated (must have ≥ 1000 unique values); a bad
+# cache is deleted and rebuilt.
 
 def _load_regrid_indices(clat: np.ndarray, clon: np.ndarray) -> np.ndarray:
     """
@@ -360,12 +438,18 @@ def _load_regrid_indices(clat: np.ndarray, clon: np.ndarray) -> np.ndarray:
 
     CACHE_DIR.mkdir(parents=True, exist_ok=True)
     np.save(INDICES_CACHE, indices)
-    print(f"[regrid] Indices cached ??? {INDICES_CACHE}")
+    print(f"[regrid] Indices cached → {INDICES_CACHE}")
     return indices
 
 
 def regrid(values: np.ndarray, indices: np.ndarray) -> np.ndarray:
-    """Remap flat ICON values array to (NY, NX) regular lat/lon grid."""
+    """Remap flat ICON values array to (NY, NX) regular lat/lon grid.
+
+    ``indices`` maps each output pixel to the nearest ICON native grid point
+    (built once by _load_regrid_indices).  This is a pure fancy-index lookup
+    — no interpolation — so it is fast and produces the same result on every
+    architecture.
+    """
     return values[indices].reshape(NY, NX)
 
 
@@ -396,6 +480,14 @@ def read_grib_data(path: Path) -> dict[int, np.ndarray]:
 # ---------------------------------------------------------------------------
 # Main fetch
 # ---------------------------------------------------------------------------
+# Orchestrates the full pipeline:
+#   1. Load / build grid caches (CLAT, CLON, regrid indices)
+#   2. Query STAC for the latest complete model run
+#   3. Download + decode all 34 GRIB2 lead-time files
+#   4. Assemble into (eps, ref_time, lead_time, y, x) DataArray
+#   5. Compute hourly_rain (mean diff) and hourly_rain_p90 in numpy
+#   6. Save timestamped NC file
+#   7. Trigger utils_render.py to pre-render PNG tiles
 
 def fetch_and_save(output_dir: Path = OUTPUT_DIR) -> Path:
     output_dir.mkdir(parents=True, exist_ok=True)
@@ -405,10 +497,10 @@ def fetch_and_save(output_dir: Path = OUTPUT_DIR) -> Path:
     indices = _load_regrid_indices(clat, clon)
 
     # 2. STAC query
-    print("[fetch] Querying STAC for latest TOT_PREC???")
+    print("[fetch] Querying STAC for latest TOT_PREC...")
     url_map, ref_str = get_latest_urls()
     ref_dt = datetime.strptime(ref_str, "%Y%m%d%H%M").replace(tzinfo=timezone.utc)
-    print(f"[fetch] Reference time: {ref_dt.isoformat()}  ???  {len(LEAD_HOURS)} lead times")
+    print(f"[fetch] Reference time: {ref_dt.isoformat()}  —  {len(LEAD_HOURS)} lead times")
 
     # 3. Download + decode each lead time
     lead_data: dict[int, dict[int, np.ndarray]] = {}  # {lead: {member: (NY,NX)}}
@@ -425,7 +517,7 @@ def fetch_and_save(output_dir: Path = OUTPUT_DIR) -> Path:
             all_members = set(raw.keys())
 
         lead_data[h] = {mem: regrid(vals, indices) for mem, vals in raw.items()}
-        print(f"  ??? +{h:02d}h  ({len(raw)} members)")
+        print(f"  ✓ +{h:02d}h  ({len(raw)} members)")
 
     # ── debug: verify regrid output has spatial variation ──────────────────
     _h_sample  = LEAD_HOURS[len(LEAD_HOURS) // 2]
@@ -489,7 +581,8 @@ def fetch_and_save(output_dir: Path = OUTPUT_DIR) -> Path:
     # 5b. Hourly p90 — computed directly from the raw numpy array while it is still
     #     in memory.  axis=0 is unambiguously eps here (shape: n_eps, n_lead, NY, NX),
     #     so there is no architecture-specific NC-reading involved.  Storing the result
-    #     in the NC file lets render_from_nc skip all heavy computation entirely.
+    #     in the NC file lets render_from_nc skip all heavy computation entirely and
+    #     avoids hitting the slow xarray.quantile → apply_along_axis path on ARM64.
     arr_eps    = data[:, 0, :, :, :]              # view: (eps, lead_time, y, x)
     arr_sorted = np.sort(arr_eps, axis=0)         # sorted copy along eps axis
     p90_idx    = min(int(np.floor(0.9 * n_eps)), n_eps - 1)
@@ -523,6 +616,10 @@ def fetch_and_save(output_dir: Path = OUTPUT_DIR) -> Path:
     # 6. Save with ref_time as Unix-timestamp filename (not download time).
     # The routing endpoint derives lead_hours = (departure_unix - filename_stem) / 3600,
     # so the stem must be the forecast reference time, not the wall-clock download time.
+    # The NC stores three variables so the frontend only ever needs this one file:
+    #   TOT_PREC       — raw ensemble cumulative precip (used by the routing backend)
+    #   hourly_rain    — ensemble-mean hourly diff (served to frontend as PNG tiles)
+    #   hourly_rain_p90 — 90th-percentile hourly diff (rendered as halo PNG tiles)
     ts = int(ref_dt.timestamp())
     output_file = output_dir / f"{ts}.nc"
     ds = xr.Dataset({"TOT_PREC": da_all, "hourly_rain": hourly_rain, "hourly_rain_p90": hourly_rain_p90})
@@ -542,6 +639,10 @@ def fetch_and_save(output_dir: Path = OUTPUT_DIR) -> Path:
 # ---------------------------------------------------------------------------
 # Scheduler
 # ---------------------------------------------------------------------------
+# Designed to run as a persistent daemon on the Raspberry Pi (started by the
+# systemd unit in scripts/startup/ alongside the FastAPI process).
+# check_fetch_on_startup() handles the case where the Pi was offline during
+# the last scheduled window and needs to catch up immediately.
 
 def check_fetch_on_startup():
     """Fetch immediately if newest .nc predates the last scheduled update."""
@@ -587,7 +688,7 @@ def check_fetch_on_startup():
 
 
 def scheduler_loop():
-    """Block forever, fetch at 00:05, 03:05, 06:05, ???, 21:05 UTC."""
+    """Block forever, fetch at 00:05, 03:05, 06:05, …, 21:05 UTC."""
     while True:
         now = datetime.now(timezone.utc)
         next_times = [
@@ -602,7 +703,7 @@ def scheduler_loop():
         print(f"[{datetime.now(timezone.utc).strftime('%H:%M UTC')}] "
               f"Next fetch at {nxt.strftime('%H:%M UTC')}")
         time.sleep(max(wait, 1))
-        print(f"[{datetime.now(timezone.utc).strftime('%H:%M UTC')}] Fetching???")
+        print(f"[{datetime.now(timezone.utc).strftime('%H:%M UTC')}] Fetching...")
         fetch_and_save()
 
 

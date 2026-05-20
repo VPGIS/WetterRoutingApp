@@ -1,0 +1,12 @@
+name: secret
+channels:
+  - conda-forge
+  - defaults
+dependencies:
+  - python=3.11
+  - ffmpeg          # frame + audio extraction
+  - numpy           # array ops for OpenCV
+  - pillow          # sprite sheet packing (PIL.Image)
+  - pip
+  - pip:
+    - opencv-python # green-screen HSV masking  (cv2)

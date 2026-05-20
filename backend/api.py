@@ -524,3 +524,35 @@ def serve_logo():
 def serve_i18n():
     return FileResponse(FRONTEND_DIR / "i18n.json", media_type="application/json")
 
+@app.get("/js/{filename}", include_in_schema=False)
+def serve_js(filename: str):
+    js_path = (FRONTEND_DIR / "js" / filename).resolve()
+    js_dir = (FRONTEND_DIR / "js").resolve()
+    # Prevent path traversal: resolved path must stay inside js/
+    if not str(js_path).startswith(str(js_dir)):
+        raise HTTPException(status_code=400)
+    if not js_path.is_file():
+        raise HTTPException(status_code=404)
+    return FileResponse(js_path, media_type="application/javascript")
+
+_EASTER_MEDIA: dict = {
+    ".json": "application/json",
+    ".png":  "image/png",
+    ".mp3":  "audio/mpeg",
+    ".jpg":  "image/jpeg",
+    ".webp": "image/webp",
+}
+
+@app.get("/_apriori/schpezial/assets/{filename}", include_in_schema=False)
+def serve_easter_assets(filename: str):
+    """Serve pre-processed easter-egg assets (sprite sheet, audio, metadata)."""
+    assets_dir = (FRONTEND_DIR / "_apriori" / "schpezial" / "assets").resolve()
+    asset_path = (assets_dir / filename).resolve()
+    # Prevent path traversal
+    if not str(asset_path).startswith(str(assets_dir)):
+        raise HTTPException(status_code=400)
+    if not asset_path.is_file():
+        raise HTTPException(status_code=404)
+    media_type = _EASTER_MEDIA.get(asset_path.suffix.lower(), "application/octet-stream")
+    return FileResponse(asset_path, media_type=media_type)
+
