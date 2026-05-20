@@ -4,7 +4,7 @@ title: Wetter Routing App
 
 # Dokumentation
 
-![Screenshot_WRA](assets\Screenshot_WRA.png)
+![Screenshot_WRA](assets/Screenshot_WRA.png)
 
 Die **Wetter Routing App** ist ein Prototyp für wetterabhängiges Routing. Sie kombiniert OpenStreetMap-Daten mit Niederschlagsprognosen von MeteoSwiss, damit Routen nicht nur nach Distanz oder Reisezeit, sondern auch nach erwarteten Wetterbedingungen bewertet werden können.
 

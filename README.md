@@ -14,7 +14,7 @@ Das Projekt entstand im Rahmen des Vertiefungsprofils Geoinformatik/Raumanalyse 
 
 ## Überblick
 
-![Screenshot_WRA](docs\assets\Screenshot_WRA.png)
+![Screenshot_WRA](docs/assets/Screenshot_WRA.png)
 
 Die Anwendung besteht aus:
 
@@ -71,6 +71,6 @@ Weitere Informationen zum Ablauf einer Routinganfrage befinden sich in [Architek
 
 Die GitHub Page des Projekts ist hier erreichbar:
 
-- [vpgis.github.io/WetterRoutingApp/](vpgis.github.io/WetterRoutingApp/)
+- [https://vpgis.github.io/VPRouting/](https://vpgis.github.io/VPRouting/)
 
 Die Dokumentation des Projekts und die GitHub Page befindet sich in: `docs/index.md`
