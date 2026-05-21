@@ -33,39 +33,15 @@ Warum es besonders ist: Server-loses animated rain forecast. Kompletter Verzicht
 
 ---
 
-### `_apriori/ultra_html.ipynb` — Worst-Case-Karte als One-Liner
-
-Statt einer Animation berechnet dieses Notebook das Maximum aller 33 Lead-Times pro Rasterpunkt (`hourly_rain.max(dim="lead_time")`) und rendert eine einzelne "schlimmst mögliche Niederschlagskarte". Das Ergebnis: ein einziger PNG-Layer auf Leaflet, der zeigt, wo es irgendwann innerhalb der nächsten 33 Stunden am stärksten regnen wird.
-
-Warum es besonders ist: Mit einem einzigen numpy-Aufruf entsteht eine komplett andere, praktisch nützliche Ansicht der Daten.
-
----
-
-### `_apriori/rain_leaflet_animated_superslider.html` — Das handgefertigte Interface
-
-Das handgeschriebene HTML-Ergebnis der Visualisierungsphase: dunkles UI, animierter Zeitregler, Opazitätsschieberegler, Legende mit Farbverlauf, Zeitanzeige mit Stundenstempel. Der Gegensatz zu den Folium-generierten Karten (`rain_map.html` bis `rain_map4.html`) ist deutlich: Folium produziert ~180 Zeilen automatisierten Code mit jQuery, Bootstrap und Awesome Markers. Dieses File ist handgebaut.
-
-Warum es besonders ist: Zeigt den Sprung vom automatisch generierten Folium-Output zum eigenen, kontrollierten Interface.
-
----
-
-### `_apriori/INCA_rain.ipynb` — Erkundung einer verworfenen Datenquelle
-
-Das Notebook prüfte, ob INCA-Daten (MeteoSwiss-Analyseprodukt, höhere zeitliche Auflösung als ICON) ebenfalls über den STAC-Katalog verfügbar sind. Die Antwort war nein: `inca` taucht nicht in den verfügbaren Collections auf. Gleichzeitig enthält das Notebook bereits die saubere `sel_latlon`-Funktion mit KD-Tree-Logik und die ersten Ensemble-Auswertungen (Regenwahrscheinlichkeit, Perzentile).
-
-Warum es besonders ist: Ein dokumentierter Sackgassen-Entscheid, der aber die spätere Query-Struktur vorwegnimmt.
-
----
-
 ### `_apriori/utils_geoserver.py` — GeoServer-Vollautomatisierung auf dem Pi
 
-Das bizarrste Experiment im gesamten Projekt. Dieses Skript verbindet sich via REST-API mit einer lokalen GeoServer-Instanz, erstellt automatisch Workspace, Datastore, SLD-Style und Layer und veröffentlicht die aktuellste NetCDF-Datei als WMS-Schicht. Falls GeoServer noch nicht läuft, startet das Skript ihn selbst über das `startup.sh`-Script und wartet bis zu 60 Sekunden auf den Hochlauf.
+Dieses Skript verbindet sich via REST-API mit einer lokalen GeoServer-Instanz, erstellt automatisch Workspace, Datastore, SLD-Style und Layer und veröffentlicht die aktuellste NetCDF-Datei als WMS-Schicht. Falls GeoServer noch nicht läuft, startet das Skript ihn selbst über das `startup.sh`-Script und wartet bis zu 60 Sekunden auf den Hochlauf.
 
 Das SLD enthält einen High-Contrast-Debug-Farbverlauf (Grau → Rot → Orange → Gelb → Grün → Blau → Lila), der bei jedem Wert über 0.01 mm anspringt.
 
-Der Ansatz wurde schliesslich zugunsten des eigenen Tile-Renderers aufgegeben, weil GeoServer auf dem Pi zu ressourcenhungrig war.
+Der Ansatz wurde schliesslich zugunsten des eigenen Tile-Renderers aufgegeben, weil vermutet wurde, dass es am netcdf Format lag. Es lag daran wie eccodes die Grib2 arrays abfüllte.
 
-Warum es besonders ist: Vollständige automatisierte GeoServer-Infrastruktur, programmgesteuert von Grund auf aufgebaut und verworfen.
+Warum es besonders ist: Vollständige automatisierte GeoServer-Infrastruktur, programmgesteuert von Grund auf aufgebaut und verworfen. Heute würde es sehr wahrscheinlich funktionieren.
 
 ---
 
