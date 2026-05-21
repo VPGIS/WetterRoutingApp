@@ -71,7 +71,7 @@ Das Modell `einfach` verwendet einen statischen Dijkstra-Ansatz.
 Implementierung im Code:
 
 ```text
-static_djikstra
+static_weather_djikstra
 ```
 
 Datei:
@@ -124,7 +124,7 @@ Das Modell `advanced` verwendet einen zeitabhängigen Dijkstra-Ansatz.
 Implementierung:
 
 ```text
-time_dependent_dijkstra
+td_weather_dijkstra
 ```
 
 Datei:
