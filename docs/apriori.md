@@ -4,231 +4,136 @@ title: A priori – Highlights
 
 # A priori – Highlights
 
-Diese Datei beschreibt die Verwendung, Erzeugung und Zuordnung der Wetterdaten im Projekt Wetter Routing App.
+Diese Seite dokumentiert die interessantesten, seltsamsten und wichtigsten Skripte und Notebooks aus den `_apriori/`-Ordnern des Projekts. Sie zeigen den Weg vom ersten Experiment bis zur produktiven Lösung.
 
-## Überblick
+Die Dateien liegen in zwei Ordnern:
 
-Die Wetter Routing App verwendet Wetterdaten im NetCDF-Format, um Routen wetterabhängig bewerten zu können. Die Daten stammen aus dem Open-Data-Angebot von MeteoSwiss und werden im Projekt insbesondere zur Bewertung von Niederschlag entlang einer Route genutzt.
+- `_apriori/` — Wetterdaten-Visualisierung und Daten-Pipeline-Experimente
+- `backend/_apriori/` — Routing-Experimente und Graph-Optimierungen
 
-Die Wetterdaten ermöglichen es, betroffene Kanten im Routinggraphen zu erkennen und abhängig von der Niederschlagsmenge höher zu gewichten. Dadurch können Routen berechnet werden, die wetterbezogene Einflüsse berücksichtigen.
+---
 
-Der Zusammenhang mit der API-Verarbeitung ist in [Architektur](architecture.html#aufbau-der-api-verarbeitung) beschrieben. Die Verwendung der Wetterwerte in der Kostenfunktion steht in [Routing-Logik](routing.html#kantenbewertung).
+## Wetterdaten und Visualisierung
 
-## NetCDF-Ablagestruktur
+### `_apriori/html_rain.ipynb` — Der erste echte Pipeline-Prototyp
 
-Die Routing-API erwartet die NetCDF-Dateien im folgenden Ordner:
+Das Notebook, mit dem alles begann. Es ruft ICON-CH1-EPS-Daten über die offizielle MeteoSwiss-Bibliothek `meteodata-lab` ab, regriddert 34 Lead-Time-Schritte auf ein reguläres 429×295-Raster und speichert das Ergebnis als NetCDF. Anschliessend wird eine interaktive Leaflet-Karte mit OSM-Kacheln gerendert. Drei klare Schritte: Fetch, Clean, Render.
 
-```text
-backend/data/NC/
+Warum es besonders ist: Es war die erste funktionierende End-to-End-Pipeline vom STAC-Katalog bis zur sichtbaren Karte.
+
+---
+
+### `_apriori/icon_ch1_animated_map.ipynb` — 33 Frames, ein riesiges HTML
+
+Das Notebook rendert alle 33 Forecast-Stunden als `matplotlib`-PNGs, kodiert jeden Frame als Base64 und injiziert das gesamte Array als JavaScript-Variable in eine selbstständige HTML-Datei. Die resultierende Datei läuft ohne Server, ohne API, ohne Abhängigkeiten. Einfach im Browser öffnen.
+
+Das generierte HTML enthält einen Zeitregler, eine Opazitätssteuerung und eine Legende. Alle Bilder sind mit Haversine-Masking auf die Schweiz zugeschnitten. Die fertige HTML-Datei ist mehrere Megabyte gross.
+
+Warum es besonders ist: Server-loses animated rain forecast. Kompletter Verzicht auf jede Backend-Infrastruktur. Der direkte Vorläufer des heutigen Tile-Renderers.
+
+---
+
+### `_apriori/ultra_html.ipynb` — Worst-Case-Karte als One-Liner
+
+Statt einer Animation berechnet dieses Notebook das Maximum aller 33 Lead-Times pro Rasterpunkt (`hourly_rain.max(dim="lead_time")`) und rendert eine einzelne "schlimmst mögliche Niederschlagskarte". Das Ergebnis: ein einziger PNG-Layer auf Leaflet, der zeigt, wo es irgendwann innerhalb der nächsten 33 Stunden am stärksten regnen wird.
+
+Warum es besonders ist: Mit einem einzigen numpy-Aufruf entsteht eine komplett andere, praktisch nützliche Ansicht der Daten.
+
+---
+
+### `_apriori/rain_leaflet_animated_superslider.html` — Das handgefertigte Interface
+
+Das handgeschriebene HTML-Ergebnis der Visualisierungsphase: dunkles UI, animierter Zeitregler, Opazitätsschieberegler, Legende mit Farbverlauf, Zeitanzeige mit Stundenstempel. Der Gegensatz zu den Folium-generierten Karten (`rain_map.html` bis `rain_map4.html`) ist deutlich: Folium produziert ~180 Zeilen automatisierten Code mit jQuery, Bootstrap und Awesome Markers. Dieses File ist handgebaut.
+
+Warum es besonders ist: Zeigt den Sprung vom automatisch generierten Folium-Output zum eigenen, kontrollierten Interface.
+
+---
+
+### `_apriori/INCA_rain.ipynb` — Erkundung einer verworfenen Datenquelle
+
+Das Notebook prüfte, ob INCA-Daten (MeteoSwiss-Analyseprodukt, höhere zeitliche Auflösung als ICON) ebenfalls über den STAC-Katalog verfügbar sind. Die Antwort war nein: `inca` taucht nicht in den verfügbaren Collections auf. Gleichzeitig enthält das Notebook bereits die saubere `sel_latlon`-Funktion mit KD-Tree-Logik und die ersten Ensemble-Auswertungen (Regenwahrscheinlichkeit, Perzentile).
+
+Warum es besonders ist: Ein dokumentierter Sackgassen-Entscheid, der aber die spätere Query-Struktur vorwegnimmt.
+
+---
+
+### `_apriori/utils_geoserver.py` — GeoServer-Vollautomatisierung auf dem Pi
+
+Das bizarrste Experiment im gesamten Projekt. Dieses Skript verbindet sich via REST-API mit einer lokalen GeoServer-Instanz, erstellt automatisch Workspace, Datastore, SLD-Style und Layer und veröffentlicht die aktuellste NetCDF-Datei als WMS-Schicht. Falls GeoServer noch nicht läuft, startet das Skript ihn selbst über das `startup.sh`-Script und wartet bis zu 60 Sekunden auf den Hochlauf.
+
+Das SLD enthält einen High-Contrast-Debug-Farbverlauf (Grau → Rot → Orange → Gelb → Grün → Blau → Lila), der bei jedem Wert über 0.01 mm anspringt.
+
+Der Ansatz wurde schliesslich zugunsten des eigenen Tile-Renderers aufgegeben, weil GeoServer auf dem Pi zu ressourcenhungrig war.
+
+Warum es besonders ist: Vollständige automatisierte GeoServer-Infrastruktur, programmgesteuert von Grund auf aufgebaut und verworfen.
+
+---
+
+## Routing-Entwicklung
+
+### `backend/_apriori/Routing_Provisorisch/Djikstra_mit_abfahrtzeit.ipynb` — Der Ursprung
+
+Das erste Routing-Notebook. Dijkstra auf einem OSMnx-Fahrradgraphen mit zufälligen Wettergewichten (`np.random.uniform(0, 16, 24)` pro Kante). Der `start_zeit`-Parameter bestimmt, welche Stunde aus dem 24-Stunden-Forecast als Kantengewicht verwendet wird. Abfahrtszeit-abhängiges Routing, bevor es echte Daten gab.
+
+```python
+route = ox.routing._single_shortest_path(G, orig=start_point, dest=end_point, weight="forecast[{start_zeit}]")
 ```
 
-### Wetterdaten
+Warum es besonders ist: Die Idee des zeitabhängigen Routings ist hier vollständig umgesetzt, ohne eine einzige echte Wetterzahl.
 
-Die Forecast-Dateien enthalten einen Unix-Timestamp im Dateinamen, zum Beispiel:
+---
 
-```text
-1712345678.nc
-```
+### `backend/_apriori/dickstra_toll.ipynb` — Echter Wetterdaten-Routing
 
-Der Timestamp entspricht dem Referenzzeitpunkt des Modellaufs (nicht dem Zeitpunkt des Downloads). Er dient zur Zuordnung der Startzeit einer Routinganfrage und zur Prüfung der zeitlichen Gültigkeit der Datei. Das Backend leitet daraus den Lead-Time-Index ab:
+Die Weiterentwicklung: ersetzt zufällige Gewichte durch echte NC-Daten. Der entscheidende Fortschritt ist der Batch-Nearest-Neighbour-Lookup: alle Kanten-Zentroiden werden in einem einzigen `cKDTree.query()`-Aufruf dem nächsten Wetterrasterputnkt zugeordnet. Dann werden alle 24-Stunden-Forecasts mit einem einzigen numpy-Slice extrahiert.
 
-```text
-lead_h = (departure_unix - file_stem) / 3600
-```
-
-### Hilfsdatei für Wetterzellen
-
-Für die Zuordnung von OSM-Kanten zum Wetterraster wird bevorzugt folgende Datei verwendet:
+Performance-Output aus dem Notebook:
 
 ```text
-NC_for_Cellid.nc
+Dataset loaded:           ~ms
+Centroids collected:      ~ms  (N edges)
+Batch nearest-neighbour:  ~ms
+Forecast values sliced:   ~ms
 ```
 
-Diese Datei enthält eine reduzierte Rastergeometrie (nur `lat` und `lon`) und wird beim Erstellen neuer Graphen verwendet. Falls sie beim Start noch nicht existiert, wird sie gemäss [Startup](startup.html#schritt-2-nc_for_cellid-vorbereiten) erzeugt.
+Warum es besonders ist: Der Moment, wo abstraktes Wetterdata-Routing zur messbaren, echten Funktion wurde.
 
-## GRIB2-, xarray- und NetCDF-Datenstruktur
+---
 
-MeteoSwiss veröffentlicht die ICON-CH1-EPS-Daten im GRIB2-Format über den STAC-Katalog (`data.geo.admin.ch`). GRIB2 ist ein binäres Rasterformat der WMO, das Meteorologen weltweit verwenden. Es enthält komprimierte Felder pro Zeitschritt und Ensemble-Member, jedoch ohne reguläre Lat/Lon-Koordinaten, da ICON ein unstrukturiertes Dreiecksgitter verwendet.
+### `backend/_apriori/amazing_query.py` — Die Query-Bibliothek mit dem besten Namen
 
-Für die Weiterverarbeitung im Projekt ist folgende Umwandlungskette relevant:
+251 Zeilen sauberer Query-Code: `open_dataset`, `query_point`, `query_points`, `find_heavy_rain`, und das Herzstück `_nearest_yx_batch` mit scipy `cKDTree`. Vollständig dokumentiert mit Usage-Beispielen im Docstring. Unterstützt Einzelpunkt-, Mehrpunkt- und All-Lead-Time-Abfragen.
 
-```text
-STAC-Katalog (HTTP)
-  → GRIB2-Datei je Lead-Time (34 Dateien × N Ensemble-Member)
-    → eccodes: Dekodierung der Binärdaten zu NumPy-Arrays
-      → scipy KD-Tree: Regridding auf reguläres Lat/Lon-Raster (429 × 295)
-        → xarray.Dataset: Zusammenführung aller Zeitschritte + Dimensionen
-          → netCDF4: Speicherung als .nc-Datei
-```
+Warum es besonders ist: Eigenständige, gut dokumentierte Bibliothek, die direkt in `dickstra_toll.ipynb` eingebunden wurde und die Basis für `utils_graph.py` ist.
 
-### Warum diese Umwandlung?
+---
 
-Das ICON-Gitter hat ~600'000 unstrukturierte Gitterpunkte ohne feste Zeilen-/Spaltenindizes. Für das Routing muss aber jede OSM-Kante einem Rasterpunkt zugeordnet werden — das funktioniert nur auf einem regulären Koordinatengitter. xarray erlaubt danach die effiziente Arbeit mit benannten Dimensionen (`lead_time`, `eps`, `y`, `x`), und NetCDF ist das Standardformat für geowissenschaftliche Zeitreihen.
+### `backend/_apriori/light_graph_test.ipynb` — Graph-Diät für den Raspberry Pi
 
-### Inhalt der gespeicherten NC-Datei
+Das Notebook testet, wie weit sich der OSMnx-Graph reduzieren lässt. Die Funktion `graph_to_lightgraph` entfernt alle nicht benötigten Edge- und Node-Attribute. Ein weiterer Schritt konvertiert Kantenlängen von Float-Metern zu Integer-Zentimetern (`int(round(length * 100))`), was RAM auf dem Pi spart.
 
-Jede gespeicherte Datei enthält drei Variablen:
+Warum es besonders ist: Zeigt das Denken in Deployment-Constraints, nicht nur in Korrektheit.
 
-| Variable | Dimensionen | Beschreibung |
-|---|---|---|
-| `TOT_PREC` | `(eps, lead_time, y, x)` | Kumulierter Niederschlag aller Ensemble-Member (Rohwert) |
-| `hourly_rain` | `(lead_time, y, x)` | Ensemble-Mittelwert des stündlichen Niederschlags (diff von TOT_PREC) |
-| `hourly_rain_p90` | `(lead_time, y, x)` | 90. Perzentil des stündlichen Niederschlags über alle Ensemble-Member |
+---
 
-`TOT_PREC` wird für die Routingkostenfunktion verwendet. `hourly_rain` und `hourly_rain_p90` werden von `utils_render.py` direkt ausgelesen und als PNG-Kacheln gerendert, ohne dass bei der Anfrage noch numpy- oder xarray-Operationen anfallen.
+### `backend/_apriori/fetch_icon_old.py` — Das Relikt vor ARM64
 
-## Aufbereitung der NetCDF-Datei
+Der originale Fetch-Code auf Basis von `meteodata-lab`, `earthkit` und `rasterio`. Funktioniert auf Windows und WSL-Ubuntu problemlos. Das Skript ist vollständig und produktionsreif. Es war der direkte Vorgänger von `utils_fetch.py`, wurde aber verworfen, weil `meteodata-lab` kein ARM64-Package hat. Mehr dazu in [AI Nutzung](aiusage.html) und [Architektur](architecture.html).
 
-Die Wetterdaten werden durch `utils_fetch.py` bezogen, verarbeitet und als NetCDF-Datei gespeichert. Das Skript greift per HTTP direkt auf den MeteoSwiss-OGD-STAC-Katalog zu und verarbeitet die Rohdaten mit `eccodes`.
+Warum es besonders ist: Das historische Zeugnis des ARM64-Problems.
 
-| Parameter | Verwendung im Projekt |
-|---|---|
-| MeteoSwiss-Collection | `ch.meteoschweiz.ogd-forecasting-icon-ch1` |
-| Forecast-Variable | `TOT_PREC`: kumulierter Niederschlag; Grundlage für den daraus abgeleiteten stündlichen Niederschlag |
-| Datenformat | GRIB2 (je Lead-Time eine Datei, je Datei N Ensemble-Member als separate GRIB-Messages) |
+---
 
-### Ablauf der Wetterdaten-Erzeugung
+### `backend/_apriori/reduce_nc_to_grid_geometry.ipynb` — Der Zell-Index-Trick
 
-Die Wetterdaten-Erzeugung umfasst folgende Schritte:
+Erzeugt die Hilfsdatei `NC_for_Cellid.nc`: eine NetCDF-Datei, die nur noch `lat` und `lon` als 2D-Arrays enthält, ohne Forecast-Daten. Diese Datei wird beim Graph-Erstellen verwendet, um jeder OSM-Kante einmalig ihren nächsten Wetterrasterputnkt zuzuordnen. Das spart bei jeder späteren Routing-Anfrage die komplette KD-Tree-Suche.
 
-1. STAC-Katalog abfragen: Neuesten vollständigen ICON-CH1-Modelllauf ermitteln.
-2. Gitter-Koordinaten laden: ICON-CH1 CLAT/CLON einmalig als `horizontal_constants` GRIB2 (~200 MB) herunterladen und als `.npy` cachen.
-3. Regridding-Indizes aufbauen: Mit `scipy.cKDTree` für jeden Ausgabepixel (429 × 295) den nächsten nativen Gitterpunkt bestimmen. Ergebnis wird als `icon_ch1_regrid_indices.npy` gecacht (Bauzeit ~1 min auf dem Raspberry Pi).
-4. GRIB2 herunterladen und dekodieren: Für alle 34 Lead-Times je eine GRIB2-Datei abrufen; `eccodes` liest daraus je Ensemble-Member ein NumPy-Array.
-5. Regridding anwenden: Die nativen ICON-Vektoren per Fancy-Indexing auf das reguläre 429 × 295 Raster umrechnen.
-6. Dataset zusammenführen: Alle Zeitschritte und Ensemble-Member zu einem `(eps, lead_time, y, x)` xarray-DataArray kombinieren.
-7. Stündlichen Niederschlag und p90 berechnen: `hourly_rain = mean(TOT_PREC, axis=eps).diff("lead_time")`; p90 wird direkt im Speicher mit `np.sort(axis=0)` berechnet.
-8. Sehr kleine Werte unter `0.01 mm/h` auf `0.0` setzen, damit numerische Restwerte nicht als Regen interpretiert werden.
-9. Als timestamp-basierte `.nc`-Datei speichern (drei Variablen: `TOT_PREC`, `hourly_rain`, `hourly_rain_p90`).
-10. `utils_render.py` aufrufen, um sofort alle 33 × 2 PNG-Kacheln zu erzeugen.
+Warum es besonders ist: Ein einmaliger Preprocessing-Schritt, der alle späteren Anfragen erheblich schneller macht.
 
-### Räumliche Aufbereitung
+---
 
-Die MeteoSwiss-ICON-Daten liegen auf einem unstrukturierten Dreiecksgitter mit ~600'000 Punkten vor. Für die Zellzuordnung im Routinggraphen werden sie auf ein reguläres Raster projiziert:
+### `backend/_apriori/get_routingparam_test.ipynb` — End-to-End-Systemtest
 
-```text
-Koordinatensystem: EPSG:4326 (WGS84)
-Ausdehnung:        -0.817, 18.183, 41.183, 51.183  (lon_min, lon_max, lat_min, lat_max)
-Rastergrösse:      429 × 295
-```
+Das Notebook testet den vollständigen Routing-Ablauf: Geocoding einer Adresse (`Hof Schönenberg 2, 4133 Pratteln`), Bounding-Box-Berechnung, gecachter Graph-Load, NC-Datei-Auswahl. Es ist der direkte Vorgänger des API-Endpunkts `/WAPapi/v1/route`.
 
-Die Umrechnung erfolgt mit einem vorberechneten Nearest-Neighbour-Index (scipy KD-Tree). Die Gitter-Koordinaten und der Index werden als `.npy`-Dateien gecacht:
-
-```text
-backend/.fetch_cache/icon_ch1_clat.npy
-backend/.fetch_cache/icon_ch1_clon.npy
-backend/.fetch_cache/icon_ch1_regrid_indices.npy
-```
-
-Diese Bounds stimmen exakt mit `BOUNDS` in `frontend/js/config.js` und dem Zielraster in `utils_render.py` überein. Dies ist später für die Zellzuordnung relevant.
-
-### Zeitliche Aufbereitung
-
-Die Forecast-Horizonte werden im Bereich von **0 bis 33 Stunden** geladen.
-
-Da `TOT_PREC` kumulierten Niederschlag beschreibt, wird daraus der stündliche Niederschlag abgeleitet:
-
-```text
-hourly_rain = mean_precip.diff("lead_time")
-```
-
-Im gespeicherten NetCDF-Dataset stehen dadurch drei zentrale Variablen zur Verfügung:
-
-```text
-TOT_PREC          # kumulierter Niederschlag (Rohwert, alle Ensemble-Member)
-hourly_rain       # Ensemble-Mittelwert des stündlichen Niederschlags
-hourly_rain_p90   # 90. Perzentil des stündlichen Niederschlags
-```
-
-Für das Routing ist `hourly_rain` relevant. `hourly_rain_p90` wird für die Unsicherheits-Visualisierung in der Kartendarstellung verwendet.
-
-### Dateibenennung und Aktualisierung
-
-Die erzeugten NetCDF-Dateien erhalten den Unix-Timestamp des Modell-Referenzzeitpunkts als Dateinamen, zum Beispiel:
-
-```text
-1712345678.nc
-```
-
-Die Aktualisierungslogik:
-
-- Beim Start wird geprüft, ob bereits eine aktuelle `.nc`-Datei vorhanden ist.
-- Falls die Daten veraltet sind, wird sofort ein neuer Forecast geladen.
-- Danach läuft ein Scheduler-Daemon, der neue Daten jeweils kurz nach den ICON-CH1-Modellläufen lädt.
-
-Geplante Fetch-Zeiten:
-
-```text
-00:05, 03:05, 06:05, 09:05, 12:05, 15:05, 18:05, 21:05 UTC
-```
-
-Damit orientiert sich die Aktualisierung am dreistündigen Aktualisierungsrhythmus der ICON-CH1-Daten. Auf dem Raspberry Pi wird `utils_fetch.py` als systemd-Dienst gestartet, siehe [Startup](startup.html).
-
-### Abhängigkeiten
-
-Für das Fetching und die Aufbereitung werden folgende Pakete benötigt. Sie werden über die Projektumgebung installiert, siehe [Installation](installation.html).
-
-Wichtige Pakete:
-
-- `eccodes` — GRIB2-Dekodierung (C-Bibliothek; ARM64-Wheel auf PyPI und conda-forge verfügbar)
-- `scipy` — KD-Tree für Nearest-Neighbour-Regridding
-- `xarray` — Dimensionsbasierte Array-Operationen und NC-Dataset-Assemblierung
-- `netCDF4` — NetCDF-Schreib- und Lesezugriff
-- `requests` — HTTP-Abfragen an den STAC-Katalog
-
-> **Hinweis zur Deployment-Architektur:** Das frühere Paket `meteodata-lab` (offizielle MeteoSwiss-Bibliothek) ist nicht ARM64-kompatibel und wurde deshalb durch eine direkte STAC/eccodes-Implementierung ersetzt. Gleiches gilt für `earthkit` und `rasterio`, die als transitive Abhängigkeiten von `meteodata-lab` weggefallen sind.
-
-## Auswahl der passenden NetCDF-Datei
-
-Bei einer Routinganfrage ruft das Backend die Funktion `get_nc_file(start_time)` auf:
-
-```text
-backend/utils_nc_file.py
-```
-
-Die Funktion durchsucht:
-
-```text
-backend/data/NC/
-```
-
-Dabei gilt:
-
-- Nur `.nc`-Dateien werden berücksichtigt.
-- Dateien ohne numerischen Timestamp werden ignoriert (z.B. `NC_for_Cellid.nc`).
-- Die Datei muss zur angefragten Startzeit passen.
-- Gültig ist eine Datei, wenn sie maximal 33 Stunden alt ist.
-- Von allen gültigen Dateien wird die neueste verwendet.
-
-Logik:
-
-```text
-age = start_time - file_timestamp
-
-gültig, wenn:
-0 <= age <= 33 Stunden
-```
-
-Wenn keine passende Datei gefunden wird, kann keine wetterbasierte Route berechnet werden.
-
-## Zuordnung von Strassenkanten zu Wetterzellen
-
-Damit Wetterdaten im Routing verwendet werden können, müssen die Kanten des OSM-Graphen mit dem Wetterraster verknüpft werden. Diese Zuordnung verbindet die räumliche Struktur des Wegenetzes mit den Rasterzellen der NetCDF-Datei.
-
-Der Prozess wird beim Erstellen eines neuen Graphen ausgeführt und die berechneten Zellinformationen werden anschliessend direkt im Graphen gespeichert.
-
-Ablauf:
-
-1. Das Wetterraster wird aus `NC_for_Cellid.nc` gelesen.
-2. Aus den Rasterpunkten wird ein KD-Tree aufgebaut.
-3. Für jede OSM-Kante wird ein Referenzpunkt bestimmt, in der Regel der Mittelpunkt der Geometrie.
-4. Der nächstgelegene Rasterpunkt wird gesucht.
-5. Die Kante erhält die Attribute `cell_i`, `cell_j` und `cell_id`.
-
-Diese Attribute bleiben im gespeicherten Graphen erhalten und können bei späteren Routinganfragen direkt wiederverwendet werden.
-
-### Vorteil der Zellzuordnung
-
-Die Zuordnung muss nicht bei jeder Routinganfrage neu berechnet werden. Das verbessert die Laufzeit, reduziert wiederholte Rasterabfragen und macht gespeicherte Graphen wiederverwendbar.
-
-Weitere Informationen zur Verwendung dieser Zellattribute in der Routenberechnung befinden sich in [Routing-Logik](routing.html#wetterzellen-auf-kanten).
+Warum es besonders ist: Erster vollständiger Durchstich durch alle Backend-Schichten in einem einzigen Notebook.
