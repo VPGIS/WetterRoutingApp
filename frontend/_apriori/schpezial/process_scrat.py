@@ -39,7 +39,7 @@ GREEN_UPPER = np.array([95, 255, 255])
 ERODE_PX = 1
 # ── output scale applied after chroma-key ────────────────────────────────────
 # 0.30 = 30 % of original frame resolution → smaller sprite sheet, faster load
-OUTPUT_SCALE = 0.30
+OUTPUT_SCALE = 0.2
 # ── small isolated green blob removal ────────────────────────────────────────
 # Interior green blobs smaller than this area (px²) are treated as background
 # noise and made transparent. Keep this low — the alpha hole-fill below handles
