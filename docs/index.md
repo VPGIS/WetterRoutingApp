@@ -39,6 +39,14 @@ Das Projekt entstand im Rahmen des Vertiefungsprofils Geoinformatik/Raumanalyse 
     <strong>Wetterdaten</strong>
     <span>Bezug, Aufbereitung und Zuordnung der MeteoSwiss-Daten.</span>
   </a>
+  <a class="doc-card" href="aiusage.html">
+    <strong>AI Nutzung</strong>
+    <span>Einsatz von KI-Werkzeugen und Sprachmodellen im Projektverlauf.</span>
+  </a>
+  <a class="doc-card" href="apriori.html">
+    <strong>A priori – Highlights</strong>
+    <span>Interessante Experimente und verworfene Ansätze aus den _apriori/-Ordnern.</span>
+  </a>
 </div>
 
 ## Projektaufbau
