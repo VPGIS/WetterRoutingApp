@@ -27,6 +27,7 @@ let LABELS = [];
 let currentFrame = 0;
 let playing = false;
 let timer = null;
+let halfFrameTimer = null; // fires once per frame at the midpoint to update the cyclist
 let intervalMs = 500; // ms between animation frames (~2 fps feels calm, not frantic)
 
 // ── DOM refs ─────────────────────────────────────────────────────────────────
@@ -223,6 +224,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
     frameCount.textContent = `${idx + 1} / ${TIMES.length}`;
     updateIntensityBadge(idx);
+    if (typeof window.updateCyclist === "function") window.updateCyclist(idx);
   }
 
   // ── Intensity badge ────────────────────────────────────────────────────────
@@ -259,6 +261,14 @@ document.addEventListener("DOMContentLoaded", () => {
       stopPlay();
     } else {
       showFrame(next);
+      // Move the cyclist to the halfway point between this frame and the next
+      clearTimeout(halfFrameTimer);
+      if (typeof window.updateCyclist === "function") {
+        halfFrameTimer = setTimeout(
+          () => window.updateCyclist(next + 0.5),
+          intervalMs / 2,
+        );
+      }
     }
   }
 
@@ -282,12 +292,14 @@ document.addEventListener("DOMContentLoaded", () => {
     iconPause.style.display = "none";
     btnPlay.setAttribute("aria-label", "Play");
     clearInterval(timer);
+    clearTimeout(halfFrameTimer);
   }
 
   btnPlay.addEventListener("click", () => (playing ? stopPlay() : startPlay()));
   const handleSliderChange = () => {
     // Instantly pause playback if the user clicks or drags the timeline bar
     if (playing) stopPlay();
+    clearTimeout(halfFrameTimer);
     showFrame(parseInt(slider.value, 10) || 0);
   };
   slider.addEventListener("input", handleSliderChange);

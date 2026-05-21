@@ -481,10 +481,31 @@ label:has(.ctrl-info) {
   gap: 15px;
   padding: 15px 25px;
   box-shadow: 0 8px 16px rgba(0, 0, 0, 0.2);
-  border-radius: 12px;
+  border-radius: 0 12px 12px 12px;
   z-index: 1000;
   backdrop-filter: blur(4px);
   box-sizing: border-box;
+  overflow: visible;
+}
+
+/* ── Controls flap (title tab above the playback bar) ─────── */
+#controls-flap {
+  position: absolute;
+  bottom: 100%;
+  left: 0;
+  height: 36px;
+  padding: 0 16px;
+  background: rgba(255, 255, 255, 0.75);
+  backdrop-filter: blur(4px);
+  border-radius: 12px 12px 0 0;
+  display: flex;
+  align-items: center;
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: #1d6fa4;
+  white-space: nowrap;
+  pointer-events: none;
+  box-shadow: 0 -2px 8px rgba(0, 0, 0, 0.08);
 }
 
 /* Play/Pause */
@@ -844,9 +865,10 @@ label:has(.ctrl-info) {
   }
 
   /* Strip step buttons and hour-tick labels — too dense on narrow screens */
-  .btn-step     { display: none; }
-  #slider-ticks { display: none; }
-  #slider-wrap  { margin: 0 8px; }
+  .btn-step       { display: none; }
+  #slider-ticks   { display: none; }
+  #slider-wrap    { margin: 0 8px; }
+  #controls-flap  { display: none; }
 
   /* ── Floating legend & layer switcher: above controls bar ──────── */
   #floating-legend-ctrl,
@@ -1250,6 +1272,13 @@ label:has(.ctrl-info) {
   font-size: 0.72rem;
   color: var(--text-muted);
   font-style: italic;
+}
+
+/* ── Cyclist marker ──────────────────────────────────────────── */
+.cyclist-marker {
+  background: none !important;
+  border:     none !important;
+  filter: drop-shadow(0 1px 4px rgba(0, 0, 0, 0.45));
 }
 
 /* ── About panel ─────────────────────────────────────────────── */

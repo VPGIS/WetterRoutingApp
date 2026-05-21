@@ -574,6 +574,7 @@ document.addEventListener("DOMContentLoaded", () => {
         if (vpRouteLayer) {
           map.removeLayer(vpRouteLayer);
         }
+        if (typeof window.clearCyclist === "function") window.clearCyclist();
 
         if (typeof L === "undefined") {
           throw new Error("Leaflet is not ready");
@@ -594,6 +595,10 @@ document.addEventListener("DOMContentLoaded", () => {
 
         if (vpRouteLayer.getBounds && vpRouteLayer.getBounds().isValid()) {
           map.fitBounds(vpRouteLayer.getBounds(), { padding: [30, 30] });
+        }
+        if (typeof window.setCyclistRoute === "function") {
+          const speed = parseFloat(document.getElementById("ride_spd").value) || 20;
+          window.setCyclistRoute(geojson, speed);
         }
       } catch (err) {
         console.error("Route calculation failed:", err);

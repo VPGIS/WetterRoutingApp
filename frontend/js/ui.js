@@ -96,6 +96,26 @@ document.addEventListener("DOMContentLoaded", () => {
   updateTicks();
   window.forceUpdateTicks = updateTicks;
 
+  // ── Rain-resistance label highlight ─────────────────────────────────────
+  // Colours the label that matches the current slider position in the same
+  // blue used for the active routing-model pill (#1a5fd4).
+  const rainSlider = document.getElementById("rain_resistance");
+  if (rainSlider) {
+    const labelContainer = rainSlider.nextElementSibling;
+    const rainLabels = labelContainer
+      ? Array.from(labelContainer.querySelectorAll("span"))
+      : [];
+    const highlightRainLabel = () => {
+      const idx = parseInt(rainSlider.value, 10) - 1;
+      rainLabels.forEach((s, i) => {
+        s.style.color = i === idx ? "#1a5fd4" : "";
+        s.style.fontWeight = i === idx ? "700" : "";
+      });
+    };
+    rainSlider.addEventListener("input", highlightRainLabel);
+    highlightRainLabel();
+  }
+
   // ── Advanced Settings Toggle ───────────────────────────────────────────────
   const btnAdv = document.getElementById("btn_toggle_advanced");
   const advContainer = document.getElementById("advanced_options");

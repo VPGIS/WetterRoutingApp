@@ -57,6 +57,7 @@
     <script src="js/demo.js" defer></script>
     <script src="js/rain.js" defer></script>
     <script src="js/routing.js" defer></script>
+    <script src="js/cyclist.js" defer></script>
     <script src="js/i18n.js" defer></script>
     <script src="js/ui.js" defer></script>
     <script src="js/easter.js" defer></script>
@@ -615,6 +616,7 @@
       ></div>
       <!-- ── Playback controls ────────────────────────────────────── -->
       <div aria-label="Playback controls" id="controls" role="toolbar">
+        <div id="controls-flap">Regenplayer &ndash; Wo regnets in den n&auml;chsten Stunden?</div>
         <button aria-label="Play" id="btn-play" title="Play/Pause (Space)">
           <svg
             aria-hidden="true"
@@ -668,21 +670,6 @@
           id="btn-toggle-legend"
           title="Regen Legende"
         >
-          <svg
-            aria-hidden="true"
-            fill="none"
-            height="16"
-            stroke="currentColor"
-            stroke-linecap="round"
-            stroke-linejoin="round"
-            stroke-width="2"
-            viewbox="0 0 24 24"
-            width="16"
-          >
-            <circle cx="12" cy="12" r="10"></circle>
-            <line x1="12" x2="12" y1="16" y2="12"></line>
-            <line x1="12" x2="12.01" y1="8" y2="8"></line>
-          </svg>
           <span data-i18n="rain_legend">Regen Legende</span>
         </button>
         <div class="hidden" id="rain-legend-popup">
