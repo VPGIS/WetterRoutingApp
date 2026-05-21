@@ -1,11 +1,16 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="de">
   <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1">
-    <meta name="theme-color" content="#12656f">
-    <title>{% if page.title %}{{ page.title }} | {% endif %}{{ site.title }}</title>
-    <link rel="stylesheet" href="assets/css/style.css?v={{ site.github.build_revision }}">
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="theme-color" content="#12656f" />
+    <title>
+      {% if page.title %}{{ page.title }} | {% endif %}{{ site.title }}
+    </title>
+    <link
+      rel="stylesheet"
+      href="{{ '/assets/css/style.css?v=' | append: site.github.build_revision | relative_url }}"
+    />
     <style>
       :root {
         --brand: #12656f;
@@ -32,11 +37,9 @@
         justify-content: center;
         width: 112px;
         height: 112px;
-        padding: 0.35rem;
         margin-bottom: 1rem;
         border-radius: 8px;
         background: #fff;
-        box-sizing: border-box;
         box-shadow: 0 10px 28px rgba(0, 0, 0, 0.18);
         overflow: hidden;
       }
@@ -45,7 +48,7 @@
         display: block;
         width: 100%;
         height: 100%;
-        object-fit: contain;
+        object-fit: cover;
       }
 
       .project-name {
@@ -177,19 +180,28 @@
   </head>
   <body>
     <section class="page-header">
-      <a class="brand-logo" href="./" aria-label="Zur Startseite">
-        <img src="assets/logo.jpg" alt="Logo der Wetter Routing App">
+      <a
+        class="brand-logo"
+        href="{{ '/' | relative_url }}"
+        aria-label="Zur Startseite"
+      >
+        <img
+          src="{{ '/assets/logo.jpg' | relative_url }}"
+          alt="Logo der Wetter Routing App"
+        />
       </a>
       <h1 class="project-name">{{ site.title }}</h1>
       <h2 class="project-tagline">{{ site.description }}</h2>
       <nav class="site-nav" aria-label="Hauptnavigation">
-        <a href="./">Start</a>
-        <a href="about.html">About</a>
-        <a href="installation.html">Installation</a>
-        <a href="startup.html">Startup</a>
-        <a href="architecture.html">Architektur</a>
-        <a href="routing.html">Routing</a>
-        <a href="weather-data.html">Wetterdaten</a>
+        <a href="{{ '/' | relative_url }}">Start</a>
+        <a href="{{ '/about.html' | relative_url }}">About</a>
+        <a href="{{ '/installation.html' | relative_url }}">Installation</a>
+        <a href="{{ '/startup.html' | relative_url }}">Startup</a>
+        <a href="{{ '/architecture.html' | relative_url }}">Architektur</a>
+        <a href="{{ '/routing.html' | relative_url }}">Routing</a>
+        <a href="{{ '/weather-data.html' | relative_url }}">Wetterdaten</a>
+        <a href="{{ '/aiusage.html' | relative_url }}">Ai Nutzung</a>
+        <a href="{{ '/apriori.html' | relative_url }}">A priori - Highlights</a>
       </nav>
     </section>
 
