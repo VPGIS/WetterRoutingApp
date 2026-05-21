@@ -75,7 +75,7 @@ Detaillierte Hinweise zur Einrichtung stehen in [Installation](installation.html
 ## Repository
 
 Das Repository ist unter folgendem Link aufrufbar:
-[https://github.com/VPGIS/VPRouting](https://github.com/VPGIS/VPRouting)
+[https://github.com/VPGIS/WetterRoutingApp](https://github.com/VPGIS/WetterRoutingApp)
 
 ## Projektteam
 
