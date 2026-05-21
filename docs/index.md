@@ -44,8 +44,8 @@ Das Projekt entstand im Rahmen des Vertiefungsprofils Geoinformatik/Raumanalyse 
     <span>Einsatz von KI-Werkzeugen und Sprachmodellen im Projektverlauf.</span>
   </a>
   <a class="doc-card" href="apriori.html">
-    <strong>A priori – Highlights</strong>
-    <span>Interessante Experimente und verworfene Ansätze aus den _apriori/-Ordnern.</span>
+    <strong>A priori</strong>
+    <span>Interessante Experimente und verworfene Ansätze</span>
   </a>
 </div>
 

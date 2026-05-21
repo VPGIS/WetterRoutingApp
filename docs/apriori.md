@@ -1,5 +1,5 @@
 ---
-title: A priori – Highlights
+title: A priori
 ---
 
 # A priori – Highlights
@@ -59,7 +59,7 @@ Warum es besonders ist: Die Idee des zeitabhängigen Routings ist hier vollstän
 
 ---
 
-### `backend/_apriori/dickstra_toll.ipynb` — Echter Wetterdaten-Routing
+### `backend/_apriori/Djikstra_toll.ipynb` — Echter Wetterdaten-Routing
 
 Die Weiterentwicklung: ersetzt zufällige Gewichte durch echte NC-Daten. Der entscheidende Fortschritt ist der Batch-Nearest-Neighbour-Lookup: alle Kanten-Zentroiden werden in einem einzigen `cKDTree.query()`-Aufruf dem nächsten Wetterrasterputnkt zugeordnet. Dann werden alle 24-Stunden-Forecasts mit einem einzigen numpy-Slice extrahiert.
 
