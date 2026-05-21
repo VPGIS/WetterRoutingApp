@@ -1275,10 +1275,35 @@ label:has(.ctrl-info) {
 }
 
 /* ── Cyclist marker ──────────────────────────────────────────── */
+/* Leaflet positions .cyclist-marker via margin offsets — do not touch position. */
 .cyclist-marker {
   background: none !important;
   border:     none !important;
-  filter: drop-shadow(0 1px 4px rgba(0, 0, 0, 0.45));
+  overflow:   visible !important;
+}
+
+/* Inner wrapper: positions halo + SVG relative to each other */
+.cyclist-icon-wrap {
+  position:        relative;
+  width:           36px;
+  height:          36px;
+  display:         flex;
+  align-items:     center;
+  justify-content: center;
+  filter: drop-shadow(0 2px 6px rgba(0, 0, 0, 0.35));
+}
+
+/* Halo circle — white fill covers the route line beneath the rider.     */
+/* border / box-shadow are overridden by cyclist.js based on state:      */
+/*   at start → green ring  |  riding → no ring  |  arrived → red ring  */
+.cyclist-halo {
+  position:      absolute;
+  inset:         0;
+  border-radius: 50%;
+  background:    rgba(255, 255, 255, 0.92);
+  border:        2.5px solid #10b981;  /* start colour — JS overrides */
+  box-shadow:    0 0 10px rgba(16, 185, 129, 0.5);
+  pointer-events: none;
 }
 
 /* ── About panel ─────────────────────────────────────────────── */

@@ -19,7 +19,7 @@
 // but any code that needs translations can chain .then() on it, or simply call
 // window.t() after the DOMContentLoaded phase where it will already be settled.
 let i18n = {};
-const _i18nReady = fetch("i18n.json")
+const _i18nReady = fetch("i18n.json?v=" + Date.now())
   .then((r) => {
     if (!r.ok) throw new Error("i18n.json: " + r.status);
     return r.json();

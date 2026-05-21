@@ -27,7 +27,6 @@ let LABELS = [];
 let currentFrame = 0;
 let playing = false;
 let timer = null;
-let halfFrameTimer = null; // fires once per frame at the midpoint to update the cyclist
 let intervalMs = 500; // ms between animation frames (~2 fps feels calm, not frantic)
 
 // ── DOM refs ─────────────────────────────────────────────────────────────────
@@ -117,6 +116,9 @@ document.addEventListener("DOMContentLoaded", () => {
   // Route + marker pane — always above rain (300/310) and labels (450)
   map.createPane("route");
   map.getPane("route").style.zIndex = 500;
+  // Waypoints pane — start/end pins always above the route line
+  map.createPane("waypoints");
+  map.getPane("waypoints").style.zIndex = 510;
   L.tileLayer(
     "https://{s}.basemaps.cartocdn.com/light_only_labels/{z}/{x}/{y}{r}.png",
     {
@@ -227,6 +229,24 @@ document.addEventListener("DOMContentLoaded", () => {
     if (typeof window.updateCyclist === "function") window.updateCyclist(idx);
   }
 
+  // Exposed so routing.js can jump the timeline after route calculation.
+  window.showFrame = showFrame;
+
+  // Returns the TIMES index whose timestamp is closest to the given Unix
+  // departure timestamp (seconds).  Called by routing.js so the cyclist's
+  // departureFrame is always derived from the actual departure time, not
+  // the current slider position.
+  window.getDepFrame = function (unixTs) {
+    if (!TIMES.length) return 0;
+    const depMs = unixTs * 1000;
+    let best = 0, bestDiff = Infinity;
+    for (let i = 0; i < TIMES.length; i++) {
+      const diff = Math.abs(new Date(TIMES[i]).getTime() - depMs);
+      if (diff < bestDiff) { bestDiff = diff; best = i; }
+    }
+    return best;
+  };
+
   // ── Intensity badge ────────────────────────────────────────────────────────
   // Reading actual pixel values from the PNG overlay would require a <canvas>
   // cross-origin workaround.  As a pragmatic proxy we use the frame index
@@ -261,14 +281,6 @@ document.addEventListener("DOMContentLoaded", () => {
       stopPlay();
     } else {
       showFrame(next);
-      // Move the cyclist to the halfway point between this frame and the next
-      clearTimeout(halfFrameTimer);
-      if (typeof window.updateCyclist === "function") {
-        halfFrameTimer = setTimeout(
-          () => window.updateCyclist(next + 0.5),
-          intervalMs / 2,
-        );
-      }
     }
   }
 
@@ -284,6 +296,9 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
     timer = setInterval(step, intervalMs);
+    if (typeof window.startCyclistPlay === "function") {
+      window.startCyclistPlay(currentFrame, intervalMs);
+    }
   }
 
   function stopPlay() {
@@ -292,14 +307,18 @@ document.addEventListener("DOMContentLoaded", () => {
     iconPause.style.display = "none";
     btnPlay.setAttribute("aria-label", "Play");
     clearInterval(timer);
-    clearTimeout(halfFrameTimer);
+    if (typeof window.stopCyclistPlay === "function") {
+      window.stopCyclistPlay();
+    }
   }
+
+  // When the cyclist reaches the destination, pause the rain animation too.
+  document.addEventListener("cyclistArrived", () => { if (playing) stopPlay(); });
 
   btnPlay.addEventListener("click", () => (playing ? stopPlay() : startPlay()));
   const handleSliderChange = () => {
     // Instantly pause playback if the user clicks or drags the timeline bar
     if (playing) stopPlay();
-    clearTimeout(halfFrameTimer);
     showFrame(parseInt(slider.value, 10) || 0);
   };
   slider.addEventListener("input", handleSliderChange);

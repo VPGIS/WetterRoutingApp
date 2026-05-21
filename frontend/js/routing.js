@@ -191,7 +191,7 @@ document.addEventListener("DOMContentLoaded", () => {
           fillColor: "#10b981",
           radius: 6,
           fillOpacity: 0.9,
-          pane: "route",
+          pane: "waypoints",
         }).addTo(map);
       } else {
         if (vpEndMarker) map.removeLayer(vpEndMarker);
@@ -201,7 +201,7 @@ document.addEventListener("DOMContentLoaded", () => {
           fillColor: "#ef4444",
           radius: 6,
           fillOpacity: 0.9,
-          pane: "route",
+          pane: "waypoints",
         }).addTo(map);
       }
 
@@ -586,7 +586,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
         vpRouteLayer = L.geoJSON(geojson, {
           style: {
-            color: "#0d3a6e",
+            color: "#ffd700",
             weight: 5,
             opacity: 0.9,
           },
@@ -598,7 +598,16 @@ document.addEventListener("DOMContentLoaded", () => {
         }
         if (typeof window.setCyclistRoute === "function") {
           const speed = parseFloat(document.getElementById("ride_spd").value) || 20;
-          window.setCyclistRoute(geojson, speed);
+          // Derive departure frame from the actual departure Unix timestamp so
+          // the cyclist starts at the correct forecast hour regardless of where
+          // the user left the animation slider.
+          const depUnixTs = parseTimeToUnix(document.getElementById("time_start").value);
+          const departureFrame = typeof window.getDepFrame === "function"
+            ? window.getDepFrame(depUnixTs)
+            : 0;
+          window.setCyclistRoute(geojson, speed, departureFrame);
+          // Jump the animation timeline to the departure frame.
+          if (typeof window.showFrame === "function") window.showFrame(departureFrame);
         }
       } catch (err) {
         console.error("Route calculation failed:", err);
@@ -626,4 +635,19 @@ document.addEventListener("DOMContentLoaded", () => {
       legendBtn.classList.toggle("active");
     });
   }
-});
+  // ── Speed slider → live cyclist update ───────────────────────────────────────
+  // Whenever the user moves the ride-speed slider, recompute the cyclist's
+  // position for the currently displayed animation frame so the effect is
+  // visible immediately without needing to re-run the route calculation.
+  const rideSpdInput = document.getElementById("ride_spd");
+  if (rideSpdInput) {
+    rideSpdInput.addEventListener("input", () => {
+      const newSpeed = parseFloat(rideSpdInput.value) || 20;
+      const currentFrameIdx = parseInt(
+        document.getElementById("time-slider")?.value, 10
+      ) || 0;
+      if (typeof window.updateCyclistSpeed === "function") {
+        window.updateCyclistSpeed(newSpeed, currentFrameIdx);
+      }
+    });
+  }});
