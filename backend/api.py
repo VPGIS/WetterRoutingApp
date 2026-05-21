@@ -305,12 +305,12 @@ def get_route(
         examples=[20],
     ),
 
-    routingmodel: Literal["einfach", "advanced"] = Query(
-        "einfach",
+    routingmodel: Literal["rain", "rain+"] = Query(
+        "rain",
         description=(
             "Verwendetes Routingmodell.\n\n"
-            "- einfach: Statisches Routing basierend auf Dijkstra.\n"
-            "- advanced: Dynamisches Routing mit zeitabhängigen Bedingungen."
+            "- rain: Statisches Routing basierend auf Dijkstra.\n"
+            "- rain+: Dynamisches Routing mit zeitabhängigen Bedingungen."
         ),
     ),
 
@@ -459,7 +459,7 @@ def get_route(
     # ——————————————————————————————————————————————————————————————————————————
     # Routing anhand gewähltem Routingmodel durchführen
     # ——————————————————————————————————————————————————————————————————————————
-    if routingmodel == 'einfach':
+    if routingmodel == 'rain':
         log_step("starting static weather dijkstra")
         route = static_weather_dijkstra(G=G,
                                 start_node=start_node,
@@ -470,7 +470,7 @@ def get_route(
                                 nc_file_timestamp=nc_file_timestamp,
                                 rainresistence=rainresistence)
 
-    elif routingmodel == 'advanced':
+    elif routingmodel == 'rain+':
         log_step("starting time-dependent weather dijkstra")
         route = td_weather_dijkstra(G=G,
                                         start_node=start_node,

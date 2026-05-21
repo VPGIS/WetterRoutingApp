@@ -45,7 +45,7 @@ Bevor die eigentliche Routenberechnung startet, bereitet das Backend mehrere Dat
 4. Aus Start und Ziel wird eine Bounding Box berechnet.
 5. Ein passender OSM-Graph wird aus `backend/data/graphs/` geladen oder über OSMnx neu erstellt.
 6. Start- und Zielkoordinaten werden den nächstgelegenen Nodes im Graphen zugeordnet.
-7. Abhängig vom Parameter `routingmodel` wird `einfach` oder `advanced` ausgeführt.
+7. Abhängig vom Parameter `routingmodel` wird `rain` oder `rain+` ausgeführt.
 
 Das Ergebnis der Routingfunktion ist eine Sequenz von Node-IDs. Diese wird danach mit OSMnx in ein GeoJSON-ähnliches Format umgewandelt und an das Frontend zurückgegeben.
 
@@ -57,16 +57,16 @@ Aktuell stehen zwei Routingmodelle zur Verfügung:
 
 | Routingmodell | Beschreibung                                                     |
 | ------------- | ---------------------------------------------------------------- |
-| `einfach`     | Bewertet alle Kanten einmalig mit dem Forecast zur Startzeit.    |
-| `advanced`    | Bewertet Kanten zeitabhängig anhand der erwarteten Ankunftszeit. |
+| `rain`        | Bewertet alle Kanten einmalig mit dem Forecast zur Startzeit.    |
+| `rain+`       | Bewertet Kanten zeitabhängig anhand der erwarteten Ankunftszeit. |
 
 Beide Modelle verwenden dieselbe Grundidee für die Wetterbewertung: Pro Kante wird ein Forecast-Wert gelesen und daraus mit `compute_rain_adjusted_cost` ein wetterabhängiger Kostenwert berechnet.
 
 ---
 
-## Einfaches Routingmodell: `einfach`
+## Einfaches Routingmodell: `rain`
 
-Das Modell `einfach` verwendet einen statischen Dijkstra-Ansatz.
+Das Modell `rain` verwendet einen statischen Dijkstra-Ansatz.
 
 Implementierung im Code:
 
@@ -117,9 +117,9 @@ Danach wird mit OSMnx der kürzeste Pfad anhand der berechneten Kosten gesucht. 
 
 ---
 
-## Erweitertes Routingmodell: `advanced`
+## Erweitertes Routingmodell: `rain+`
 
-Das Modell `advanced` verwendet einen zeitabhängigen Dijkstra-Ansatz.
+Das Modell `rain+` verwendet einen zeitabhängigen Dijkstra-Ansatz.
 
 Implementierung:
 

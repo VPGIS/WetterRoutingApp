@@ -162,8 +162,8 @@ Aktuell stehen zwei Routingmodelle zur Verfügung:
 
 | Routingmodell | Beschreibung |
 |---|---|
-| `einfach` | Bewertet die Kanten einmalig mit dem Forecast zur Startzeit. |
-| `advanced` | Bewertet Kanten zeitabhängig anhand der erwarteten Ankunftszeit. |
+| `rain` | Bewertet die Kanten einmalig mit dem Forecast zur Startzeit. |
+| `rain+` | Bewertet Kanten zeitabhängig anhand der erwarteten Ankunftszeit. |
 
 Das Routing verwendet vorbereitete oder neu erzeugte OSM-Graphen. Diese werden im Projekt gespeichert, damit sie bei späteren Anfragen wiederverwendet werden können.
 

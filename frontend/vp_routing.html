@@ -32,7 +32,10 @@
 <html lang="en">
   <head>
     <meta charset="utf-8" />
-    <meta content="width=device-width, initial-scale=1.0, viewport-fit=cover" name="viewport" />
+    <meta
+      content="width=device-width, initial-scale=1.0, viewport-fit=cover"
+      name="viewport"
+    />
     <title>WetterRoutingApp</title>
     <!-- Leaflet -->
     <link
@@ -63,55 +66,59 @@
          The logo (#header-logo) also doubles as the Easter egg trigger:
          5 rapid clicks activate demo mode (see demo.js). -->
     <div id="top-right-header">
-    <div id="top-right-title">
-      <h1>
-        <span style="color: #0d3a6e">W</span>etter<span style="color: #0d3a6e"
-          >R</span
-        >outing<span style="color: #0d3a6e">A</span>pp
-      </h1>
-      <img src="logo.jpg" alt="Logo" class="header-logo" id="header-logo" />
-    </div>
-    <div id="top-right-subtitle" data-i18n="subtitle">Bleib trocken bei deiner Velotour!</div>
+      <div id="top-right-title">
+        <h1>
+          <span style="color: #0d3a6e">W</span>etter<span style="color: #0d3a6e"
+            >R</span
+          >outing<span style="color: #0d3a6e">A</span>pp
+        </h1>
+        <img src="logo.jpg" alt="Logo" class="header-logo" id="header-logo" />
+      </div>
+      <div id="top-right-subtitle" data-i18n="subtitle">
+        Bleib trocken bei deiner Velotour!
+      </div>
 
-    <!-- About panel — collapses to a 56px icon button; expands via two-phase
+      <!-- About panel — collapses to a 56px icon button; expands via two-phase
          CSS transition driven by ui.js.  All text is i18n-driven (data-i18n). -->
-    <div id="about-panel">
-      <div class="about-header-row">
-        <h3 id="about-heading" data-i18n="about_heading"></h3>
-        <button
-          id="about-toggle"
-          aria-label="About this project"
-          title="About this project"
-        >
-          <svg
-            aria-hidden="true"
-            fill="none"
-            height="26"
-            stroke="currentColor"
-            stroke-linecap="round"
-            stroke-linejoin="round"
-            stroke-width="1.8"
-            viewbox="0 0 24 24"
-            width="26"
+      <div id="about-panel">
+        <div class="about-header-row">
+          <h3 id="about-heading" data-i18n="about_heading"></h3>
+          <button
+            id="about-toggle"
+            aria-label="About this project"
+            title="About this project"
           >
-            <circle cx="12" cy="12" r="10"></circle>
-            <line x1="12" x2="12" y1="16" y2="12"></line>
-            <line x1="12" x2="12.01" y1="8" y2="8"></line>
-          </svg>
-        </button>
+            <svg
+              aria-hidden="true"
+              fill="none"
+              height="26"
+              stroke="currentColor"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="1.8"
+              viewbox="0 0 24 24"
+              width="26"
+            >
+              <circle cx="12" cy="12" r="10"></circle>
+              <line x1="12" x2="12" y1="16" y2="12"></line>
+              <line x1="12" x2="12.01" y1="8" y2="8"></line>
+            </svg>
+          </button>
+        </div>
+        <div id="about-body">
+          <p>
+            <span class="about-highlight" data-i18n="about_intro_hl"></span>
+          </p>
+          <p data-i18n="about_intro"></p>
+          <h4 class="about-section-title" data-i18n="about_weather_title"></h4>
+          <p data-i18n="about_weather"></p>
+          <h4 class="about-section-title" data-i18n="about_routing_title"></h4>
+          <p data-i18n="about_routing"></p>
+          <h4 class="about-section-title" data-i18n="about_hood_title"></h4>
+          <p data-i18n="about_hood"></p>
+          <p class="about-thanks" data-i18n="about_thanks"></p>
+        </div>
       </div>
-      <div id="about-body">
-        <p><span class="about-highlight" data-i18n="about_intro_hl"></span></p>
-        <p data-i18n="about_intro"></p>
-        <h4 class="about-section-title" data-i18n="about_weather_title"></h4>
-        <p data-i18n="about_weather"></p>
-        <h4 class="about-section-title" data-i18n="about_routing_title"></h4>
-        <p data-i18n="about_routing"></p>
-        <h4 class="about-section-title" data-i18n="about_hood_title"></h4>
-        <p data-i18n="about_hood"></p>
-        <p class="about-thanks" data-i18n="about_thanks"></p>
-      </div>
-    </div>
     </div>
     <!-- ── Left routing panel ────────────────────────────────────────────
          Contains: geocode inputs (start/end), departure time picker,
@@ -123,230 +130,50 @@
            Mirrors the about-panel animation: collapsed = 56 px bar with
            a bold italic blue "R" button; expanded = full form below. -->
       <div id="routing-panel-header">
-        <h3 id="routing-panel-label" data-i18n="tagline">Berechne Route anhand Niederschlag</h3>
-        <button id="routing-panel-toggle" aria-label="Toggle routing panel" title="Routing">
+        <h3 id="routing-panel-label" data-i18n="tagline">
+          Berechne Route anhand Niederschlag
+        </h3>
+        <button
+          id="routing-panel-toggle"
+          aria-label="Toggle routing panel"
+          title="Routing"
+        >
           <span>Routing</span>
-          <svg aria-hidden="true" width="13" height="13" viewbox="0 0 24 24"
-               fill="none" stroke="currentColor" stroke-width="2.5"
-               stroke-linecap="round" stroke-linejoin="round">
+          <svg
+            aria-hidden="true"
+            width="13"
+            height="13"
+            viewbox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2.5"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+          >
             <polyline points="6 9 12 15 18 9"></polyline>
           </svg>
         </button>
       </div>
       <div id="routing-panel-body">
-      <p id="routing-tagline" data-i18n="tagline">Berechne Route anhand Niederschlag</p>
-      <div class="control-group">
-        <div
-          style="
-            position: relative;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            width: 100%;
-            margin-bottom: 8px;
-          "
-        >
-          <label data-i18n="start" for="route_start"
-            >Startpunkt<span
-              class="ctrl-info"
-              data-tip=""
-              data-i18n-tip="tip_start"
-              ><svg
-                aria-hidden="true"
-                fill="none"
-                height="13"
-                stroke="currentColor"
-                stroke-linecap="round"
-                stroke-linejoin="round"
-                stroke-width="2"
-                viewbox="0 0 24 24"
-                width="13"
-              >
-                <circle cx="12" cy="12" r="10"></circle>
-                <line x1="12" x2="12" y1="16" y2="12"></line>
-                <line x1="12" x2="12.01" y1="8" y2="8"></line></svg></span
-          ></label>
+        <p id="routing-tagline" data-i18n="tagline">
+          Berechne Route anhand Niederschlag
+        </p>
+        <div class="control-group">
           <div
-            id="start-marker-ui"
-            onclick="zoomToMarker('start')"
-            title="Zoom to Start"
             style="
-              display: none;
-              position: absolute;
-              left: 50%;
-              transform: translateX(-50%);
-              width: 12px;
-              height: 12px;
-              border-radius: 50%;
-              background: #10b981;
-              border: 2px solid rgba(0, 0, 0, 0.5);
-              cursor: pointer;
-              flex-shrink: 0;
-              box-shadow: 0 0 4px rgba(0, 0, 0, 0.3);
+              position: relative;
+              display: flex;
+              justify-content: space-between;
+              align-items: center;
+              width: 100%;
+              margin-bottom: 8px;
             "
-          ></div>
-          <div class="lang-switcher" style="position: static !important">
-            <select id="lang_select">
-              <option selected="" value="de">DE</option>
-              <option value="en">EN</option>
-              <option value="it">IT</option>
-              <option value="fr">FR</option>
-            </select>
-          </div>
-        </div>
-        <input
-          data-i18n-ph="where_from"
-          id="route_start"
-          placeholder="Woher?"
-          type="text"
-        />
-      </div>
-      <div class="control-group">
-        <div
-          style="
-            position: relative;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            width: 100%;
-            margin-bottom: 8px;
-          "
-        >
-          <label data-i18n="end" for="route_end"
-            >Ziel<span class="ctrl-info" data-tip="" data-i18n-tip="tip_end"
-              ><svg
-                aria-hidden="true"
-                fill="none"
-                height="13"
-                stroke="currentColor"
-                stroke-linecap="round"
-                stroke-linejoin="round"
-                stroke-width="2"
-                viewbox="0 0 24 24"
-                width="13"
-              >
-                <circle cx="12" cy="12" r="10"></circle>
-                <line x1="12" x2="12" y1="16" y2="12"></line>
-                <line x1="12" x2="12.01" y1="8" y2="8"></line></svg></span
-          ></label>
-          <div
-            id="end-marker-ui"
-            onclick="zoomToMarker('end')"
-            title="Zoom to End"
-            style="
-              display: none;
-              position: absolute;
-              left: 50%;
-              transform: translateX(-50%);
-              width: 12px;
-              height: 12px;
-              border-radius: 50%;
-              background: #ef4444;
-              border: 2px solid rgba(0, 0, 0, 0.5);
-              cursor: pointer;
-              flex-shrink: 0;
-              box-shadow: 0 0 4px rgba(0, 0, 0, 0.3);
-            "
-          ></div>
-          <div style="width: 50px"></div>
-          <!-- Spacer to match layout -->
-        </div>
-        <input
-          data-i18n-ph="where_to"
-          id="route_end"
-          placeholder="Wohin?"
-          type="text"
-        />
-      </div>
-      <div class="control-group">
-        <div
-          style="
-            display: flex;
-            justify-content: space-between;
-            align-items: baseline;
-          "
-        >
-          <label data-i18n="time" for="time_start"
-            >Abfahrtszeit<span
-              class="ctrl-info"
-              data-tip=""
-              data-i18n-tip="tip_time"
-              ><svg
-                aria-hidden="true"
-                fill="none"
-                height="13"
-                stroke="currentColor"
-                stroke-linecap="round"
-                stroke-linejoin="round"
-                stroke-width="2"
-                viewbox="0 0 24 24"
-                width="13"
-              >
-                <circle cx="12" cy="12" r="10"></circle>
-                <line x1="12" x2="12" y1="16" y2="12"></line>
-                <line x1="12" x2="12.01" y1="8" y2="8"></line></svg></span
-          ></label>
-          <div
-            id="departure-date"
-            style="font-size: 0.72rem; color: #666"
-          ></div>
-        </div>
-        <div
-          style="display: flex; gap: 6px; align-items: center; margin-top: 4px"
-        >
-          <input id="time_start" type="time" style="flex: 1; min-width: 0" />
-          <div class="day-toggle" id="day-toggle">
-            <button class="day-btn active" data-offset="0" data-i18n="today">
-              Heute
-            </button>
-            <button class="day-btn" data-offset="1" data-i18n="tomorrow">
-              Morgen
-            </button>
-          </div>
-        </div>
-      </div>
-      <div class="advanced-settings-wrapper">
-        <div class="adv-toggle" id="btn_toggle_advanced">
-          <svg
-            aria-hidden="true"
-            class="adv-icon"
-            fill="none"
-            height="16"
-            stroke="currentColor"
-            stroke-linecap="round"
-            stroke-linejoin="round"
-            stroke-width="2"
-            viewbox="0 0 24 24"
-            width="16"
           >
-            <path
-              d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"
-            ></path>
-            <circle cx="12" cy="12" r="3"></circle>
-          </svg>
-          <span data-i18n="adv_settings">Erweiterte Einstellungen</span>
-          <svg
-            class="adv-chevron"
-            fill="none"
-            height="14"
-            stroke="currentColor"
-            stroke-linecap="round"
-            stroke-linejoin="round"
-            stroke-width="2"
-            viewbox="0 0 24 24"
-            width="14"
-          >
-            <polyline points="6 9 12 15 18 9"></polyline>
-          </svg>
-        </div>
-        <div class="adv-options-container hidden" id="advanced_options">
-          <div class="control-group">
-            <label for="ride_spd"
-              ><span data-i18n="speed">Geschwindigkeit</span>:
-              <span id="speed_display">20</span> km/h<span
+            <label data-i18n="start" for="route_start"
+              >Startpunkt<span
                 class="ctrl-info"
                 data-tip=""
-                data-i18n-tip="tip_speed"
+                data-i18n-tip="tip_start"
                 ><svg
                   aria-hidden="true"
                   fill="none"
@@ -362,111 +189,54 @@
                   <line x1="12" x2="12" y1="16" y2="12"></line>
                   <line x1="12" x2="12.01" y1="8" y2="8"></line></svg></span
             ></label>
-            <input
-              id="ride_spd"
-              max="50"
-              min="10"
-              step="1"
-              type="range"
-              value="20"
-            />
-            <div class="slider-labels">
-              <span>10</span><span>15</span><span>20</span><span>25</span
-              ><span>30</span><span>35</span><span>40</span><span>45</span
-              ><span>50</span>
-            </div>
-          </div>
-          <div class="control-group">
-            <label data-i18n="rain" for="rain_resistance"
-              >Regenresistenz<span
-                class="ctrl-info"
-                data-tip=""
-                data-i18n-tip="tip_rain"
-                ><svg
-                  aria-hidden="true"
-                  fill="none"
-                  height="13"
-                  stroke="currentColor"
-                  stroke-linecap="round"
-                  stroke-linejoin="round"
-                  stroke-width="2"
-                  viewbox="0 0 24 24"
-                  width="13"
-                >
-                  <circle cx="12" cy="12" r="10"></circle>
-                  <line x1="12" x2="12" y1="16" y2="12"></line>
-                  <line x1="12" x2="12.01" y1="8" y2="8"></line></svg></span
-            ></label>
-            <input
-              id="rain_resistance"
-              max="5"
-              min="1"
-              step="1"
-              type="range"
-              value="3"
-            />
             <div
+              id="start-marker-ui"
+              onclick="zoomToMarker('start')"
+              title="Zoom to Start"
               style="
-                position: relative;
-                height: 1.4em;
-                margin-top: 6px;
-                font-size: 0.72rem;
-                color: var(--text-muted);
+                display: none;
+                position: absolute;
+                left: 50%;
+                transform: translateX(-50%);
+                width: 12px;
+                height: 12px;
+                border-radius: 50%;
+                background: #10b981;
+                border: 2px solid rgba(0, 0, 0, 0.5);
+                cursor: pointer;
+                flex-shrink: 0;
+                box-shadow: 0 0 4px rgba(0, 0, 0, 0.3);
               "
-            >
-              <span
-                data-i18n="rain_lowest"
-                style="
-                  position: absolute;
-                  left: 8px;
-                  transform: translateX(-50%);
-                "
-                >Meiden</span
-              >
-              <span
-                data-i18n="rain_low"
-                style="
-                  position: absolute;
-                  left: calc((100% - 16px) / 4 + 8px);
-                  transform: translateX(-50%);
-                "
-                >Wenig</span
-              >
-              <span
-                data-i18n="rain_med"
-                style="
-                  position: absolute;
-                  left: 50%;
-                  transform: translateX(-50%);
-                "
-                >Mittel</span
-              >
-              <span
-                data-i18n="rain_high"
-                style="
-                  position: absolute;
-                  left: calc((100% - 16px) * 3 / 4 + 8px);
-                  transform: translateX(-50%);
-                "
-                >Viel</span
-              >
-              <span
-                data-i18n="rain_highest"
-                style="
-                  position: absolute;
-                  left: calc(100% - 8px);
-                  transform: translateX(-50%);
-                "
-                >Egal</span
-              >
+            ></div>
+            <div class="lang-switcher" style="position: static !important">
+              <select id="lang_select">
+                <option selected="" value="de">DE</option>
+                <option value="en">EN</option>
+                <option value="it">IT</option>
+                <option value="fr">FR</option>
+              </select>
             </div>
           </div>
-          <div class="control-group">
-            <label data-i18n="routing_model"
-              >Routingmodell<span
-                class="ctrl-info"
-                data-tip=""
-                data-i18n-tip="tip_routing_model"
+          <input
+            data-i18n-ph="where_from"
+            id="route_start"
+            placeholder="Woher?"
+            type="text"
+          />
+        </div>
+        <div class="control-group">
+          <div
+            style="
+              position: relative;
+              display: flex;
+              justify-content: space-between;
+              align-items: center;
+              width: 100%;
+              margin-bottom: 8px;
+            "
+          >
+            <label data-i18n="end" for="route_end"
+              >Ziel<span class="ctrl-info" data-tip="" data-i18n-tip="tip_end"
                 ><svg
                   aria-hidden="true"
                   fill="none"
@@ -483,43 +253,302 @@
                   <line x1="12" x2="12.01" y1="8" y2="8"></line></svg></span
             ></label>
             <div
-              style="display: flex; justify-content: center; margin-top: 6px"
+              id="end-marker-ui"
+              onclick="zoomToMarker('end')"
+              title="Zoom to End"
+              style="
+                display: none;
+                position: absolute;
+                left: 50%;
+                transform: translateX(-50%);
+                width: 12px;
+                height: 12px;
+                border-radius: 50%;
+                background: #ef4444;
+                border: 2px solid rgba(0, 0, 0, 0.5);
+                cursor: pointer;
+                flex-shrink: 0;
+                box-shadow: 0 0 4px rgba(0, 0, 0, 0.3);
+              "
+            ></div>
+            <div style="width: 50px"></div>
+            <!-- Spacer to match layout -->
+          </div>
+          <input
+            data-i18n-ph="where_to"
+            id="route_end"
+            placeholder="Wohin?"
+            type="text"
+          />
+        </div>
+        <div class="control-group">
+          <div
+            style="
+              display: flex;
+              justify-content: space-between;
+              align-items: baseline;
+            "
+          >
+            <label data-i18n="time" for="time_start"
+              >Abfahrtszeit<span
+                class="ctrl-info"
+                data-tip=""
+                data-i18n-tip="tip_time"
+                ><svg
+                  aria-hidden="true"
+                  fill="none"
+                  height="13"
+                  stroke="currentColor"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="2"
+                  viewbox="0 0 24 24"
+                  width="13"
+                >
+                  <circle cx="12" cy="12" r="10"></circle>
+                  <line x1="12" x2="12" y1="16" y2="12"></line>
+                  <line x1="12" x2="12.01" y1="8" y2="8"></line></svg></span
+            ></label>
+            <div
+              id="departure-date"
+              style="font-size: 0.72rem; color: #666"
+            ></div>
+          </div>
+          <div
+            style="
+              display: flex;
+              gap: 6px;
+              align-items: center;
+              margin-top: 4px;
+            "
+          >
+            <input id="time_start" type="time" style="flex: 1; min-width: 0" />
+            <div class="day-toggle" id="day-toggle">
+              <button class="day-btn active" data-offset="0" data-i18n="today">
+                Heute
+              </button>
+              <button class="day-btn" data-offset="1" data-i18n="tomorrow">
+                Morgen
+              </button>
+            </div>
+          </div>
+        </div>
+        <div class="advanced-settings-wrapper">
+          <div class="adv-toggle" id="btn_toggle_advanced">
+            <svg
+              aria-hidden="true"
+              class="adv-icon"
+              fill="none"
+              height="16"
+              stroke="currentColor"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              viewbox="0 0 24 24"
+              width="16"
             >
-              <div class="day-toggle" id="routing_model_toggle">
-                <button
-                  class="day-btn active"
-                  data-model="einfach"
-                  data-i18n="model_simple"
-                ></button>
-                <button
-                  class="day-btn"
-                  data-model="advanced"
-                  data-i18n="model_advanced"
-                ></button>
+              <path
+                d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"
+              ></path>
+              <circle cx="12" cy="12" r="3"></circle>
+            </svg>
+            <span data-i18n="adv_settings">Erweiterte Einstellungen</span>
+            <svg
+              class="adv-chevron"
+              fill="none"
+              height="14"
+              stroke="currentColor"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              viewbox="0 0 24 24"
+              width="14"
+            >
+              <polyline points="6 9 12 15 18 9"></polyline>
+            </svg>
+          </div>
+          <div class="adv-options-container hidden" id="advanced_options">
+            <div class="control-group">
+              <label for="ride_spd"
+                ><span data-i18n="speed">Geschwindigkeit</span>:
+                <span id="speed_display">20</span> km/h<span
+                  class="ctrl-info"
+                  data-tip=""
+                  data-i18n-tip="tip_speed"
+                  ><svg
+                    aria-hidden="true"
+                    fill="none"
+                    height="13"
+                    stroke="currentColor"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    stroke-width="2"
+                    viewbox="0 0 24 24"
+                    width="13"
+                  >
+                    <circle cx="12" cy="12" r="10"></circle>
+                    <line x1="12" x2="12" y1="16" y2="12"></line>
+                    <line x1="12" x2="12.01" y1="8" y2="8"></line></svg></span
+              ></label>
+              <input
+                id="ride_spd"
+                max="50"
+                min="10"
+                step="1"
+                type="range"
+                value="20"
+              />
+              <div class="slider-labels">
+                <span>10</span><span>15</span><span>20</span><span>25</span
+                ><span>30</span><span>35</span><span>40</span><span>45</span
+                ><span>50</span>
+              </div>
+            </div>
+            <div class="control-group">
+              <label data-i18n="rain" for="rain_resistance"
+                >Regenresistenz<span
+                  class="ctrl-info"
+                  data-tip=""
+                  data-i18n-tip="tip_rain"
+                  ><svg
+                    aria-hidden="true"
+                    fill="none"
+                    height="13"
+                    stroke="currentColor"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    stroke-width="2"
+                    viewbox="0 0 24 24"
+                    width="13"
+                  >
+                    <circle cx="12" cy="12" r="10"></circle>
+                    <line x1="12" x2="12" y1="16" y2="12"></line>
+                    <line x1="12" x2="12.01" y1="8" y2="8"></line></svg></span
+              ></label>
+              <input
+                id="rain_resistance"
+                max="5"
+                min="1"
+                step="1"
+                type="range"
+                value="3"
+              />
+              <div
+                style="
+                  position: relative;
+                  height: 1.4em;
+                  margin-top: 6px;
+                  font-size: 0.72rem;
+                  color: var(--text-muted);
+                "
+              >
+                <span
+                  data-i18n="rain_lowest"
+                  style="
+                    position: absolute;
+                    left: 8px;
+                    transform: translateX(-50%);
+                  "
+                  >Meiden</span
+                >
+                <span
+                  data-i18n="rain_low"
+                  style="
+                    position: absolute;
+                    left: calc((100% - 16px) / 4 + 8px);
+                    transform: translateX(-50%);
+                  "
+                  >Wenig</span
+                >
+                <span
+                  data-i18n="rain_med"
+                  style="
+                    position: absolute;
+                    left: 50%;
+                    transform: translateX(-50%);
+                  "
+                  >Mittel</span
+                >
+                <span
+                  data-i18n="rain_high"
+                  style="
+                    position: absolute;
+                    left: calc((100% - 16px) * 3 / 4 + 8px);
+                    transform: translateX(-50%);
+                  "
+                  >Viel</span
+                >
+                <span
+                  data-i18n="rain_highest"
+                  style="
+                    position: absolute;
+                    left: calc(100% - 8px);
+                    transform: translateX(-50%);
+                  "
+                  >Egal</span
+                >
+              </div>
+            </div>
+            <div class="control-group">
+              <label data-i18n="routing_model"
+                >Routingmodell<span
+                  class="ctrl-info"
+                  data-tip=""
+                  data-i18n-tip="tip_routing_model"
+                  ><svg
+                    aria-hidden="true"
+                    fill="none"
+                    height="13"
+                    stroke="currentColor"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    stroke-width="2"
+                    viewbox="0 0 24 24"
+                    width="13"
+                  >
+                    <circle cx="12" cy="12" r="10"></circle>
+                    <line x1="12" x2="12" y1="16" y2="12"></line>
+                    <line x1="12" x2="12.01" y1="8" y2="8"></line></svg></span
+              ></label>
+              <div
+                style="display: flex; justify-content: center; margin-top: 6px"
+              >
+                <div class="day-toggle" id="routing_model_toggle">
+                  <button
+                    class="day-btn active"
+                    data-model="rain"
+                    data-i18n="model_simple"
+                  ></button>
+                  <button
+                    class="day-btn"
+                    data-model="rain+"
+                    data-i18n="model_advanced"
+                  ></button>
+                </div>
               </div>
             </div>
           </div>
         </div>
-      </div>
-      <button class="calculate-btn" id="btn_calculate">
-        <div class="btn-spinner" id="calc_spinner"></div>
-        <span data-i18n="calc" id="calc_text">Route berechnen</span>
-      </button>
-      <div class="control-group buttons">
-        <button data-i18n="gpx_in" id="btn_import" type="button">
-          GPX Import
+        <button class="calculate-btn" id="btn_calculate">
+          <div class="btn-spinner" id="calc_spinner"></div>
+          <span data-i18n="calc" id="calc_text">Route berechnen</span>
         </button>
-        <input
-          accept=".gpx"
-          id="data_import"
-          style="display: none"
-          type="file"
-        />
-        <button data-i18n="gpx_out" id="btn_export" type="button">
-          GPX Export
-        </button>
+        <div class="control-group buttons">
+          <button data-i18n="gpx_in" id="btn_import" type="button">
+            GPX Import
+          </button>
+          <input
+            accept=".gpx"
+            id="data_import"
+            style="display: none"
+            type="file"
+          />
+          <button data-i18n="gpx_out" id="btn_export" type="button">
+            GPX Export
+          </button>
+        </div>
       </div>
-      </div><!-- /routing-panel-body -->
+      <!-- /routing-panel-body -->
     </div>
     <!-- Loading overlay — visible until rain.js hides it after Leaflet boots
          and the first rain frame has been requested. -->

@@ -512,7 +512,7 @@ document.addEventListener("DOMContentLoaded", () => {
       );
       const selectedRoutingModel = activeModelBtn
         ? activeModelBtn.dataset.model
-        : "einfach";
+        : "rain";
 
       // Validate that both points have been geocoded before submitting.
       // dataset.lat/lon are written by the map-click and text-entry handlers.
