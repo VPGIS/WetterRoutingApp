@@ -85,10 +85,12 @@
     var dw = fw;
     var dh = fh;
 
-    // Anchor to the top-left corner of the #controls bar, slightly outside it
-    var ctrl = document.getElementById('controls');
+    // Anchor canvas bottom to the top edge of #controls-flap (the label tab
+    // above the playback bar).  Falls back to #controls if flap is absent.
+    var ctrl = document.getElementById('controls-flap') ||
+               document.getElementById('controls');
     var rect = ctrl ? ctrl.getBoundingClientRect() : { top: 80, left: 40 };
-    var canvasBottom = window.innerHeight - rect.top + 6;
+    var canvasBottom = window.innerHeight - rect.top;
     var canvasLeft   = rect.left - 18;
 
     var canvas   = document.createElement('canvas');

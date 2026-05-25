@@ -86,6 +86,16 @@ Aufgaben des Frontends:
 - Absenden der Routinganfrage an das Backend
 - Darstellung der berechneten Route
 
+
+<div style="display:flex;justify-content:center;align-items:flex-start;gap:24px;flex-wrap:wrap;">
+  <video height="420" autoplay loop muted playsinline>
+    <source src="assets/calc.mp4" type="video/mp4">
+  </video>
+  <video height="420" autoplay loop muted playsinline>
+    <source src="assets/interface.mp4" type="video/mp4">
+  </video>
+</div>
+
 ---
 
 ## Backend
