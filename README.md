@@ -58,6 +58,10 @@ Die wichtigsten Detailinformationen befinden sich in den Markdown-Dateien im Ord
 | [Architektur](docs/architecture.md)  | Technischer Aufbau und Zusammenspiel der Komponenten          |
 | [Routing-Logik](docs/routing.md)     | Routingmodelle, Kostenfunktion und Ergebnisformat             |
 | [Wetterdaten](docs/weather-data.md)  | Bezug, Aufbereitung und Zuordnung der MeteoSwiss-Daten        |
+| [A-priori-Arbeiten](docs/apriori.md) | Vorarbeiten, Experimente und frühe Prototypen                 |
+| [AI-Nutzung](docs/aiusage.md)        | Einsatz von KI-Unterstützung im Projekt                       |
+| [Reflektionen](docs/reflektionen.md) | Reflexionen zum Projektverlauf und zu den Ergebnissen         |
+| [GitHub Page](docs/index.md)         | Startseite der veröffentlichten Projektdokumentation          |
 
 ## API
 
