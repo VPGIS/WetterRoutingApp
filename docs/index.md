@@ -47,6 +47,10 @@ Das Projekt entstand im Rahmen des Vertiefungsprofils Geoinformatik/Raumanalyse 
     <strong>A priori</strong>
     <span>Interessante Experimente und verworfene Ansätze</span>
   </a>
+  <a class="doc-card" href="reflektionen.html">
+    <strong>Reflektionen</strong>
+    <span>Persönliche Rückblicke auf Entscheidungen, Herausforderungen und Learnings.</span>
+  </a>
 </div>
 
 ## Projektaufbau
