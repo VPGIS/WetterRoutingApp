@@ -10,23 +10,16 @@ Diese Datei beschreibt die Routingmodelle, die Kostenberechnung und die Verwendu
 
 ## Überblick
 
-Die Wetter Routing App berechnet Fahrradrouten auf Basis von OpenStreetMap-Graphen. Die Anwendung bewertet Kanten nicht nur nach ihrer Länge, sondern kann zusätzlich Niederschlagsdaten aus MeteoSwiss-Forecasts berücksichtigen. Dadurch werden Streckenabschnitte mit ungünstigen Wetterbedingungen höher gewichtet.
+Die Wetter Routing App berechnet Fahrradrouten auf Basis von OpenStreetMap-Graphen. Die Kanten werden nicht nur nach ihrer Länge, sondern zusätzlich ebenfalls aufgrund des Niederschlags bewertet. Dadurch werden Streckenabschnitte mit ungünstigen Wetterbedingungen höher gewichtet, sodass der Fahrradfahrer gelangt möglichst trocken ans Ziel gelangt.
 
 Die Routinglogik ist Teil der FastAPI-Verarbeitung. Eine Anfrage kommt über den Endpunkt `/WAPapi/v1/route` ins Backend, wird in `backend/api.py` vorbereitet und anschliessend an eines der Routingmodelle übergeben.
 
-Die wichtigste Datei für die Routingmodelle ist:
+Die Routingmodelle werden in folgender Datei verwaltet:
 
 ```text
 backend/utils_routingmodels.py
 ```
 
-Zusätzlich werden Funktionen aus folgenden Dateien verwendet:
-
-```text
-backend/utils_forecast.py
-backend/utils_graph.py
-backend/utils_nc_file.py
-```
 
 Weitere Einordnung zum gesamten Ablauf befindet sich in:
 
@@ -53,8 +46,6 @@ Das Ergebnis der Routingfunktion ist eine Sequenz von Node-IDs. Diese wird danac
 
 ## Routingmodelle
 
- 
-
 Aktuell stehen zwei Routingmodelle zur Verfügung:
 
 | Routingmodell | Beschreibung                                                     |
@@ -64,97 +55,54 @@ Aktuell stehen zwei Routingmodelle zur Verfügung:
 
 Beide Modelle verwenden dieselbe Grundidee für die Wetterbewertung: Pro Kante wird ein Forecast-Wert gelesen und daraus mit `compute_rain_adjusted_cost` ein wetterabhängiger Kostenwert berechnet.
 
-### Dijkstra  
-Den beiden Routingmodellen liegt der Dijkstra-Algorithmus zugrunde. Er wurde 1959 von Edsger W. Dijkstra veröffentlicht und dient dazu, in einem Graphen den kürzesten beziehungsweise kostengünstigsten Pfad zwischen Knoten zu finden. Dabei wird schrittweise immer der aktuell günstigste noch offene Knoten erweitert, bis das Ziel erreicht ist.
+### Dijkstra
 
-Für diese Anwendung eignet sich Dijkstra besonders gut, weil der Algorithmus einfach nachvollziehbar, robust und flexibel anpassbar ist. Die Kantengewichte müssen nicht nur Distanzen abbilden, sondern können beliebige Kosten enthalten. Dadurch lassen sich neben der Streckenlänge auch Wetterdaten wie Niederschlag in die Routenbewertung einbeziehen. Zudem bildet Dijkstra eine gute Grundlage für beide Varianten: das statische Modell `rain` und das zeitabhängige Modell `rain+`.
+Den Routingmodellen liegt der Dijkstra-Algorithmus zugrunde. Er wurde 1959 von Edsger W. Dijkstra veröffentlicht und dient dazu, in einem Graphen den kürzesten beziehungsweise kostengünstigsten Pfad zwischen Knoten zu finden. Dabei wird schrittweise immer der aktuell günstigste noch offene Knoten erweitert, bis das Ziel erreicht ist.
 
-<div style="text-align: center; margin: 1.5rem 0;">
+Für diese Anwendung eignet sich der Dijkstra-Algorithmus besonders gut, da er einfach nachvollziehbar, robust und flexibel an unterschiedliche Kostenfunktionen anpassbar ist. NetworkX respektive OSMnx verfügen bereits über bestehende Implementierungen, die für das statische Modell rain eingesetzt werden können. Das zeitabhängige Modell rain+ verwendet hingegen eine eigene Implementierung, da die zusätzliche Zeitkomponente von den oben genannten Bibliotheken in der benötigten Form nicht unterstützt wird.
+
+Obwohl der Dijkstra-Algorithmus in bestimmten Anwendungsfällen weniger performant sein kann als heuristische Verfahren wie beispielsweise der A*-Algorithmus, wurde er für dieses Projekt bewusst gewählt. Der Grund dafür liegt darin, dass Dijkstra ohne Heuristik arbeitet und dadurch transparenter sowie einfacher kontrollierbar ist. Dies ist insbesondere für die Integration projektspezifischer Gewichtungen und zeitabhängiger Kosten relevant. Während A* stark von der Wahl einer geeigneten Heuristik abhängt, lässt sich Dijkstra direkter anpassen und erlaubt eine klarere Nachvollziehbarkeit der berechneten Routen. Für dieses Projekt wurde deshalb die bessere Manipulierbarkeit und Interpretierbarkeit höher gewichtet als eine mögliche Performanceoptimierung durch A*.
+
+Die nachfolgende Grafik zeigt grafisch auf, wie sich der Dijkstra-Algorithmus Schritt für Schritt durch den Graphen arbeitet, um die kostengünstigste Route von Node A zu Node Z zu finden:
+
+<div
+  class="routing-animation"
+  data-frame-base="assets/Dijkstra_GIF/Folie"
+  data-frame-extension=".PNG"
+  data-total-frames="39"
+  style="text-align: center; margin: 1.5rem 0;"
+>
   <img
-    id="dijkstraFrame"
+    class="routing-animation-frame"
     src="assets/Dijkstra_GIF/Folie1.PNG"
     alt="Dijkstra Routing Animation"
     style="max-width: 100%; border: 1px solid #ddd; border-radius: 8px;"
   >
 
   <div style="margin-top: 10px;">
-    <button type="button" onclick="prevDijkstraFrame()">Zurück</button>
-    <button type="button" onclick="toggleDijkstraPlay()" id="dijkstraPlayButton">Play</button>
-    <button type="button" onclick="nextDijkstraFrame()">Weiter</button>
+    <button type="button" data-action="prev" aria-label="Vorheriger Frame" title="Vorheriger Frame">&#9198;</button>
+    <button type="button" data-action="toggle" aria-label="Animation abspielen" title="Animation abspielen">&#9654;</button>
+    <button type="button" data-action="next" aria-label="Nächster Frame" title="Nächster Frame">&#9197;</button>
   </div>
 
-  <p id="dijkstraFrameCounter">Frame 1 / 39</p>
+  <p class="routing-animation-counter">Frame 1 / 39</p>
 </div>
 
-<script>
-  const totalDijkstraFrames = 39;
-  let currentDijkstraFrame = 1;
-  let dijkstraPlaying = false;
-  let dijkstraInterval = null;
-
-  function dijkstraFramePath(frame) {
-    return `assets/Dijkstra_GIF/Folie${frame}.PNG`;
-  }
-
-  function updateDijkstraFrame() {
-    document.getElementById("dijkstraFrame").src = dijkstraFramePath(currentDijkstraFrame);
-    document.getElementById("dijkstraFrameCounter").innerText =
-      `Frame ${currentDijkstraFrame} / ${totalDijkstraFrames}`;
-  }
-
-  function nextDijkstraFrame() {
-    currentDijkstraFrame = currentDijkstraFrame < totalDijkstraFrames
-      ? currentDijkstraFrame + 1
-      : totalDijkstraFrames;
-    updateDijkstraFrame();
-  }
-
-  function prevDijkstraFrame() {
-    currentDijkstraFrame = currentDijkstraFrame > 1 ? currentDijkstraFrame - 1 : 1;
-    updateDijkstraFrame();
-  }
-
-  function toggleDijkstraPlay() {
-    const button = document.getElementById("dijkstraPlayButton");
-
-    if (dijkstraPlaying) {
-      clearInterval(dijkstraInterval);
-      dijkstraPlaying = false;
-      button.innerText = "Play";
-    } else {
-      dijkstraInterval = setInterval(() => {
-        if (currentDijkstraFrame < totalDijkstraFrames) {
-          nextDijkstraFrame();
-        } else {
-          clearInterval(dijkstraInterval);
-          dijkstraPlaying = false;
-          button.innerText = "Play";
-        }
-      }, 500);
-
-      dijkstraPlaying = true;
-      button.innerText = "Pause";
-    }
-  }
-</script>
-
-
+<details style="margin: 1rem 0 1.5rem;">
+  <summary>GIF-Version anzeigen</summary>
+  <div style="text-align: center; margin-top: 1rem;">
+    <img
+      src="assets/Dijkstra_GIF/Dijkstra.gif"
+      alt="Dijkstra Routing Animation als GIF"
+      style="max-width: 100%; border: 1px solid #ddd; border-radius: 8px;"
+    >
+  </div>
+</details>
 
 ## Einfaches Routingmodell: `rain`
 
-Das Modell `rain` verwendet einen statischen Dijkstra-Ansatz.
+Das Modell `rain` verwendet einen statischen Dijkstra-Ansatz und ist im Modul `static_weather_djikstra` umgesetzt.
 
-Implementierung im Code:
-
-```text
-static_weather_djikstra
-```
-
-Datei:
-
-```text
-backend/utils_routingmodels.py
-```
 
 ### Grundidee
 
@@ -162,21 +110,42 @@ Bei diesem Modell werden alle Kanten vor der eigentlichen Wegsuche einmalig bewe
 
 Danach wird mit OSMnx der kürzeste Pfad anhand der berechneten Kosten gesucht. Die Route bleibt dadurch einfach nachvollziehbar und ist schneller berechnet als beim zeitabhängigen Modell.
 
-### Ablauf
+In der nachfolgenden Grafik ist das einfache Routingmodell interaktiv dargestellt:
 
-```text
-1. Routingmodell starten
-2. Start- und Zielnode übernehmen
-3. Forecast zur Startzeit bestimmen
-4. Für jede Edge:
-   - Forecast-Wert lesen
-   - Regen-Penalty berechnen
-   - Kosten (`cost`) setzen
-   - Reisezeit (`travel_time`) setzen
-5. Kürzesten Pfad mit OSMnx berechnen
-   - Gewichtung: `cost`
-6. Node-Pfad zurückgeben
-```
+<div
+  class="routing-animation"
+  data-frame-base="assets/Dijkstra_rain_GIF/Folie"
+  data-frame-extension=".PNG"
+  data-total-frames="42"
+  style="text-align: center; margin: 1.5rem 0;"
+>
+  <img
+    class="routing-animation-frame"
+    src="assets/Dijkstra_rain_GIF/Folie1.PNG"
+    alt="Animation des Routingmodells rain"
+    style="max-width: 100%; border: 1px solid #ddd; border-radius: 8px;"
+  >
+
+  <div style="margin-top: 10px;">
+    <button type="button" data-action="prev" aria-label="Vorheriger Frame" title="Vorheriger Frame">&#9198;</button>
+    <button type="button" data-action="toggle" aria-label="Animation abspielen" title="Animation abspielen">&#9654;</button>
+    <button type="button" data-action="next" aria-label="Nächster Frame" title="Nächster Frame">&#9197;</button>
+  </div>
+
+  <p class="routing-animation-counter">Frame 1 / 42</p>
+</div>
+
+<details style="margin: 1rem 0 1.5rem;">
+  <summary>GIF-Version anzeigen</summary>
+  <div style="text-align: center; margin-top: 1rem;">
+    <img
+      src="assets/Dijkstra_rain_GIF/Dijkstra_rain.gif"
+      alt="Animation des Routingmodells rain als GIF"
+      style="max-width: 100%; border: 1px solid #ddd; border-radius: 8px;"
+    >
+  </div>
+</details>
+
 
 ### Vorteile
 
@@ -195,19 +164,7 @@ Danach wird mit OSMnx der kürzeste Pfad anhand der berechneten Kosten gesucht. 
 
 ## Erweitertes Routingmodell: `rain+`
 
-Das Modell `rain+` verwendet einen zeitabhängigen Dijkstra-Ansatz.
-
-Implementierung:
-
-```text
-td_weather_dijkstra
-```
-
-Datei:
-
-```text
-backend/utils_routingmodels.py
-```
+Das Modell `rain+` verwendet einen zeitabhängigen Dijkstra-Ansatz und ist im Modul `td_weather_dijkstra` umgesetzt.
 
 ### Grundidee
 
@@ -215,33 +172,41 @@ Bei diesem Modell wird nicht nur betrachtet, welche Kante befahren wird, sondern
 
 Im Unterschied zum einfachen Modell wird der Forecast während der Suche laufend anhand der erwarteten Ankunftszeit abgefragt. Zwischen den Forecast-Zeitschritten wird interpoliert.
 
-### Ablauf
+In der nachfolgenden Grafik ist das erweiterte Routingmodell interaktiv dargestellt:
 
-```text
-1. Advanced-Routingmodell starten
-2. Start-State initialisieren
-3. Priority Queue erstellen
-4. Startnode mit Kosten `0` einfügen
-5. Solange die Priority Queue nicht leer ist:
-   - State mit den geringsten Kosten entnehmen
-   - Prüfen, ob das Ziel erreicht wurde
-   - Falls ja:
-     - Pfad rekonstruieren
-     - Node-Pfad zurückgeben
-   - Falls nein:
-     - Ausgehende Kanten prüfen
-     - Travel Time der Kante berechnen
-     - Ankunftszeit am Nachbarn bestimmen
-     - Forecast zur Ankunftszeit interpolieren
-     - Regen-Penalty berechnen
-     - Neue Gesamtkosten berechnen
-     - Prüfen, ob ein besserer Pfad gefunden wurde
-     - Falls ja:
-       - `dist` und `parent` aktualisieren
-       - Neuen State in die Priority Queue einfügen
-6. Falls die Priority Queue leer ist:
-   - Keine Route gefunden
-```
+<div
+  class="routing-animation"
+  data-frame-base="assets/Dijkstra_rainplus_GIF/Folie"
+  data-frame-extension=".PNG"
+  data-total-frames="49"
+  style="text-align: center; margin: 1.5rem 0;"
+>
+  <img
+    class="routing-animation-frame"
+    src="assets/Dijkstra_rainplus_GIF/Folie1.PNG"
+    alt="Animation des Routingmodells rain+"
+    style="max-width: 100%; border: 1px solid #ddd; border-radius: 8px;"
+  >
+
+  <div style="margin-top: 10px;">
+    <button type="button" data-action="prev" aria-label="Vorheriger Frame" title="Vorheriger Frame">&#9198;</button>
+    <button type="button" data-action="toggle" aria-label="Animation abspielen" title="Animation abspielen">&#9654;</button>
+    <button type="button" data-action="next" aria-label="Nächster Frame" title="Nächster Frame">&#9197;</button>
+  </div>
+
+  <p class="routing-animation-counter">Frame 1 / 49</p>
+</div>
+
+<details style="margin: 1rem 0 1.5rem;">
+  <summary>GIF-Version anzeigen</summary>
+  <div style="text-align: center; margin-top: 1rem;">
+    <img
+      src="assets/Dijkstra_rainplus_GIF/Dijkstra_rainplus.gif"
+      alt="Animation des Routingmodells rain+ als GIF"
+      style="max-width: 100%; border: 1px solid #ddd; border-radius: 8px;"
+    >
+  </div>
+</details>
 
 ### Vorteile
 
@@ -252,7 +217,7 @@ Im Unterschied zum einfachen Modell wird der Forecast während der Suche laufend
 
 ### Grenzen
 
-- rechenintensiver als `einfach`
+- rechenintensiver als das einfache Modell
 - komplexere Zustandsverwaltung
 - mehr Forecast-Abfragen während der Suche
 
@@ -362,3 +327,68 @@ Die Antwort enthält pro Routensegment unter anderem:
 - `cost`
 - `travel_time`
 - `geometry`
+
+<script>
+  document.querySelectorAll(".routing-animation").forEach((animation) => {
+    const frame = animation.querySelector(".routing-animation-frame");
+    const counter = animation.querySelector(".routing-animation-counter");
+    const playButton = animation.querySelector('[data-action="toggle"]');
+    const totalFrames = Number(animation.dataset.totalFrames);
+    const frameBase = animation.dataset.frameBase;
+    const frameExtension = animation.dataset.frameExtension || ".PNG";
+    let currentFrame = 1;
+    let playing = false;
+    let interval = null;
+
+    function framePath(frameNumber) {
+      return `${frameBase}${frameNumber}${frameExtension}`;
+    }
+
+    function updateFrame() {
+      frame.src = framePath(currentFrame);
+      counter.innerText = `Frame ${currentFrame} / ${totalFrames}`;
+    }
+
+    function nextFrame() {
+      currentFrame = currentFrame < totalFrames ? currentFrame + 1 : totalFrames;
+      updateFrame();
+    }
+
+    function prevFrame() {
+      currentFrame = currentFrame > 1 ? currentFrame - 1 : 1;
+      updateFrame();
+    }
+
+    function stopPlayback() {
+      clearInterval(interval);
+      playing = false;
+      playButton.innerText = "\u25B6";
+      playButton.setAttribute("aria-label", "Animation abspielen");
+      playButton.setAttribute("title", "Animation abspielen");
+    }
+
+    function togglePlayback() {
+      if (playing) {
+        stopPlayback();
+        return;
+      }
+
+      interval = setInterval(() => {
+        if (currentFrame < totalFrames) {
+          nextFrame();
+        } else {
+          stopPlayback();
+        }
+      }, 500);
+
+      playing = true;
+      playButton.innerText = "\u23F8";
+      playButton.setAttribute("aria-label", "Animation pausieren");
+      playButton.setAttribute("title", "Animation pausieren");
+    }
+
+    animation.querySelector('[data-action="prev"]').addEventListener("click", prevFrame);
+    animation.querySelector('[data-action="next"]').addEventListener("click", nextFrame);
+    playButton.addEventListener("click", togglePlayback);
+  });
+</script>
