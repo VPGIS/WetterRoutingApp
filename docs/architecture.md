@@ -88,12 +88,12 @@ Aufgaben des Frontends:
 
 
 <p><strong>Standardablauf: User möchte Route berechnen lassen</strong></p>
-<video id="vid-calc" style="width:100%;" loop muted playsinline>
+<video id="vid-calc" style="width:100%;border-radius:8px;box-shadow:0 6px 18px rgba(25,42,55,0.06);" loop muted playsinline>
   <source src="assets/calc.mp4" type="video/mp4">
 </video>
 
 <p><strong>Interface Showcase: Kurzer rundown verschiedener Frontend Features</strong></p>
-<video id="vid-interface" style="width:100%;clip-path:inset(0 3px 0 0);" loop muted playsinline>
+<video id="vid-interface" style="width:100%;clip-path:inset(0 3px 0 0);border-radius:8px;box-shadow:0 6px 18px rgba(25,42,55,0.06);" loop muted playsinline>
   <source src="assets/interface.mp4" type="video/mp4">
 </video>
 <script>
