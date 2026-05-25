@@ -49,7 +49,7 @@ Das Projekt entstand im Rahmen des Vertiefungsprofils Geoinformatik/Raumanalyse 
   </a>
   <a class="doc-card" href="reflektionen.html">
     <strong>Reflektionen</strong>
-    <span>Persönliche Rückblicke auf Entscheidungen, Herausforderungen und Learnings.</span>
+    <span>Persönliche Rückblicke auf Learnings.</span>
   </a>
 </div>
 

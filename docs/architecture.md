@@ -104,7 +104,7 @@ Aufgaben des Frontends:
       if (entry.isIntersecting) { entry.target.play(); }
       else { entry.target.pause(); }
     });
-  }, { threshold: 0.25 });
+  }, { threshold: 0, rootMargin: '-33% 0px -33% 0px' });
   function init() {
     ids.forEach(function (id) {
       var v = document.getElementById(id);
