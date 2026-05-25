@@ -670,11 +670,15 @@ def check_fetch_on_startup():
         print(f"[{ts}] Data is up-to-date")
         # Even if .nc is fresh, PNGs may be stale (e.g. after a restart).
         # Re-render if rain_layers is missing or older than the newest .nc.
+        # If the NC file is unreadable (corrupt / incomplete write), delete it
+        # and force a fresh fetch so the daemon self-heals automatically.
+        _suspect_nc = None
         try:
             from utils_render import render_from_nc, RAIN_LAYERS_DIR
             nc_files = list(OUTPUT_DIR.glob("*.nc"))
             if nc_files:
                 newest_nc = max(nc_files, key=lambda f: f.stat().st_mtime)
+                _suspect_nc = newest_nc  # track so except block can delete it
                 png_files = list(RAIN_LAYERS_DIR.glob("rain_*.png")) if RAIN_LAYERS_DIR.exists() else []
                 needs_render = (
                     not png_files
@@ -683,8 +687,16 @@ def check_fetch_on_startup():
                 if needs_render:
                     print(f"[{ts}] PNGs missing or stale — re-rendering from {newest_nc.name}")
                     render_from_nc(newest_nc)
+                _suspect_nc = None  # render succeeded — file is valid
         except Exception as e:
             print(f"[{ts}] Re-render check failed: {e}")
+            if _suspect_nc is not None:
+                try:
+                    print(f"[{ts}] Removing corrupt NC file: {_suspect_nc.name} — forcing re-fetch")
+                    _suspect_nc.unlink()
+                except Exception as del_err:
+                    print(f"[{ts}] Could not remove NC file: {del_err}")
+            fetch_and_save()
 
 
 def scheduler_loop():

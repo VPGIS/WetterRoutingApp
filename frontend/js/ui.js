@@ -38,6 +38,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
       ticksContainer.innerHTML = "";
       const totalHours = LABELS.length;
+      let lastDay = "";
 
       for (let i = 0; i < totalHours; i++) {
         const span = document.createElement("span");
@@ -60,6 +61,14 @@ document.addEventListener("DOMContentLoaded", () => {
           const timeStr = parts[1].replace(" CE(S)T", "");
           const timeParts = timeStr.split(" ");
           if (timeParts.length >= 4) timeText = timeParts[3];
+          // Mark the first tick of each new calendar day so the user can
+          // distinguish duplicate hour labels that cross midnight.
+          const dayNum = timeParts[1] || "";
+          if (dayNum && dayNum !== lastDay) {
+            span.dataset.date = `${timeParts[0]} ${dayNum}.`;
+            span.classList.add("day-boundary");
+            lastDay = dayNum;
+          }
         }
 
         span.textContent = timeText;

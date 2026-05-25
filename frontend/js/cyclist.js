@@ -46,8 +46,8 @@
   let cyclistArrivalDone = false;
 
   // Colours mirror the start / end circleMarker fillColors in routing.js
-  const START_COLOR = "#10b981";
-  const DEST_COLOR  = "#ef4444";
+  const START_COLOR = "#ef4444";
+  const DEST_COLOR  = "#10b981";
 
   // ── Haversine distance (metres) between two [lon, lat] points ──────────────
   function haversine(a, b) {
@@ -131,10 +131,10 @@
       hasArrived         = false;
       cyclistArrivalDone = false;
       halo.style.border    = `2.5px solid ${START_COLOR}`;
-      halo.style.boxShadow = `0 0 10px rgba(16,185,129,0.5)`;
+      halo.style.boxShadow = `0 0 10px rgba(239,68,68,0.5)`;
     } else if (dist >= totalDist) {
       halo.style.border    = `2.5px solid ${DEST_COLOR}`;
-      halo.style.boxShadow = `0 0 12px rgba(239,68,68,0.55)`;
+      halo.style.boxShadow = `0 0 12px rgba(16,185,129,0.55)`;
       hasArrived = true;
       // Only dispatch once per route so pressing play again doesn't re-trigger stopPlay
       if (!cyclistArrivalDone) {

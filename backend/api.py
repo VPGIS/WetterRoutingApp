@@ -393,10 +393,16 @@ def get_route(
         log_step(f"nc selected: {nc_filepath}")
 
     try:
-        ds = xr.open_dataset(nc_filepath)
+        ds = xr.open_dataset(nc_filepath, engine="netcdf4")
     except FileNotFoundError as exc:
         print(f"[route] nc open failed: {exc}")
         raise HTTPException(status_code=404, detail=str(exc))
+    except ValueError as exc:
+        print(f"[route] nc unreadable (corrupt?): {exc}")
+        raise HTTPException(
+            status_code=503,
+            detail="Wetterdaten werden gerade erneuert – bitte in Kürze erneut versuchen.",
+        )
 
     print(f"[route] nc_filepath={nc_filepath}")
     log_step(f"nc opened with variables={list(ds.data_vars)}")

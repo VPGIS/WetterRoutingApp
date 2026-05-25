@@ -188,7 +188,7 @@ document.addEventListener("DOMContentLoaded", () => {
         vpStartMarker = L.circleMarker([lat, lng], {
           color: "#000",
           weight: 1,
-          fillColor: "#10b981",
+          fillColor: "#ef4444",
           radius: 6,
           fillOpacity: 0.9,
           pane: "waypoints",
@@ -198,7 +198,7 @@ document.addEventListener("DOMContentLoaded", () => {
         vpEndMarker = L.circleMarker([lat, lng], {
           color: "#000",
           weight: 1,
-          fillColor: "#ef4444",
+          fillColor: "#10b981",
           radius: 6,
           fillOpacity: 0.9,
           pane: "waypoints",
@@ -242,7 +242,7 @@ document.addEventListener("DOMContentLoaded", () => {
           vpStartMarker = L.circleMarker([coords.lat, coords.lon], {
             color: "#000",
             weight: 1,
-            fillColor: "#10b981",
+            fillColor: "#ef4444",
             radius: 6,
             fillOpacity: 0.9,
             pane: "route",
@@ -252,7 +252,7 @@ document.addEventListener("DOMContentLoaded", () => {
           vpEndMarker = L.circleMarker([coords.lat, coords.lon], {
             color: "#000",
             weight: 1,
-            fillColor: "#ef4444",
+            fillColor: "#10b981",
             radius: 6,
             fillOpacity: 0.9,
             pane: "route",
