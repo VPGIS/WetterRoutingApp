@@ -53,6 +53,8 @@ Das Ergebnis der Routingfunktion ist eine Sequenz von Node-IDs. Diese wird danac
 
 ## Routingmodelle
 
+ 
+
 Aktuell stehen zwei Routingmodelle zur Verfügung:
 
 | Routingmodell | Beschreibung                                                     |
@@ -62,7 +64,81 @@ Aktuell stehen zwei Routingmodelle zur Verfügung:
 
 Beide Modelle verwenden dieselbe Grundidee für die Wetterbewertung: Pro Kante wird ein Forecast-Wert gelesen und daraus mit `compute_rain_adjusted_cost` ein wetterabhängiger Kostenwert berechnet.
 
----
+### Dijkstra  
+Den beiden Routingmodellen liegt der Dijkstra-Algorithmus zugrunde. Er wurde 1959 von Edsger W. Dijkstra veröffentlicht und dient dazu, in einem Graphen den kürzesten beziehungsweise kostengünstigsten Pfad zwischen Knoten zu finden. Dabei wird schrittweise immer der aktuell günstigste noch offene Knoten erweitert, bis das Ziel erreicht ist.
+
+Für diese Anwendung eignet sich Dijkstra besonders gut, weil der Algorithmus einfach nachvollziehbar, robust und flexibel anpassbar ist. Die Kantengewichte müssen nicht nur Distanzen abbilden, sondern können beliebige Kosten enthalten. Dadurch lassen sich neben der Streckenlänge auch Wetterdaten wie Niederschlag in die Routenbewertung einbeziehen. Zudem bildet Dijkstra eine gute Grundlage für beide Varianten: das statische Modell `rain` und das zeitabhängige Modell `rain+`.
+
+<div style="text-align: center; margin: 1.5rem 0;">
+  <img
+    id="dijkstraFrame"
+    src="assets/Dijkstra_GIF/Folie1.PNG"
+    alt="Dijkstra Routing Animation"
+    style="max-width: 100%; border: 1px solid #ddd; border-radius: 8px;"
+  >
+
+  <div style="margin-top: 10px;">
+    <button type="button" onclick="prevDijkstraFrame()">Zurück</button>
+    <button type="button" onclick="toggleDijkstraPlay()" id="dijkstraPlayButton">Play</button>
+    <button type="button" onclick="nextDijkstraFrame()">Weiter</button>
+  </div>
+
+  <p id="dijkstraFrameCounter">Frame 1 / 39</p>
+</div>
+
+<script>
+  const totalDijkstraFrames = 39;
+  let currentDijkstraFrame = 1;
+  let dijkstraPlaying = false;
+  let dijkstraInterval = null;
+
+  function dijkstraFramePath(frame) {
+    return `assets/Dijkstra_GIF/Folie${frame}.PNG`;
+  }
+
+  function updateDijkstraFrame() {
+    document.getElementById("dijkstraFrame").src = dijkstraFramePath(currentDijkstraFrame);
+    document.getElementById("dijkstraFrameCounter").innerText =
+      `Frame ${currentDijkstraFrame} / ${totalDijkstraFrames}`;
+  }
+
+  function nextDijkstraFrame() {
+    currentDijkstraFrame = currentDijkstraFrame < totalDijkstraFrames
+      ? currentDijkstraFrame + 1
+      : totalDijkstraFrames;
+    updateDijkstraFrame();
+  }
+
+  function prevDijkstraFrame() {
+    currentDijkstraFrame = currentDijkstraFrame > 1 ? currentDijkstraFrame - 1 : 1;
+    updateDijkstraFrame();
+  }
+
+  function toggleDijkstraPlay() {
+    const button = document.getElementById("dijkstraPlayButton");
+
+    if (dijkstraPlaying) {
+      clearInterval(dijkstraInterval);
+      dijkstraPlaying = false;
+      button.innerText = "Play";
+    } else {
+      dijkstraInterval = setInterval(() => {
+        if (currentDijkstraFrame < totalDijkstraFrames) {
+          nextDijkstraFrame();
+        } else {
+          clearInterval(dijkstraInterval);
+          dijkstraPlaying = false;
+          button.innerText = "Play";
+        }
+      }, 500);
+
+      dijkstraPlaying = true;
+      button.innerText = "Pause";
+    }
+  }
+</script>
+
+
 
 ## Einfaches Routingmodell: `rain`
 
