@@ -87,11 +87,11 @@ Aufgaben des Frontends:
 - Darstellung der berechneten Route
 
 
-<div style="display:flex;justify-content:center;align-items:flex-start;gap:24px;flex-wrap:wrap;">
-  <video height="420" autoplay loop muted playsinline>
+<div style="display:flex;justify-content:center;align-items:flex-start;gap:24px;flex-wrap:wrap;width:100%;">
+  <video style="width:calc(50% - 12px);" autoplay loop muted playsinline>
     <source src="assets/calc.mp4" type="video/mp4">
   </video>
-  <video height="420" autoplay loop muted playsinline>
+  <video style="width:calc(50% - 12px);" autoplay loop muted playsinline>
     <source src="assets/interface.mp4" type="video/mp4">
   </video>
 </div>
