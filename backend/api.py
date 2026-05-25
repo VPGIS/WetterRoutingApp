@@ -392,6 +392,7 @@ def get_route(
         )
         log_step(f"nc selected: {nc_filepath}")
 
+    # Corruptions failssafe: Wenn .nc beschädigt / korrupt neuer fetch.
     try:
         ds = xr.open_dataset(nc_filepath, engine="netcdf4")
     except FileNotFoundError as exc:
