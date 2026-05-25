@@ -88,13 +88,41 @@ Aufgaben des Frontends:
 
 
 <div style="display:flex;justify-content:center;align-items:flex-start;gap:24px;flex-wrap:wrap;width:100%;">
-  <video style="width:calc(50% - 12px);" autoplay loop muted playsinline>
-    <source src="assets/calc.mp4" type="video/mp4">
-  </video>
-  <video style="width:calc(50% - 12px);" autoplay loop muted playsinline>
-    <source src="assets/interface.mp4" type="video/mp4">
-  </video>
+  <div style="width:calc(50% - 12px);">
+    <p style="margin:0 0 6px;"><strong>Standardablauf: User möchte Route berechnen lassen</strong></p>
+    <video id="vid-calc" style="width:100%;" loop muted playsinline>
+      <source src="assets/calc.mp4" type="video/mp4">
+    </video>
+  </div>
+  <div style="width:calc(50% - 12px);">
+    <p style="margin:0 0 6px;"><strong>Interface Showcase: Kurzer rundown verschiedener Frontend Features</strong></p>
+    <video id="vid-interface" style="width:100%;" loop muted playsinline>
+      <source src="assets/interface.mp4" type="video/mp4">
+    </video>
+  </div>
 </div>
+<script>
+(function () {
+  var ids = ['vid-calc', 'vid-interface'];
+  var observer = new IntersectionObserver(function (entries) {
+    entries.forEach(function (entry) {
+      if (entry.isIntersecting) { entry.target.play(); }
+      else { entry.target.pause(); }
+    });
+  }, { threshold: 0.25 });
+  function init() {
+    ids.forEach(function (id) {
+      var v = document.getElementById(id);
+      if (v) observer.observe(v);
+    });
+  }
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', init);
+  } else {
+    init();
+  }
+})();
+</script>
 
 ---
 
