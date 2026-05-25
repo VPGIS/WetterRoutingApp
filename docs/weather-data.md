@@ -215,20 +215,30 @@ Wenn keine passende Datei gefunden wird, kann keine wetterbasierte Route berechn
 
 Damit Wetterdaten im Routing verwendet werden können, müssen die Kanten des OSM-Graphen mit dem Wetterraster verknüpft werden. Diese Zuordnung verbindet die räumliche Struktur des Wegenetzes mit den Rasterzellen der NetCDF-Datei.
 
-Der Prozess wird beim Erstellen eines neuen Graphen ausgeführt und die berechneten Zellinformationen werden anschliessend direkt im Graphen gespeichert.
+Die räumliche Zuordnung wird beim Erstellen eines neuen Graphen einmalig berechnet. Dabei wird nicht der eigentliche Forecast-Wert gespeichert, sondern nur die Position der nächstgelegenen Wetterzelle. Die berechneten Zellinformationen bleiben anschliessend direkt im Graphen erhalten.
 
 Ablauf:
 
-1. Das Wetterraster wird aus `NC_for_Cellid.nc` gelesen.
-2. Aus den Rasterpunkten wird ein KD-Tree aufgebaut.
+1. Die reduzierte Rastergeometrie wird aus `NC_for_Cellid.nc` gelesen.
+2. Aus den Rasterpunkten (`lat`, `lon`) wird ein KD-Tree aufgebaut.
 3. Für jede OSM-Kante wird ein Referenzpunkt bestimmt, in der Regel der Mittelpunkt der Geometrie.
 4. Der nächstgelegene Rasterpunkt wird gesucht.
 5. Die Kante erhält die Attribute `cell_i`, `cell_j` und `cell_id`.
 
 Diese Attribute bleiben im gespeicherten Graphen erhalten und können bei späteren Routinganfragen direkt wiederverwendet werden.
 
+Die Forecast-Werte selbst werden nicht für jede Kante einzeln aus der NetCDF-Datei abgefragt, da dies sehr rechenintensiv ist. Stattdessen wird in `get_forecast_grid` zuerst der benötigte Zeitpunkt aus der NetCDF-Datei gesliced. Daraus entsteht ein zweidimensionales Forecast-Raster (`y`, `x`) welches effizienter abgefragt werden kann.
+
+Beim Modell `rain` wird dieses Raster einmal für die Startzeit erstellt. Beim Modell `rain+` wird es anhand der erwarteten Ankunftszeit erzeugt und bei Bedarf zwischen zwei Forecast-Zeitschritten interpoliert.
+
+Danach wird der Wert einer Kante nur noch über die gespeicherten Zellindizes gelesen:
+
+```text
+forecast = forecast_grid[cell_i, cell_j]
+```
+
 ### Vorteil der Zellzuordnung
 
-Die Zuordnung muss nicht bei jeder Routinganfrage neu berechnet werden. Das verbessert die Laufzeit, reduziert wiederholte Rasterabfragen und macht gespeicherte Graphen wiederverwendbar.
+Die räumliche Zuordnung muss nicht bei jeder Routinganfrage neu berechnet werden. Gleichzeitig muss xarray nicht für jede einzelne Kante aufgerufen werden, weil das relevante Forecast-Raster vorgängig gesliced wird. Dadurch werden wiederholte NetCDF-Zugriffe reduziert, die Laufzeit verbessert und gespeicherte Graphen bleiben wiederverwendbar.
 
 Weitere Informationen zur Verwendung dieser Zellattribute in der Routenberechnung befinden sich in [Routing-Logik](routing.html#wetterzellen-auf-kanten).
