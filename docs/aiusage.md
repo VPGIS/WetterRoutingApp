@@ -10,7 +10,7 @@ Diese Seite beschreibt, wie und wo künstliche Intelligenz im Projekt eingesetzt
 
 ## Einstieg in die Wetterdaten
 
-Zu Beginn des Projekts war der Umgang mit Wetterdaten und den zugehörigen Formaten weitgehend unbekannt. AI half dabei, einen schnellen Überblick über verfügbare Datenquellen zu gewinnen: Was bietet MeteoSwiss an, welche Formate werden verwendet, was sind die Unterschiede zwischen GRIB2, NetCDF und ICON-Gittern?
+Zu Beginn des Projekts war der Umgang mit Wetterdaten und den zugehörigen Formaten weitgehend unbekannt. Nach einer eigenen Suche nach verfügbaren Daten half AI dabei, weitere Ansätze zu finden oder zusammenfassend Fragen zu beantworten: Was gibt es für Möglichkeiten, die nebst den bereits gefundenen Niederschlag oder Schnee zu erfassen? Was ist denn genau NetCDF?
 
 Nach allgemeinem Recherchieren konnten Vor- und Nachteile verschiedener Ansätze gezielt nachgefragt werden, etwa der Vergleich von ICON-CH1-EPS mit alternativen Quellen wie Copernicus-Satellitendaten. Entscheidend war dabei das Verifizieren, ob vorgeschlagene Ansätze überhaupt umsetzbar und zielführend waren, bevor Zeit in die Implementierung investiert wurde.
 
