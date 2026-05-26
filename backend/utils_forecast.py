@@ -86,7 +86,7 @@ def get_forecast_from_grid(edge, forecast_grid):
     j = int(edge["cell_j"])
     return float(forecast_grid[i, j])
 
-# decapitated
+# deprecated
 def get_forecast(
     G,
     ds,
