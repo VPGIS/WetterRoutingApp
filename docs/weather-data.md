@@ -75,7 +75,7 @@ Jede gespeicherte Datei enthält drei Variablen:
 | `hourly_rain` | `(lead_time, y, x)` | Ensemble-Mittelwert des stündlichen Niederschlags (diff von TOT_PREC) |
 | `hourly_rain_p90` | `(lead_time, y, x)` | 90. Perzentil des stündlichen Niederschlags über alle Ensemble-Member |
 
-`TOT_PREC` wird für die Routingkostenfunktion verwendet. `hourly_rain` und `hourly_rain_p90` werden von `utils_render.py` direkt ausgelesen und als PNG-Kacheln gerendert, ohne dass bei der Anfrage noch numpy- oder xarray-Operationen anfallen.
+`hourly_rain` wird für die Routingkostenfunktion verwendet. `hourly_rain` und `hourly_rain_p90` werden von `utils_render.py` direkt ausgelesen und als PNG-Kacheln gerendert, ohne dass bei der Anfrage noch numpy- oder xarray-Operationen anfallen.
 
 ## Aufbereitung der NetCDF-Datei
 

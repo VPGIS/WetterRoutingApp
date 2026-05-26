@@ -617,8 +617,8 @@ def fetch_and_save(output_dir: Path = OUTPUT_DIR) -> Path:
     # The routing endpoint derives lead_hours = (departure_unix - filename_stem) / 3600,
     # so the stem must be the forecast reference time, not the wall-clock download time.
     # The NC stores three variables so the frontend only ever needs this one file:
-    #   TOT_PREC       — raw ensemble cumulative precip (used by the routing backend)
-    #   hourly_rain    — ensemble-mean hourly diff (served to frontend as PNG tiles)
+    #   TOT_PREC       — raw ensemble cumulative precip
+    #   hourly_rain    — ensemble-mean hourly diff (used by routing and PNG tiles)
     #   hourly_rain_p90 — 90th-percentile hourly diff (rendered as halo PNG tiles)
     ts = int(ref_dt.timestamp())
     output_file = output_dir / f"{ts}.nc"

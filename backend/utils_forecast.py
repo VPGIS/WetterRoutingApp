@@ -10,7 +10,7 @@ def compute_rain_adjusted_cost(length, forecast, rainresistence):
         return length
 
     if rainresistence == "lowest":  # bei Regen wird die Strecke komplett vermieden
-        return np.inf
+        return 99999999
 
     if rainresistence == "highest":  # Regen hat keinen Einfluss auf die Kosten
         return length
@@ -52,7 +52,7 @@ def get_forecast_grid(
     target_timestamp,
     eps_idx=0,
     ref_time_idx=0,
-    var_name="TOT_PREC",
+    var_name="hourly_rain",
     interpolate=True,
 ):
     """
@@ -75,7 +75,12 @@ def get_forecast_grid(
         lead_idx = int(np.abs(lead_values - lead_hours).argmin())
         da_t = da.isel(lead_time=lead_idx)
 
-    return da_t.isel(eps=eps_idx, ref_time=ref_time_idx).values
+    if "eps" in da_t.dims:
+        da_t = da_t.isel(eps=eps_idx)
+    if "ref_time" in da_t.dims:
+        da_t = da_t.isel(ref_time=ref_time_idx)
+
+    return da_t.values
 
 
 def get_forecast_from_grid(edge, forecast_grid):
@@ -97,7 +102,7 @@ def get_forecast(
     target_timestamp,
     eps_idx=0,
     ref_time_idx=0,
-    var_name="TOT_PREC",
+    var_name="hourly_rain",
     interpolate=True,
 ):
     """

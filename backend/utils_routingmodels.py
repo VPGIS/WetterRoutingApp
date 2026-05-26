@@ -20,6 +20,7 @@ def static_weather_dijkstra(G, start_node, end_node, start_time, speed, ds, nc_f
         ds,
         file_timestamp=nc_file_timestamp,
         target_timestamp=start_time,
+        var_name="hourly_rain",
         interpolate=False,
     )
     print(f"[route] static model: forecast grid ready shape={forecast_grid.shape}")
@@ -94,6 +95,7 @@ def td_weather_dijkstra(G, start_node, end_node, start_timestamp, speed, ds, nc_
                 ds,
                 file_timestamp=nc_file_timestamp,
                 target_timestamp=bucket_timestamp,
+                var_name="hourly_rain",
                 interpolate=True,
             )
         return forecast_grid_cache[bucket_timestamp]

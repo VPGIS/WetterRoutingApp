@@ -451,7 +451,12 @@ def get_route(
         print(f"[route] invalid lead time: start_time={start_time}, nc_file_timestamp={nc_file_timestamp}, lead_hours={lead_hours}")
         raise HTTPException(status_code=400, detail="start_time is before the forecast file timestamp")
 
-    max_lead_idx = int(ds["TOT_PREC"].sizes.get("lead_time", 0)) - 1
+    if "hourly_rain" not in ds:
+        ds.close()
+        print("[route] forecast dataset has no hourly_rain variable")
+        raise HTTPException(status_code=500, detail="forecast dataset has no hourly_rain variable")
+
+    max_lead_idx = int(ds["hourly_rain"].sizes.get("lead_time", 0)) - 1
     if max_lead_idx < 0:
         ds.close()
         print("[route] forecast dataset has no lead_time dimension")
