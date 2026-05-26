@@ -273,7 +273,14 @@ def get_graph_cached(bbox, network_type="bike", size_threshold=0.5, precision=5)
         if not graph_file.is_absolute():
             graph_file = BACKEND_DIR / graph_file
         print(f"[route] graph cache hit: {graph_file}")
-        return ox.load_graphml(graph_file)
+
+        # Ladet den gechachten Graphen
+        G = ox.load_graphml(graph_file)
+        
+        # Schneidet den Graphen auf die benötigte Grösse zu
+        G = ox.truncate.truncate_graph_bbox(G, to_osmnx_bbox(bbox), )
+        
+        return G
 
     else:
         print(f"[route] graph cache miss: downloading OSM graph for bbox={bbox}, network_type={network_type}")
