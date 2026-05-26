@@ -60,3 +60,4 @@ Typische Einsatzgebiete:
 | --- | --- |
 | Claude Sonnet 4.6 | Anthropic (via GitHub Copilot) |
 | Gemini 3.1 | Google |
+| ChatGPT 5.5 | OpenAI |

@@ -49,13 +49,9 @@ Warum es besonders ist: Vollständige automatisierte GeoServer-Infrastruktur, pr
 
 ### `backend/_apriori/Routing_Provisorisch/Djikstra_mit_abfahrtzeit.ipynb` — Der Ursprung
 
-Das erste Routing-Notebook. Dijkstra auf einem OSMnx-Fahrradgraphen mit zufälligen Wettergewichten (`np.random.uniform(0, 16, 24)` pro Kante). Der `start_zeit`-Parameter bestimmt, welche Stunde aus dem 24-Stunden-Forecast als Kantengewicht verwendet wird. Abfahrtszeit-abhängiges Routing, bevor es echte Daten gab.
+Das erste Routing-Notebook. Dijkstra auf einem OSMnx-Fahrradgraphen mit zufälligen Wettergewichten (`np.random.uniform(0, 16, 24)` pro Kante). Hier wurden die Bausteine ein erstes mal getestet, und sich überlegt wie die Wetterdaten auf die Kanten kommen. Noch bevor es überhaupt Wetterdaten gab.
 
-```python
-route = ox.routing._single_shortest_path(G, orig=start_point, dest=end_point, weight="forecast[{start_zeit}]")
-```
-
-Warum es besonders ist: Die Idee des zeitabhängigen Routings ist hier vollständig umgesetzt, ohne eine einzige echte Wetterzahl.
+Warum es besonders ist: Die Idee des zeitabhängigen Routings wird hier das erste Mal angerissen.
 
 ---
 
@@ -86,9 +82,9 @@ Warum es besonders ist: Eigenständige, gut dokumentierte Bibliothek, die direkt
 
 ### `backend/_apriori/light_graph_test.ipynb` — Graph-Diät für den Raspberry Pi
 
-Das Notebook testet, wie weit sich der OSMnx-Graph reduzieren lässt. Die Funktion `graph_to_lightgraph` entfernt alle nicht benötigten Edge- und Node-Attribute. Ein weiterer Schritt konvertiert Kantenlängen von Float-Metern zu Integer-Zentimetern (`int(round(length * 100))`), was RAM auf dem Pi spart.
+Das Notebook testet, wie weit sich der OSMnx-Graph reduzieren lässt. Die Funktion `graph_to_lightgraph` entfernt alle nicht benötigten Edge- und Node-Attribute. Ein weiterer Ansatz, das Umrechnen der Kantenlängen von Float-Metern zu Integer-Zentimetern (`int(round(length * 100))`), was RAM auf dem Pi sparen soll.
 
-Warum es besonders ist: Zeigt das Denken in Deployment-Constraints, nicht nur in Korrektheit.
+Warum es besonders ist: Dieses Notebook bereitet Ansätze vor, wie der RAM bei grossen Graphen eingespart werden kann. Was sich allerdings nicht Umgesetz wurde.
 
 ---
 
@@ -102,7 +98,7 @@ Warum es besonders ist: Das historische Zeugnis des ARM64-Problems.
 
 ### `backend/_apriori/reduce_nc_to_grid_geometry.ipynb` — Der Zell-Index-Trick
 
-Erzeugt die Hilfsdatei `NC_for_Cellid.nc`: eine NetCDF-Datei, die nur noch `lat` und `lon` als 2D-Arrays enthält, ohne Forecast-Daten. Diese Datei wird beim Graph-Erstellen verwendet, um jeder OSM-Kante einmalig ihren nächsten Wetterrasterputnkt zuzuordnen. Das spart bei jeder späteren Routing-Anfrage die komplette KD-Tree-Suche.
+Erzeugt die Hilfsdatei `NC_for_Cellid.nc`: eine NetCDF-Datei, die nur noch `lat` und `lon` als 2D-Arrays enthält, ohne Forecast-Daten. Diese Datei wird beim Graph-Erstellen verwendet, um jeder OSM-Kante einmalig ihren nächsten Wetterzelle zuzuordnen. Das spart bei jeder späteren Routing-Anfrage die Vektorielle Zuordnung von Edge und Wetterzelle.
 
 Warum es besonders ist: Ein einmaliger Preprocessing-Schritt, der alle späteren Anfragen erheblich schneller macht.
 

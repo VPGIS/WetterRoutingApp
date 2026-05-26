@@ -86,7 +86,6 @@ Aufgaben des Frontends:
 - Absenden der Routinganfrage an das Backend
 - Darstellung der berechneten Route
 
-
 <p><strong>Standardablauf: User möchte Route berechnen lassen</strong></p>
 <video id="vid-calc" style="width:100%;border-radius:8px;box-shadow:0 6px 18px rgba(25,42,55,0.06);" loop muted playsinline>
   <source src="assets/calc.mp4" type="video/mp4">
@@ -172,7 +171,7 @@ Die wichtigsten Prozessschritte:
 4. **Modellauswahl:** Abhängig vom gewählten Routingmodell wird entweder ein einfaches oder ein zeitabhängiges Routingverfahren verwendet.
 5. **Rückgabe:** Nach der Routenberechnung wird die Route in ein GeoJSON-ähnliches Format umgewandelt und an das Frontend zurückgegeben.
 
-<details>
+<details open>
 <summary><strong>📊 Ablaufdiagramm anzeigen / ausblenden</strong></summary>
 
 <img src="assets/Ablaufdiagramm_Verarbeitung_API.svg" alt="Ablaufdiagramm Verarbeitung API">
@@ -193,10 +192,10 @@ backend/utils_routingmodels.py
 
 Aktuell stehen zwei Routingmodelle zur Verfügung:
 
-| Routingmodell | Beschreibung |
-|---|---|
-| `rain` | Bewertet die Kanten einmalig mit dem Forecast zur Startzeit. |
-| `rain+` | Bewertet Kanten zeitabhängig anhand der erwarteten Ankunftszeit. |
+| Routingmodell | Beschreibung                                                     |
+| ------------- | ---------------------------------------------------------------- |
+| `rain`        | Bewertet die Kanten einmalig mit dem Forecast zur Startzeit.     |
+| `rain+`       | Bewertet Kanten zeitabhängig anhand der erwarteten Ankunftszeit. |
 
 Das Routing verwendet vorbereitete oder neu erzeugte OSM-Graphen. Diese werden im Projekt gespeichert, damit sie bei späteren Anfragen wiederverwendet werden können.
 

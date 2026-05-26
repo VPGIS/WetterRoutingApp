@@ -199,13 +199,12 @@ def to_osmnx_bbox(bbox):
     north, south, east, west = bbox
     return (west, south, east, north)
 
-def get_graph_cached(bbox, network_type="bike", size_threshold=0.5, precision=5):
+def get_graph_cached(bbox, network_type="bike", precision=5):
     """
     Lädt einen OSMnx-Graphen aus dem Cache oder erstellt einen neuen basierend auf einer Bounding Box.
     
     Die Funktion prüft, ob bereits ein gespeicherter Graph existiert, dessen Bounding Box
-    die angefragte Bounding Box vollständig enthält und dessen Größe innerhalb eines
-    definierten Schwellenwerts liegt. Falls ein passender Graph gefunden wird, wird dieser geladen.
+    die angefragte Bounding Box vollständig enthält. Falls ein passender Graph gefunden wird, wird dieser geladen.
     Andernfalls wird ein neuer Graph von OSM heruntergeladen, gespeichert und im Index registriert.
     
     Parameter
@@ -214,9 +213,6 @@ def get_graph_cached(bbox, network_type="bike", size_threshold=0.5, precision=5)
         Bounding Box im Format (north, south, east, west)
     network_type : str, optional
         Typ des Straßennetzwerks (z.B. "drive", "walk", "bike") (default: "bike")
-    size_threshold : float, optional
-        Maximal erlaubte relative Größenabweichung zwischen gespeicherter und angefragter Bounding Box.
-        Beispiel: 0.5 bedeutet, dass der gespeicherte Graph höchstens 50% größer sein darf (default: 0.5)
     precision : int, optional
         Anzahl Dezimalstellen zur Rundung der Bounding Box Koordinaten (default: 5)
     
@@ -238,8 +234,6 @@ def get_graph_cached(bbox, network_type="bike", size_threshold=0.5, precision=5)
     bbox = (north, south, east, west)
 
     requested_geom = box(west, south, east, north)
-    requested_area = requested_geom.area
-
     if os.path.exists(INDEX_FILE):
         with open(INDEX_FILE, "r") as f:
             index = json.load(f)
@@ -259,13 +253,7 @@ def get_graph_cached(bbox, network_type="bike", size_threshold=0.5, precision=5)
         if not cached_geom.covers(requested_geom):
             continue
 
-        existing_area = cached_geom.area
-        size_ratio = (existing_area - requested_area) / requested_area
-
-        if size_ratio > size_threshold:
-            continue
-
-        candidates.append((feature, existing_area))
+        candidates.append((feature, cached_geom.area))
 
     if candidates:
         best_feature = min(candidates, key=lambda x: x[1])[0]
@@ -273,7 +261,14 @@ def get_graph_cached(bbox, network_type="bike", size_threshold=0.5, precision=5)
         if not graph_file.is_absolute():
             graph_file = BACKEND_DIR / graph_file
         print(f"[route] graph cache hit: {graph_file}")
-        return ox.load_graphml(graph_file)
+
+        # Ladet den gechachten Graphen
+        G = ox.load_graphml(graph_file)
+        
+        # Schneidet den Graphen auf die benötigte Grösse zu
+        G = ox.truncate.truncate_graph_bbox(G, to_osmnx_bbox(bbox), truncate_by_edge=True)
+        
+        return G
 
     else:
         print(f"[route] graph cache miss: downloading OSM graph for bbox={bbox}, network_type={network_type}")
