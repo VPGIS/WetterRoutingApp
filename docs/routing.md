@@ -20,7 +20,6 @@ Die Routingmodelle werden in folgender Datei verwaltet:
 backend/utils_routingmodels.py
 ```
 
-
 Weitere Einordnung zum gesamten Ablauf befindet sich in:
 
 - [Architektur](architecture.html)
@@ -61,7 +60,7 @@ Den Routingmodellen liegt der Dijkstra-Algorithmus zugrunde. Er wurde 1959 von E
 
 Für diese Anwendung eignet sich der Dijkstra-Algorithmus besonders gut, da er einfach nachvollziehbar, robust und flexibel an unterschiedliche Kostenfunktionen anpassbar ist. NetworkX respektive OSMnx verfügen bereits über bestehende Implementierungen, die für das statische Modell rain eingesetzt werden können. Das zeitabhängige Modell rain+ verwendet hingegen eine eigene Implementierung, da die zusätzliche Zeitkomponente von den oben genannten Bibliotheken in der benötigten Form nicht unterstützt wird.
 
-Obwohl der Dijkstra-Algorithmus in bestimmten Anwendungsfällen weniger performant sein kann als heuristische Verfahren wie beispielsweise der A*-Algorithmus, wurde er für dieses Projekt bewusst gewählt. Der Grund dafür liegt darin, dass Dijkstra ohne Heuristik arbeitet und dadurch transparenter sowie einfacher kontrollierbar ist. Dies ist insbesondere für die Integration projektspezifischer Gewichtungen und zeitabhängiger Kosten relevant. Während A* stark von der Wahl einer geeigneten Heuristik abhängt, lässt sich Dijkstra direkter anpassen und erlaubt eine klarere Nachvollziehbarkeit der berechneten Routen. Für dieses Projekt wurde deshalb die bessere Manipulierbarkeit und Interpretierbarkeit höher gewichtet als eine mögliche Performanceoptimierung durch A*.
+Obwohl der Dijkstra-Algorithmus in bestimmten Anwendungsfällen weniger performant sein kann als heuristische Verfahren wie beispielsweise der A\*-Algorithmus, wurde er für dieses Projekt bewusst gewählt. Der Grund dafür liegt darin, dass Dijkstra ohne Heuristik arbeitet und dadurch transparenter sowie einfacher kontrollierbar ist. Dies ist insbesondere für die Integration projektspezifischer Gewichtungen und zeitabhängiger Kosten relevant. Während A\* stark von der Wahl einer geeigneten Heuristik abhängt, lässt sich Dijkstra direkter anpassen und erlaubt eine klarere Nachvollziehbarkeit der berechneten Routen. Für dieses Projekt wurde deshalb die bessere Manipulierbarkeit und Interpretierbarkeit höher gewichtet als eine mögliche Performanceoptimierung durch A\*.
 
 Die nachfolgende Grafik zeigt grafisch auf, wie sich der Dijkstra-Algorithmus Schritt für Schritt durch den Graphen arbeitet, um die kostengünstigste Route von Node A zu Node Z zu finden:
 
@@ -102,7 +101,6 @@ Die nachfolgende Grafik zeigt grafisch auf, wie sich der Dijkstra-Algorithmus Sc
 ## Einfaches Routingmodell: `rain`
 
 Das Modell `rain` verwendet einen statischen Dijkstra-Ansatz und ist im Modul `static_weather_djikstra` umgesetzt.
-
 
 ### Grundidee
 
@@ -145,7 +143,6 @@ In der nachfolgenden Grafik ist das einfache Routingmodell interaktiv dargestell
     >
   </div>
 </details>
-
 
 ### Vorteile
 
